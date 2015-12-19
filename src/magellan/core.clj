@@ -1,10 +1,15 @@
 (ns magellan.core
   (:require [schema.core :as s]
             [clojure.java.io :as io])
-  (:import (org.geotools.coverage.grid GridCoverage2D GridGeometry2D RenderedSampleDimension)
+  (:import (org.geotools.coverage.grid GridCoverage2D GridGeometry2D
+                                       RenderedSampleDimension)
            (org.geotools.coverage.grid.io GridFormatFinder)
-           (org.geotools.referencing CRS)
+           (org.geotools.referencing CRS ReferencingFactoryFinder)
+           (org.geotools.referencing.factory PropertyAuthorityFactory
+                                             ReferencingFactoryContainer)
            (org.geotools.referencing.operation.projection MapProjection)
+           (org.geotools.metadata.iso.citation Citations)
+           (org.geotools.factory Hints)
            (org.geotools.geometry GeneralEnvelope)
            (org.geotools.coverage.processing Operations)
            (org.opengis.referencing.crs CoordinateReferenceSystem)
@@ -14,7 +19,7 @@
     [coverage   :- GridCoverage2D
      image      :- RenderedImage
      crs        :- CoordinateReferenceSystem
-     projection :- MapProjection
+     projection :- (s/maybe MapProjection)
      envelope   :- GeneralEnvelope
      grid       :- GridGeometry2D
      width      :- Integer
@@ -65,7 +70,17 @@
   [crs :- CoordinateReferenceSystem]
   (.toWKT crs))
 
-;; FIXME: Figure out how to add custom projections to the GeoTools database
+(defn register-new-crs-definitions-from-properties-file!
+  [authority-name filename]
+  (ReferencingFactoryFinder/addAuthorityFactory
+   (PropertyAuthorityFactory.
+    (ReferencingFactoryContainer.
+     (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
+    (Citations/fromName authority-name)
+    (io/resource filename)))
+  (ReferencingFactoryFinder/scanForPlugins))
+
+;; FIXME: Throws a NoninvertibleTransformException when reprojecting to EPSG:4326.
 (s/defn reproject-raster :- Raster
   [raster :- Raster
    crs :- CoordinateReferenceSystem]
@@ -96,5 +111,5 @@
   (def fmod-iet-reprojected-and-cropped (crop-raster fmod-iet-reprojected (:envelope fmod-reax)))
   (s/validate Raster fmod-iet-reprojected)
   (s/validate Raster fmod-iet-reprojected-and-cropped)
-
+  (register-new-crs-definitions-from-properties-file! "CALFIRE" "custom_projections.properties")
   )
