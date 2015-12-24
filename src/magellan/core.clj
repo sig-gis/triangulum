@@ -12,7 +12,9 @@
            (org.geotools.factory Hints)
            (org.geotools.geometry GeneralEnvelope)
            (org.geotools.coverage.processing Operations)
+           (org.geotools.gce.geotiff GeoTiffWriter)
            (org.opengis.referencing.crs CoordinateReferenceSystem)
+           (org.opengis.parameter GeneralParameterValue)
            (java.awt.image RenderedImage)))
 
 (s/defrecord Raster
@@ -96,6 +98,20 @@
   [raster   :- Raster
    envelope :- GeneralEnvelope]
   (to-raster (.crop Operations/DEFAULT (:coverage raster) envelope)))
+
+;; FIXME: Throws NullPointerException.
+(s/defn write-raster :- s/Any
+  [raster   :- Raster
+   filename :- s/Str]
+  (let [writer (GeoTiffWriter. (io/file filename))
+        params (->> writer
+                    (.getFormat)
+                    (.getWriteParameters)
+                    (.values)
+                    (into-array GeneralParameterValue))]
+    (try (.write writer (:coverage raster) params)
+         (catch Exception e
+           (println "Cannot write raster. Exception:" (class e))))))
 
 ;;; ======================== Usage examples below here =============================
 
