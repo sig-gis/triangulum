@@ -70,8 +70,9 @@
   [crs :- CoordinateReferenceSystem]
   (.toWKT crs))
 
-(defn register-new-crs-definitions-from-properties-file!
-  [authority-name filename]
+(s/defn register-new-crs-definitions-from-properties-file! :- s/Any
+  [authority-name :- s/Str
+   filename       :- s/Str]
   (ReferencingFactoryFinder/addAuthorityFactory
    (PropertyAuthorityFactory.
     (ReferencingFactoryContainer.
@@ -83,16 +84,16 @@
 ;; FIXME: Throws a NoninvertibleTransformException when reprojecting to EPSG:4326.
 (s/defn reproject-raster :- Raster
   [raster :- Raster
-   crs :- CoordinateReferenceSystem]
+   crs    :- CoordinateReferenceSystem]
   (to-raster (.resample Operations/DEFAULT (:coverage raster) crs)))
 
 (s/defn resample-raster :- Raster
   [raster :- Raster
-   grid :- GridGeometry2D]
+   grid   :- GridGeometry2D]
   (to-raster (.resample Operations/DEFAULT (:coverage raster) nil grid nil)))
 
 (s/defn crop-raster :- Raster
-  [raster :- Raster
+  [raster   :- Raster
    envelope :- GeneralEnvelope]
   (to-raster (.crop Operations/DEFAULT (:coverage raster) envelope)))
 
