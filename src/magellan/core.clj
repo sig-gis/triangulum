@@ -3,7 +3,7 @@
             [clojure.java.io :as io])
   (:import (org.geotools.coverage.grid GridCoverage2D GridGeometry2D
                                        RenderedSampleDimension)
-           (org.geotools.coverage.grid.io GridFormatFinder)
+           (org.geotools.coverage.grid.io GridFormatFinder AbstractGridFormat)
            (org.geotools.referencing CRS ReferencingFactoryFinder)
            (org.geotools.referencing.factory PropertyAuthorityFactory
                                              ReferencingFactoryContainer)
@@ -12,7 +12,7 @@
            (org.geotools.factory Hints)
            (org.geotools.geometry GeneralEnvelope)
            (org.geotools.coverage.processing Operations)
-           (org.geotools.gce.geotiff GeoTiffWriter)
+           (org.geotools.gce.geotiff GeoTiffWriter GeoTiffWriteParams)
            (org.opengis.referencing.crs CoordinateReferenceSystem)
            (org.opengis.parameter GeneralParameterValue)
            (java.awt.image RenderedImage)))
@@ -104,12 +104,22 @@
   [raster   :- Raster
    filename :- s/Str]
   (let [writer (GeoTiffWriter. (io/file filename))
-        params (->> writer
-                    (.getFormat)
-                    (.getWriteParameters)
-                    (.values)
-                    (into-array GeneralParameterValue))]
-    (try (.write writer (:coverage raster) params)
+        params (-> writer
+                   (.getFormat)
+                   (.getWriteParameters))]
+    ;; Enable LZW compression and tiling to 256x16 cell tiles
+    (-> params
+        (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
+        (.setValue (doto (GeoTiffWriteParams.)
+                     (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
+                     (.setCompressionType "LZW")
+                     (.setCompressionQuality 1.0)
+                     (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
+                     (.setTiling 256 16))))
+    ;; Write the GeoTIFF to disk
+    (try (.write writer
+                 (:coverage raster)
+                 (into-array GeneralParameterValue (.values params)))
          (catch Exception e
            (println "Cannot write raster. Exception:" (class e))))))
 
@@ -129,4 +139,5 @@
   (s/validate Raster fmod-iet-reprojected)
   (s/validate Raster fmod-iet-reprojected-and-cropped)
   (register-new-crs-definitions-from-properties-file! "CALFIRE" "custom_projections.properties")
+  (write-raster fmod-iet "/home/gjohnson/fmod-iet.tif")
   )
