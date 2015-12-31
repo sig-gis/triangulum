@@ -114,7 +114,8 @@
    envelope :- GeneralEnvelope]
   (to-raster (.crop Operations/DEFAULT (:coverage raster) envelope)))
 
-;; FIXME: Throws NullPointerException.
+;; FIXME: Throws a NullPointerException when writing a resampled coverage.
+;; FIXME: Parameterize the compression and tiling operations.
 (s/defn write-raster :- s/Any
   [raster   :- Raster
    filename :- s/Str]
@@ -123,14 +124,14 @@
                    (.getFormat)
                    (.getWriteParameters))]
     ;; Enable LZW compression and tiling to 256x16 cell tiles
-    (-> params
-        (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
-        (.setValue (doto (GeoTiffWriteParams.)
-                     (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
-                     (.setCompressionType "LZW")
-                     (.setCompressionQuality 1.0)
-                     (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
-                     (.setTiling 256 16))))
+    #_(-> params
+          (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
+          (.setValue (doto (GeoTiffWriteParams.)
+                       (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
+                       (.setCompressionType "LZW")
+                       (.setCompressionQuality 1.0)
+                       (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
+                       (.setTiling 256 16))))
     ;; Write the GeoTIFF to disk
     (try (.write writer
                  (:coverage raster)
@@ -155,4 +156,5 @@
   (s/validate Raster fmod-iet-reprojected-and-cropped)
   (register-new-crs-definitions-from-properties-file! "CALFIRE" "custom_projections.properties")
   (write-raster fmod-iet "/home/gjohnson/fmod-iet.tif")
+
   )
