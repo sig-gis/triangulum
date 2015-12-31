@@ -1,5 +1,5 @@
 (task-options!
- pom  {:project     'magellan
+ pom  {:project     'lambdatronic/magellan
        :version     "0.1.0"
        :description "Minimal API for Raster & Vector Manipulation over GeoTools"}
  repl {:init-ns     'magellan.core
