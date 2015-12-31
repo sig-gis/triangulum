@@ -1,5 +1,5 @@
 (task-options!
- pom  {:project     'lambdatronic/magellan
+ pom  {:project     'sig-gis/magellan
        :version     "0.1.0"
        :description "Minimal API for Raster & Vector Manipulation over GeoTools"}
  aot  {:all true}
