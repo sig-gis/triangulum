@@ -2,7 +2,7 @@
   (:require [schema.core :as s]
             [clojure.java.io :as io])
   (:import (org.geotools.coverage.grid GridCoverage2D GridGeometry2D
-                                       RenderedSampleDimension)
+                                       RenderedSampleDimension GridCoverageFactory)
            (org.geotools.coverage.grid.io GridFormatFinder AbstractGridFormat)
            (org.geotools.referencing CRS ReferencingFactoryFinder)
            (org.geotools.referencing.factory PropertyAuthorityFactory
@@ -10,7 +10,7 @@
            (org.geotools.referencing.operation.projection MapProjection)
            (org.geotools.metadata.iso.citation Citations)
            (org.geotools.factory Hints)
-           (org.geotools.geometry GeneralEnvelope)
+           (org.geotools.geometry GeneralEnvelope Envelope2D)
            (org.geotools.coverage.processing Operations)
            (org.geotools.gce.geotiff GeoTiffWriter GeoTiffWriteParams)
            (org.opengis.referencing.crs CoordinateReferenceSystem)
@@ -82,6 +82,21 @@
     (Citations/fromName authority-name)
     (io/resource filename)))
   (ReferencingFactoryFinder/scanForPlugins))
+
+(s/defn make-envelope :- Envelope2D
+  [srid       :- s/Str
+   upperleftx :- Double
+   upperlefty :- Double
+   width      :- Double
+   height     :- Double]
+  (Envelope2D. (srid-to-crs srid) upperleftx upperlefty width height))
+
+(s/defn matrix-to-raster :- GridCoverage2D
+  [name     :- s/Str
+   matrix   :- [[double]]
+   envelope :- Envelope2D]
+  (let [float-matrix (into-array (map float-array matrix))]
+    (to-raster (.create (GridCoverageFactory.) name float-matrix envelope))))
 
 ;; FIXME: Throws a NoninvertibleTransformException when reprojecting to EPSG:4326.
 (s/defn reproject-raster :- Raster
