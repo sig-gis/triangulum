@@ -2,6 +2,7 @@
  pom  {:project     'lambdatronic/magellan
        :version     "0.1.0"
        :description "Minimal API for Raster & Vector Manipulation over GeoTools"}
+ aot  {:all true}
  repl {:init-ns     'magellan.core
        :eval        '(set! *warn-on-reflection* true)})
 
@@ -25,4 +26,4 @@
 (deftask build
   "Build my project."
   []
-  (comp (pom) (jar)))
+  (comp (aot) (pom) (jar)))
