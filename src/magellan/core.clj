@@ -24,8 +24,8 @@
      projection :- (s/maybe MapProjection)
      envelope   :- GeneralEnvelope
      grid       :- GridGeometry2D
-     width      :- Integer
-     height     :- Integer
+     width      :- s/Int
+     height     :- s/Int
      bands      :- [RenderedSampleDimension]])
 
 (s/defn to-raster :- Raster
@@ -116,6 +116,7 @@
 
 ;; FIXME: Throws a NullPointerException when writing a resampled coverage.
 ;; FIXME: Parameterize the compression and tiling operations.
+;; REFERENCE: http://svn.osgeo.org/geotools/trunk/modules/plugin/geotiff/src/test/java/org/geotools/gce/geotiff/GeoTiffWriterTest.java
 (s/defn write-raster :- s/Any
   [raster   :- Raster
    filename :- s/Str]
@@ -139,6 +140,14 @@
          (catch Exception e
            (println "Cannot write raster. Exception:" (class e))))))
 
+(s/defn raster-band-stats :- {:min s/Num :max s/Num :nodata (s/maybe s/Num)}
+  [raster   :- Raster
+   band-num :- s/Int]
+  (let [band (nth (:bands raster) band-num)]
+    {:min    (.getMinimumValue band)
+     :max    (.getMaximumValue band)
+     :nodata (.getNoDataValues band)}))
+
 ;;; ======================== Usage examples below here =============================
 
 (comment
@@ -156,5 +165,15 @@
   (s/validate Raster fmod-iet-reprojected-and-cropped)
   (register-new-crs-definitions-from-properties-file! "CALFIRE" "custom_projections.properties")
   (write-raster fmod-iet "/home/gjohnson/fmod-iet.tif")
+  (doseq [x (range 0 84)]
+    (println (map (comp #(.getSampleDouble (.getData %) x y 0) :image)
+                  [fire-spread-raster flame-length-raster fire-line-intensity-raster])))
+  (def fire-spread
+    (read-string (slurp "/home/gjohnson/fire_spread_111-207_25_25.tif.clj")))
+  (def fire-spread-raster
+    (matrix-to-raster "fire-spread-matrix" fire-spread test-envelope))
+  (let [data (.getData (:image fire-spread-raster))]
+    (filter pos? (for [x (range 0 84) y (range 0 85)]
+                   (.getSampleFloat data x y 0))))
 
   )
