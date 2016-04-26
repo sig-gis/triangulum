@@ -1,10 +1,12 @@
 (task-options!
- pom  {:project     'sig-gis/magellan
-       :version     "0.1.0"
-       :description "Minimal API for Raster & Vector Manipulation over GeoTools"}
- aot  {:all true}
- repl {:init-ns     'magellan.core
-       :eval        '(set! *warn-on-reflection* true)})
+ pom    {:project     'sig-gis/magellan
+         :version     "0.1.0"
+         :description "Minimal API for Raster & Vector Manipulation over GeoTools"}
+ aot    {:all         true}
+ target {:dir         #{"target/"}}
+ push   {:repo        "clojars"}
+ repl   {:init-ns     'magellan.core
+         :eval        '(set! *warn-on-reflection* true)})
 
 (set-env!
  :source-paths   #{"src"}
@@ -21,9 +23,17 @@
                    [junit/junit               "4.11" :scope "test"]]
  :repositories   #(conj %
                         ["java.net"  "http://download.java.net/maven/2"]
-                        ["osgeo.org" "http://download.osgeo.org/webdav/geotools/"]))
+                        ["osgeo.org" "http://download.osgeo.org/webdav/geotools/"]
+                        ["clojars"   {:url "https://clojars.org/repo/"
+                                      :username (System/getenv "CLOJARS_USER")
+                                      :password (System/getenv "CLOJARS_PASS")}]))
 
 (deftask build
   "Build my project."
   []
-  (comp (aot) (pom) (jar)))
+  (comp (aot) (pom) (jar) (target)))
+
+(deftask deploy
+  "Deploy my project to Clojars."
+  []
+  (comp (aot) (pom) (jar) (target) (push)))
