@@ -117,7 +117,7 @@
 ;; FIXME: Throws a NullPointerException when writing a resampled coverage.
 ;; FIXME: Parameterize the compression and tiling operations.
 ;; REFERENCE: http://svn.osgeo.org/geotools/trunk/modules/plugin/geotiff/src/test/java/org/geotools/gce/geotiff/GeoTiffWriterTest.java
-(s/defn write-raster :- s/Any
+(s/defn write-raster-old :- s/Any
   [raster   :- Raster
    filename :- s/Str]
   (let [writer (GeoTiffWriter. (io/file filename))
@@ -140,6 +140,30 @@
          (catch Exception e
            (println "Cannot write raster. Exception:" (class e))))))
 
+;; FIXME: Throws a NullPointerException when writing a resampled coverage.
+;; FIXME: Parameterize the compression and tiling operations.
+;; REFERENCE: http://svn.osgeo.org/geotools/trunk/modules/plugin/geotiff/src/test/java/org/geotools/gce/geotiff/GeoTiffWriterTest.java
+(s/defn write-raster :- s/Any
+  [raster   :- Raster
+   filename :- s/Str]
+  (let [writer (GeoTiffWriter. (io/file filename))
+        params (-> writer
+                   (.getFormat)
+                   (.getWriteParameters)
+                   (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
+                   (.setValue (doto (GeoTiffWriteParams.)
+                                (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
+                                (.setCompressionType "LZW")
+                                (.setCompressionQuality 0.5)
+                                (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
+                                (.setTiling 256 16))))]
+    ;; Write the GeoTIFF to disk
+    (try (.write writer
+                 (:coverage raster)
+                 (into-array GeneralParameterValue (.values params)))
+         (catch Exception e
+           (println "Cannot write raster. Exception:" (class e))))))
+
 (s/defn raster-band-stats :- {:min s/Num :max s/Num :nodata (s/maybe s/Num)}
   [raster   :- Raster
    band-num :- s/Int]
@@ -152,10 +176,12 @@
 
 (comment
 
+  (def asp-raster (read-raster "/home/gjohnson/sig/gisdata/landfire/asp.tif"))
   (def fmod-iet (read-raster "/home/gjohnson/tmp/fuel_models/FMOD_IET_veg2015.tif"))
   (def fmod-reax (read-raster "/home/gjohnson/tmp/fuel_models/FMOD_REAX_v2005.tif"))
   (def lw-avg-20km (read-raster "/home/gjohnson/tmp/fuel_moisture_update/lw_avg_20km.tif"))
   (s/explain Raster)
+  (s/validate Raster asp-raster)
   (s/validate Raster fmod-iet)
   (s/validate Raster fmod-reax)
   (s/validate Raster lw-avg-20km)
@@ -164,6 +190,7 @@
   (s/validate Raster fmod-iet-reprojected)
   (s/validate Raster fmod-iet-reprojected-and-cropped)
   (register-new-crs-definitions-from-properties-file! "CALFIRE" "custom_projections.properties")
+  (write-raster asp-raster "/home/gjohnson/asp.tif")
   (write-raster fmod-iet "/home/gjohnson/fmod-iet.tif")
   (doseq [x (range 0 84)]
     (println (map (comp #(.getSampleDouble (.getData %) x y 0) :image)
