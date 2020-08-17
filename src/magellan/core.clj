@@ -9,7 +9,7 @@
                                              ReferencingFactoryContainer)
            (org.geotools.referencing.operation.projection MapProjection)
            (org.geotools.metadata.iso.citation Citations)
-           (org.geotools.factory Hints)
+           (org.geotools.util.factory Hints)
            (org.geotools.geometry GeneralEnvelope Envelope2D)
            (org.geotools.coverage.processing Operations)
            (org.geotools.gce.geotiff GeoTiffWriter GeoTiffWriteParams)
@@ -149,14 +149,15 @@
   (let [writer (GeoTiffWriter. (io/file filename))
         params (-> writer
                    (.getFormat)
-                   (.getWriteParameters)
-                   (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
-                   (.setValue (doto (GeoTiffWriteParams.)
-                                (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
-                                (.setCompressionType "LZW")
-                                (.setCompressionQuality 0.5)
-                                (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
-                                (.setTiling 256 16))))]
+                   (.getWriteParameters))]
+    (-> params
+        (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
+        (.setValue (doto (GeoTiffWriteParams.)
+                     (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
+                     (.setCompressionType "LZW")
+                     (.setCompressionQuality 0.5)
+                     (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
+                     (.setTiling 256 16))))
     ;; Write the GeoTIFF to disk
     (try (.write writer
                  (:coverage raster)
@@ -175,8 +176,7 @@
 ;;; ======================== Usage examples below here =============================
 
 (comment
-
-  (def asp-raster (read-raster "/home/gjohnson/sig/gisdata/landfire/asp.tif"))
+  (def asp-raster (read-raster "/home/kcheung/Work/magellan/BackscatterA_8101_2004_OffshoreSanFrancisco.tif"))
   (def fmod-iet (read-raster "/home/gjohnson/tmp/fuel_models/FMOD_IET_veg2015.tif"))
   (def fmod-reax (read-raster "/home/gjohnson/tmp/fuel_models/FMOD_REAX_v2005.tif"))
   (def lw-avg-20km (read-raster "/home/gjohnson/tmp/fuel_moisture_update/lw_avg_20km.tif"))
