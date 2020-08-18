@@ -62,8 +62,14 @@
     (let [samp-rast (read-raster (file-path "NE1_50M_SR_W.tif"))
           _         (write-raster samp-rast "test/output/raster.tif")
           my-rast   (read-raster "test/output/raster.tif")]
+
       (is (not (nil? my-rast)))
-      (is (instance? magellan.core.Raster my-rast)))))
+
+      (is (instance? magellan.core.Raster my-rast))
+
+      (is (= (:envelope samp-rast)
+             (:envelope my-rast)))
+      )))
 
 
 (deftest reproject-raster-test

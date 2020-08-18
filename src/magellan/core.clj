@@ -114,31 +114,6 @@
    envelope :- GeneralEnvelope]
   (to-raster (.crop Operations/DEFAULT (:coverage raster) envelope)))
 
-;; FIXME: Throws a NullPointerException when writing a resampled coverage.
-;; FIXME: Parameterize the compression and tiling operations.
-;; REFERENCE: http://svn.osgeo.org/geotools/trunk/modules/plugin/geotiff/src/test/java/org/geotools/gce/geotiff/GeoTiffWriterTest.java
-(s/defn write-raster-old :- s/Any
-  [raster   :- Raster
-   filename :- s/Str]
-  (let [writer (GeoTiffWriter. (io/file filename))
-        params (-> writer
-                   (.getFormat)
-                   (.getWriteParameters))]
-    ;; Enable LZW compression and tiling to 256x16 cell tiles
-    #_(-> params
-          (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
-          (.setValue (doto (GeoTiffWriteParams.)
-                       (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
-                       (.setCompressionType "LZW")
-                       (.setCompressionQuality 1.0)
-                       (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
-                       (.setTiling 256 16))))
-    ;; Write the GeoTIFF to disk
-    (try (.write writer
-                 (:coverage raster)
-                 (into-array GeneralParameterValue (.values params)))
-         (catch Exception e
-           (println "Cannot write raster. Exception:" (class e))))))
 
 ;; FIXME: Throws a NullPointerException when writing a resampled coverage.
 ;; FIXME: Parameterize the compression and tiling operations.
