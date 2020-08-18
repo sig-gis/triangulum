@@ -36,3 +36,5 @@ clojure -A:check-deps
 #+END_SRC
 
 *** To run tests
+    
+# TODO: fix alias when testing has been added
