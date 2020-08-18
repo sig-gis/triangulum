@@ -1,0 +1,29 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: num:nil
+
+* Magellan
+** Aliases
+*** To build the (library) jar run:
+    
+#+BEGIN_SRC sh
+clojure -A:make-jar
+#+END_SRC
+
+*** To deploy jar to clojars.org 
+
+*Note*: make sure to build the library first.
+First create a pom.xml file if you don't already have one.
+#+BEGIN_SRC sh
+clojure -Spom
+#+END_SRC
+
+Then deploy run:
+#+BEGIN_SRC sh
+env CLOJARS_USERNAME=username CLOJARS_PASSWORD=clojars-token clj -A:deploy
+#+END_SRC
+**** A note on Clojare tokens:
+     
+As of 2020-06-27, Clojars will no longer accept your Clojars password when 
+deploying. You will have to use a token instead. Please read more about this[[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][ here]] 
+
+*** To Run tests
