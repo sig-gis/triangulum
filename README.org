@@ -2,7 +2,10 @@
 #+OPTIONS: num:nil
 
 * Magellan
-** Aliases
+ 
+A Clojure library for interoping with[[https://geotools.org/][ GeoTools]], an open source Java library that provides tools for geospatial data.
+
+** Useful Aliases
 *** To build the (library) jar run:
     
 #+BEGIN_SRC sh
@@ -17,13 +20,19 @@ First create a pom.xml file if you don't already have one.
 clojure -Spom
 #+END_SRC
 
-Then deploy run:
+Then to deploy run:
 #+BEGIN_SRC sh
-env CLOJARS_USERNAME=username CLOJARS_PASSWORD=clojars-token clj -A:deploy
+env CLOJARS_USERNAME=your-username CLOJARS_PASSWORD=your-clojars-token clojure -A:deploy
 #+END_SRC
 **** A note on Clojare tokens:
      
 As of 2020-06-27, Clojars will no longer accept your Clojars password when 
 deploying. You will have to use a token instead. Please read more about this[[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][ here]] 
 
-*** To Run tests
+*** To check for outdated dependencies run:
+    
+#+BEGIN_SRC sh
+clojure -A:check-deps
+#+END_SRC
+
+*** To run tests
