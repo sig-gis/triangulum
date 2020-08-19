@@ -120,13 +120,13 @@
 
       (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
 
+
 (deftest matrix-to-raster-test
   (testing "Creating a raster from a 2d matrix"
     (let [envelope (:envelope (read-raster (file-path "SRS-EPSG-3857.tif")))
-          envelope (make-envelope "EPSG:3857" 0.0 100.0 100 100)
-          matrix   (for [x (range 10)]
-                     (for [y (range 10)]
-                       (double 1)))
+          height   100
+          width    100
+          envelope (make-envelope "EPSG:3857" 0.0 100.0 width height)
+          matrix   (repeat height (repeat width 1.0))
           rast     (matrix-to-raster "some-name" matrix envelope)]
-      (is (instance? magellan.core.Raster rast))
-      )))
+      (is (instance? magellan.core.Raster rast)))))
