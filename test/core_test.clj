@@ -53,13 +53,13 @@
 
 (deftest read-raster-test
   (testing "Reading raster from file"
-    (let [sample-raster (read-raster (file-path "HYP_50M_SR.tif"))]
+    (let [sample-raster (read-raster (file-path "SRS-ESPG-3857.tif"))]
       (is (instance? magellan.core.Raster sample-raster)))))
 
 
 (deftest write-raster-test
   (testing "write a raster to file"
-    (let [samp-rast (read-raster (file-path "NE1_50M_SR_W.tif"))
+    (let [samp-rast (read-raster (file-path "SRS-ESPG-3857.tif"))
           _         (write-raster samp-rast "test/output/raster.tif")
           my-rast   (read-raster "test/output/raster.tif")]
 
@@ -67,29 +67,51 @@
 
       (is (instance? magellan.core.Raster my-rast))
 
+      (is (= (:crs samp-rast)
+             (:crs my-rast)))
+
+      (is (= (:projection samp-rast)
+             (:projection my-rast)))
+
+      (is (= (.gridDimensionY (:grid samp-rast))
+             (.gridDimensionY (:grid my-rast))))
+
+      (is (= (:bands samp-rast)
+               (:bands my-rast)))
+
+      (is (= (:grid samp-rast)
+             (:grid my-rast)))
+
       (is (= (:envelope samp-rast)
              (:envelope my-rast)))
+
+      ;; TODO Failing
+      (is (= samp-rast my-rast))
       )))
 
 
 (deftest reproject-raster-test
   (testing "reproject raster"
-    (let [samp1-rast (read-raster (file-path "HYP_50M_SR.tif"))
-          samp2-rast (read-raster (file-path "NE1_50M_SR_W.tif"))
-          new-raster (reproject-raster samp1-rast (:crs samp2-rast))]
-      (is (instance? magellan.core.Raster new-raster))
-      ;; TODO Verify operation
+    (let [samp-rast        (read-raster (file-path "SRS-ESPG-3857.tif"))
+          new-crs          (:crs (read-raster (file-path "SRS-ESPG-32610.tif")))
+          reprojected-rast (reproject-raster samp-rast new-crs)]
+
+      (is (instance? magellan.core.Raster samp-rast))
+
+      (is (not (= (:crs samp-rast)
+                  new-crs)))
+
+      (is (= (:crs reprojected-rast)
+             new-crs)
+          "should produce a new raster with  ")
       )))
 
 
 (deftest reproject-and-crop-test
   (testing "reproject and crop raster"
-    (let [samp-rast  (read-raster (file-path "NE1_50M_SR_W.tif"))
+    (let [samp-rast  (read-raster (file-path "SRS-ESPG-3857.tif"))
           new-raster (crop-raster samp-rast (:envelope samp-rast))]
       (is (instance? magellan.core.Raster new-raster))
 
       ;; TODO Verify operation
       )))
-
-
-
