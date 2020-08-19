@@ -55,6 +55,7 @@
 (deftest read-raster-test
   (testing "Reading raster from file"
     (let [sample-raster (read-raster (file-path "SRS-EPSG-3857.tif"))]
+
       (is (instance? magellan.core.Raster sample-raster)))))
 
 
@@ -115,8 +116,9 @@
           new-upper (map #(/ (+ %1 %2) 2) lower upper)
           new-rast  (crop-raster samp-rast (GeneralEnvelope. lower (double-array new-upper)))]
 
+      (is (instance? magellan.core.Raster new-rast))
 
-      (is (instance? magellan.core.Raster new-rast)))))
+      (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
 
 (deftest matrix-to-raster-test
   (testing "Creating a raster from a 2d matrix"
@@ -126,8 +128,5 @@
                      (for [y (range 10)]
                        (double 1)))
           rast     (matrix-to-raster "some-name" matrix envelope)]
-
-
-      (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
-
-(is (instance? magellan.core.Raster rast)))))
+      (is (instance? magellan.core.Raster rast))
+      )))
