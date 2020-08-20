@@ -131,7 +131,22 @@
 
       (is (instance? magellan.core.Raster new-rast))
 
-      (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
+      (is (not (= (:envelope new-rast) (:envelope samp-rast))))
+
+      )))
+
+(deftest make-envelope-test
+  (testing "Creating an envelope"
+    (let [samp-crs (:crs (read-raster (file-path "SRS-EPSG-3857.tif")))
+          height    100.0
+          width     100.0
+          x-min     0.0
+          y-min     0.0
+          envelope  (make-envelope "EPSG:3857" x-min y-min height width)]
+
+      (is (instance? Envelope2D envelope))
+
+      (is (= envelope (Envelope2D. samp-crs x-min y-min height width))))))
 
 
 (deftest matrix-to-raster-test
