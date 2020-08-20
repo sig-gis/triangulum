@@ -105,36 +105,6 @@
       )))
 
 
-(deftest reproject-raster-test
-  (testing "reproject raster"
-    (let [samp-rast        (read-raster (file-path "SRS-EPSG-3857.tif"))
-          new-crs          (:crs (read-raster (file-path "SRS-EPSG-32610.tif")))
-          reprojected-rast (reproject-raster samp-rast new-crs)]
-
-      (is (instance? magellan.core.Raster samp-rast))
-
-      (is (not (= (:crs samp-rast) new-crs))
-          "new crs to be projected to should not be the same as the original")
-
-      (is (= (:crs reprojected-rast)
-             new-crs)
-          "should produce a new raster with updated coordinate reference system"))))
-
-
-(deftest reproject-and-crop-test
-  (testing "reproject and crop raster"
-    (let [samp-rast (read-raster (file-path "SRS-EPSG-3857.tif"))
-          lower     (-> (:envelope samp-rast) .getLowerCorner .getCoordinate)
-          upper     (-> (:envelope samp-rast) .getUpperCorner .getCoordinate)
-          new-upper (map #(/ (+ %1 %2) 2) lower upper)
-          new-rast  (crop-raster samp-rast (GeneralEnvelope. lower (double-array new-upper)))]
-
-      (is (instance? magellan.core.Raster new-rast))
-
-      (is (not (= (:envelope new-rast) (:envelope samp-rast))))
-
-      )))
-
 (deftest make-envelope-test
   (testing "Creating an envelope"
     (let [samp-crs (:crs (read-raster (file-path "SRS-EPSG-3857.tif")))
@@ -158,12 +128,40 @@
           matrix   (repeat height (repeat width 1.0))
           rast     (matrix-to-raster "some-name" matrix envelope)]
 
-      (is (instance? magellan.core.Raster rast))
+      (is (instance? magellan.core.Raster rast)))))
 
-      (let [[x y] (lower-ordinates (:envelope rast))]
-        (is (= [0.0 0.0] [x y])
-            "lower left corner of the envelope should be at [0,0]"))
 
-      (let [[x y] (upper-ordinates (:envelope rast))]
-        (is (= [100.0 100.0] [x y])
-            "upper right corner of the envelope should be at [100, 100]")))))
+(deftest reproject-raster-test
+  (testing "reproject a raster"
+    (let [samp-rast        (read-raster (file-path "SRS-EPSG-3857.tif"))
+          new-crs          (:crs (read-raster (file-path "SRS-EPSG-32610.tif")))
+          reprojected-rast (reproject-raster samp-rast new-crs)]
+
+      (is (instance? magellan.core.Raster samp-rast))
+
+      (is (not (= (:crs samp-rast) new-crs))
+          "new crs to be projected to should not be the same as the original")
+
+      (is (= (:crs reprojected-rast)
+             new-crs)
+          "should produce a new raster with updated coordinate reference system"))))
+
+
+(deftest resample-raster-test
+  (testing "resampling a raster"))
+
+
+(deftest reproject-and-crop-test
+  (testing "reproject and crop raster"
+    (let [samp-rast (read-raster (file-path "SRS-EPSG-3857.tif"))
+          lower     (-> (:envelope samp-rast) .getLowerCorner .getCoordinate)
+          upper     (-> (:envelope samp-rast) .getUpperCorner .getCoordinate)
+          new-upper (map #(/ (+ %1 %2) 2) lower upper)
+          new-rast  (crop-raster samp-rast (GeneralEnvelope. lower (double-array new-upper)))]
+
+      (is (instance? magellan.core.Raster new-rast))
+
+      (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
+
+
+
