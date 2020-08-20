@@ -4,7 +4,7 @@
             [clojure.java.io :as io])
   (:import
    (org.geotools.coverage.processing Operations)
-   (org.geotools.geometry GeneralEnvelope)))
+   (org.geotools.geometry GeneralEnvelope Envelope2D)))
 
 ;; -----------------------------------------------------------------------------
 ;; Utils
@@ -21,6 +21,19 @@
                    (func func f2)))
                (clojure.java.io/delete-file f))]
     (func func (clojure.java.io/file fname))))
+
+
+(defn lower-ordinates
+  [envelope]
+  (-> envelope
+      .getLowerCorner
+      .ordinates))
+
+(defn upper-ordinates
+  [envelope]
+  (-> envelope
+      .getUpperCorner
+      .ordinates))
 
 ;; -----------------------------------------------------------------------------
 ;; Fixures
@@ -126,7 +139,16 @@
     (let [envelope (:envelope (read-raster (file-path "SRS-EPSG-3857.tif")))
           height   100
           width    100
-          envelope (make-envelope "EPSG:3857" 0.0 100.0 width height)
+          envelope (make-envelope "EPSG:3857" 0.0 0.0 width height)
           matrix   (repeat height (repeat width 1.0))
           rast     (matrix-to-raster "some-name" matrix envelope)]
-      (is (instance? magellan.core.Raster rast)))))
+
+      (is (instance? magellan.core.Raster rast))
+
+      (let [[x y] (lower-ordinates (:envelope rast))]
+        (is (= [0.0 0.0] [x y])
+            "lower left corner of the envelope should be at [0,0]"))
+
+      (let [[x y] (upper-ordinates (:envelope rast))]
+        (is (= [100.0 100.0] [x y])
+            "upper right corner of the envelope should be at [100, 100]")))))
