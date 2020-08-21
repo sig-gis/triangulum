@@ -6,8 +6,7 @@
    (org.geotools.coverage.processing Operations)
    (org.geotools.geometry GeneralEnvelope Envelope2D)
    (org.geotools.referencing CRS ReferencingFactoryFinder)
-   (org.geotools.referencing.factory.epsg AuthorityCodes)
-   ))
+   (org.geotools.referencing.factory.epsg AuthorityCodes)))
 
 ;; -----------------------------------------------------------------------------
 ;; Utils
@@ -16,6 +15,7 @@
 (defn file-path
   [filename]
   (str "test/data/" filename))
+
 
 (defn clear-dir [fname]
   (let [func (fn [func f]
@@ -26,18 +26,6 @@
     (func func (clojure.java.io/file fname))))
 
 
-(defn lower-ordinates
-  [envelope]
-  (-> envelope
-      .getLowerCorner
-      .ordinates))
-
-(defn upper-ordinates
-  [envelope]
-  (-> envelope
-      .getUpperCorner
-      .ordinates))
-
 ;; -----------------------------------------------------------------------------
 ;; Fixures
 ;; -----------------------------------------------------------------------------
@@ -46,6 +34,7 @@
   []
   (.mkdir (java.io.File. "test/output")))
 
+
 (defn del-recur [fname]
   (let [f (clojure.java.io/file fname)]
     (when (.isDirectory f)
@@ -53,14 +42,17 @@
         (del-recur f2)))
     (clojure.java.io/delete-file f)))
 
+
 (defn teardown-once
   []
   (clear-dir "test/output"))
+
 
 (defn fixture-once [test-fn]
   (setup-once)
   (test-fn)
   (teardown-once))
+
 
 (use-fixtures :once fixture-once)
 
@@ -202,6 +194,7 @@
       (is (instance? magellan.core.Raster new-rast))
 
       (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
+
 
 (deftest register-crs-definitions-test
   (let [authority  "CALFIRE"
