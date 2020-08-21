@@ -4,7 +4,10 @@
             [clojure.java.io :as io])
   (:import
    (org.geotools.coverage.processing Operations)
-   (org.geotools.geometry GeneralEnvelope Envelope2D)))
+   (org.geotools.geometry GeneralEnvelope Envelope2D)
+   (org.geotools.referencing CRS ReferencingFactoryFinder)
+   (org.geotools.referencing.factory.epsg AuthorityCodes)
+   ))
 
 ;; -----------------------------------------------------------------------------
 ;; Utils
@@ -75,8 +78,8 @@
 (deftest write-raster-test
   (testing "write a raster to file"
     (let [samp-rast (read-raster (file-path "SRS-EPSG-3857.tif"))
-          _         (write-raster samp-rast "test/output/raster.tif")
-          my-rast   (read-raster "test/output/raster.tif")]
+          _         (write-raster samp-rast "test/output/SRS-EPSG-3857.tif")
+          my-rast   (read-raster "test/output/SRS-EPSG-3857.tif")]
 
       (is (not (nil? my-rast)))
 
@@ -101,6 +104,10 @@
              (:envelope my-rast)))
 
       ;; TODO Failing
+      (is (= (:image samp-rast)
+             (:image my-rast)))
+
+      ;; TODO Failing
       (is (= samp-rast my-rast))
       )))
 
@@ -119,16 +126,32 @@
 
 (deftest matrix-to-raster-test
   (testing "Creating a raster from a 2d matrix"
-    (let [envelope       (:envelope (read-raster (file-path "SRS-EPSG-3857.tif")))
-          [height width] [100, 100]
+    (let [[height width] [100, 100]
           [x-min y-min]  [0.0, 0.0]
           envelope       (make-envelope "EPSG:3857" x-min y-min width height)
           matrix         (repeat height (repeat width 1.0))
-          rast           (matrix-to-raster "some-name" matrix envelope)]
+          rast           (matrix-to-raster "some-name" matrix envelope)
+          coverage       (:coverage rast)]
 
-      (prn (:grid rast))
+      (is (instance? magellan.core.Raster rast))
 
-      (is (instance? magellan.core.Raster rast)))))
+      (is (= (:crs rast) (.getCoordinateReferenceSystem coverage)))
+
+      (is (= (:projection rast) (CRS/getMapProjection (:crs rast))))
+
+      (is (= (:image rast) (.getRenderedImage coverage)))
+
+      (is (= (:envelope rast) (.getEnvelope coverage)))
+
+      (is (= (:crs rast) (.getCoordinateReferenceSystem coverage)))
+
+      (is (= (:grid rast) (.getGridGeometry coverage)))
+
+      (is (= (:width rast) (.getWidth (.getRenderedImage coverage))))
+
+      (is (= (:height rast) (.getHeight (.getRenderedImage coverage))))
+
+      (is (= (:bands rast) (vec (.getSampleDimensions coverage)))))))
 
 
 (deftest reproject-raster-test
@@ -140,7 +163,7 @@
       (is (instance? magellan.core.Raster samp-rast))
 
       (is (not (= (:crs samp-rast) new-crs))
-          "New crs to be projected to should not be the same as the original")
+          "new crs to be projected to should not be the same as the original")
 
       (is (= (:crs reprojected-rast)
              new-crs)
@@ -148,17 +171,40 @@
 
 
 (deftest resample-raster-test
-  (testing "resampling a raster"))
+  (testing "resampling a raster")
+  (let [[width height]  [100, 100]
+        [x-min y-min]   [0.0, 0.0]
+        envelope        (make-envelope "EPSG:3857" x-min y-min width height)
+        matrix          (repeat height (repeat width 1.0))
+        matrix2         (repeat (* 2 height) (repeat (* 2 width) 1.0))
+        source-rast     (matrix-to-raster "100Res" matrix envelope)
+        target-rast     (matrix-to-raster "200Res" (repeat (* 2 height) (repeat (* 2 width) 1.0)) envelope)
+        rast1-resampled (resample-raster source-rast (:grid target-rast))]
 
 
-(deftest reproject-and-crop-test
-  (testing "reproject and crop raster"
+    (is (not (= [(:width source-rast) (:height source-rast)]
+                [(:width target-rast) (:height target-rast)]))
+        "resolution of the two rasters should be different")
+
+    (is (= [(:width rast1-resampled) (:height rast1-resampled)]
+           [(:width target-rast) (:height target-rast)])
+        "resampled raster should have the same resolution as target raster")))
+
+
+(deftest crop-test
+  (testing "cropping a raster"
     (let [samp-rast (read-raster (file-path "SRS-EPSG-3857.tif"))
           lower     (-> (:envelope samp-rast) .getLowerCorner .getCoordinate)
           upper     (-> (:envelope samp-rast) .getUpperCorner .getCoordinate)
           new-upper (map #(/ (+ %1 %2) 2) lower upper)
           new-rast  (crop-raster samp-rast (GeneralEnvelope. lower (double-array new-upper)))]
-
       (is (instance? magellan.core.Raster new-rast))
 
       (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
+
+(deftest register-crs-definitions-test
+  (let [authority  "CALFIRE"
+        properties "data/sample_projections.properties"]
+    (register-new-crs-definitions-from-properties-file! authority properties)
+
+    (is (not (nil? (CRS/decode "CALFIRE:900914"))))))
