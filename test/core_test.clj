@@ -107,12 +107,10 @@
 
 (deftest make-envelope-test
   (testing "Creating an envelope"
-    (let [samp-crs (:crs (read-raster (file-path "SRS-EPSG-3857.tif")))
-          height    100.0
-          width     100.0
-          x-min     0.0
-          y-min     0.0
-          envelope  (make-envelope "EPSG:3857" x-min y-min height width)]
+    (let [samp-crs       (:crs (read-raster (file-path "SRS-EPSG-3857.tif")))
+          [height width] [100, 100]
+          [x-min y-min]  [0.0, 0.0]
+          envelope       (make-envelope "EPSG:3857" x-min y-min height width)]
 
       (is (instance? Envelope2D envelope))
 
@@ -121,12 +119,14 @@
 
 (deftest matrix-to-raster-test
   (testing "Creating a raster from a 2d matrix"
-    (let [envelope (:envelope (read-raster (file-path "SRS-EPSG-3857.tif")))
-          height   100
-          width    100
-          envelope (make-envelope "EPSG:3857" 0.0 0.0 width height)
-          matrix   (repeat height (repeat width 1.0))
-          rast     (matrix-to-raster "some-name" matrix envelope)]
+    (let [envelope       (:envelope (read-raster (file-path "SRS-EPSG-3857.tif")))
+          [height width] [100, 100]
+          [x-min y-min]  [0.0, 0.0]
+          envelope       (make-envelope "EPSG:3857" x-min y-min width height)
+          matrix         (repeat height (repeat width 1.0))
+          rast           (matrix-to-raster "some-name" matrix envelope)]
+
+      (prn (:grid rast))
 
       (is (instance? magellan.core.Raster rast)))))
 
@@ -140,7 +140,7 @@
       (is (instance? magellan.core.Raster samp-rast))
 
       (is (not (= (:crs samp-rast) new-crs))
-          "new crs to be projected to should not be the same as the original")
+          "New crs to be projected to should not be the same as the original")
 
       (is (= (:crs reprojected-rast)
              new-crs)
@@ -162,6 +162,3 @@
       (is (instance? magellan.core.Raster new-rast))
 
       (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
-
-
-
