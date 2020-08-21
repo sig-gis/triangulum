@@ -1,21 +1,19 @@
-#+OPTIONS: toc:nil
-#+OPTIONS: num:nil
-
 * Magellan
- 
-A Clojure library for interoping with[[https://geotools.org/][ GeoTools]], an open source Java library that provides tools for geospatial data.
+
+A Clojure library for interating with [[https://geotools.org/][GeoTools]], an open source Java library that provides tools for geospatial data.
 
 ** Useful Aliases
 *** To build the (library) jar run:
-    
+
 #+BEGIN_SRC sh
 clojure -A:make-jar
 #+END_SRC
 
-*** To deploy jar to clojars.org 
+*** To deploy jar to clojars.org
 
 *Note*: make sure to build the library first.
 First create a pom.xml file if you don't already have one.
+
 #+BEGIN_SRC sh
 clojure -Spom
 #+END_SRC
@@ -24,17 +22,20 @@ Then to deploy run:
 #+BEGIN_SRC sh
 env CLOJARS_USERNAME=your-username CLOJARS_PASSWORD=your-clojars-token clojure -A:deploy
 #+END_SRC
-**** A note on Clojare tokens:
+
+**** A note on Clojars tokens:
      
-As of 2020-06-27, Clojars will no longer accept your Clojars password when 
-deploying. You will have to use a token instead. Please read more about this[[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][ here]] 
+As of 2020-06-27, Clojars will no longer accept your Clojars password when
+deploying. You will have to use a token instead. Please read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][here]].
 
 *** To check for outdated dependencies run:
-    
+
 #+BEGIN_SRC sh
 clojure -A:check-deps
 #+END_SRC
 
-*** To run tests
+*** To test run:
     
-# TODO: fix alias when testing has been added
+#+BEGIN_SRC sh
+clojure -A:test
+#+END_SRC
