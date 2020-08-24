@@ -7,64 +7,61 @@
            (org.geotools.referencing CRS ReferencingFactoryFinder)
            (org.geotools.referencing.factory.epsg AuthorityCodes)))
 
-;; -----------------------------------------------------------------------------
+;;-----------------------------------------------------------------------------
 ;; Utils
-;; -----------------------------------------------------------------------------
+;;-----------------------------------------------------------------------------
+
 
 (defn file-path
   [filename]
   (str "test/data/" filename))
-
 
 (defn clear-dir [fname]
   (let [func (fn [func f]
                (when (.isDirectory f)
                  (doseq [f2 (.listFiles f)]
                    (func func f2)))
-               (clojure.java.io/delete-file f))]
-    (func func (clojure.java.io/file fname))))
+               (io/delete-file f))]
+    (func func (io/file fname))))
 
 
-;; -----------------------------------------------------------------------------
-;; Fixures
-;; -----------------------------------------------------------------------------
+;;-----------------------------------------------------------------------------
+;; Fixtures
+;;-----------------------------------------------------------------------------
 
 (defn setup-once
   []
   (.mkdir (java.io.File. "test/output")))
 
-
-(defn del-recur [fname]
+(defn del-recur
+  [fname]
   (let [f (clojure.java.io/file fname)]
     (when (.isDirectory f)
       (doseq [f2 (.listFiles f)]
         (del-recur f2)))
     (clojure.java.io/delete-file f)))
 
-
 (defn teardown-once
   []
   (clear-dir "test/output"))
 
-
-(defn fixture-once [test-fn]
+(defn fixture-once
+  [test-fn]
   (setup-once)
   (test-fn)
   (teardown-once))
 
-
 (use-fixtures :once fixture-once)
 
-;; -----------------------------------------------------------------------------
+;;------------------------------------------------------------------------------
 ;; Tests
-;; -----------------------------------------------------------------------------
+;;------------------------------------------------------------------------------
 
 (deftest read-raster-test
   (testing "Reading raster from file"
     (let [sample-raster (mg/read-raster (file-path "SRS-EPSG-3857.tif"))]
 
       (is (instance? magellan.core.Raster sample-raster)))))
-
 
 (deftest write-raster-test
   (testing "write a raster to file"
@@ -103,7 +100,6 @@
       ;;        (:coverage my-rast)))
       )))
 
-
 (deftest make-envelope-test
   (testing "Creating an envelope"
     (let [samp-crs       (:crs (mg/read-raster (file-path "SRS-EPSG-3857.tif")))
@@ -114,7 +110,6 @@
       (is (instance? Envelope2D envelope))
 
       (is (= envelope (Envelope2D. samp-crs x-min y-min height width))))))
-
 
 (deftest matrix-to-raster-test
   (testing "Creating a raster from a 2d matrix"
@@ -145,7 +140,6 @@
 
       (is (= (:bands rast) (vec (.getSampleDimensions coverage)))))))
 
-
 (deftest reproject-raster-test
   (testing "reproject a raster"
     (let [samp-rast        (mg/read-raster (file-path "SRS-EPSG-3857.tif"))
@@ -160,7 +154,6 @@
       (is (= (:crs reprojected-rast)
              new-crs)
           "should produce a new raster with updated coordinate reference system"))))
-
 
 (deftest resample-raster-test
   (testing "resampling a raster")
@@ -182,7 +175,6 @@
            [(:width target-rast) (:height target-rast)])
         "resampled raster should have the same resolution as target raster")))
 
-
 (deftest crop-test
   (testing "cropping a raster"
     (let [samp-rast (mg/read-raster (file-path "SRS-EPSG-3857.tif"))
@@ -193,7 +185,6 @@
       (is (instance? magellan.core.Raster new-rast))
 
       (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
-
 
 (deftest register-crs-definitions-test
   (let [authority  "CALFIRE"
