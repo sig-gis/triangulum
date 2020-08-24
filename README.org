@@ -3,15 +3,15 @@
 A Clojure library for interacting with [[https://geotools.org/][GeoTools]], an open source Java library that provides tools for geospatial data.
 
 ** Useful Aliases
-*** To build the (library) jar run:
+*** To build the (library) JAR run:
 
 #+BEGIN_SRC sh
 clojure -A:make-jar
 #+END_SRC
 
-*** To deploy jar to clojars.org:
+*** To deploy the JAR to clojars.org run:
 
-*Note*: make sure to build the library first.
+*Note*: Make sure to build the library first.
 
 First create a pom.xml file if you don't already have one.
 
@@ -36,7 +36,7 @@ deploying. You will have to use a token instead. Please read more about this [[h
 clojure -A:check-deps
 #+END_SRC
 
-*** To launch test suite run:
+*** To launch the test suite run:
     
 #+BEGIN_SRC sh
 clojure -A:test
