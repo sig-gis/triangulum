@@ -2,11 +2,10 @@
   (:require [clojure.test :refer :all]
             [magellan.core :as mg]
             [clojure.java.io :as io])
-  (:import
-   (org.geotools.coverage.processing Operations)
-   (org.geotools.geometry GeneralEnvelope Envelope2D)
-   (org.geotools.referencing CRS ReferencingFactoryFinder)
-   (org.geotools.referencing.factory.epsg AuthorityCodes)))
+  (:import (org.geotools.coverage.processing Operations)
+           (org.geotools.geometry GeneralEnvelope Envelope2D)
+           (org.geotools.referencing CRS ReferencingFactoryFinder)
+           (org.geotools.referencing.factory.epsg AuthorityCodes)))
 
 ;; -----------------------------------------------------------------------------
 ;; Utils
