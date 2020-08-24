@@ -1,4 +1,4 @@
-{:paths ["src" "resources" "test"]
+{:paths ["src" "resources"]
 
  :deps {org.clojure/clojure       {:mvn/version "1.10.1"}
         org.geotools/gt-shapefile {:mvn/version "23.2"}
@@ -21,7 +21,8 @@
            :deploy     {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
                         :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy"
                                      "target/magellan-0.2.0.jar"]}
-           :test       {:extra-deps  {com.cognitect/test-runner
+           :test       {:extra-paths ["test"]
+                        :extra-deps  {com.cognitect/test-runner
                                       {:git/url
                                        "https://github.com/cognitect-labs/test-runner.git"
                                        :sha
