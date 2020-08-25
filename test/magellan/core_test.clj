@@ -1,7 +1,7 @@
 (ns magellan.core-test
   (:require [clojure.test :refer [deftest is use-fixtures]]
-            [magellan.core :as mg]
-            [clojure.java.io :as io])
+            [io :as io]
+            [magellan.core :as mg])
   (:import (org.geotools.coverage.processing Operations)
            (org.geotools.geometry GeneralEnvelope Envelope2D)
            (org.geotools.referencing CRS ReferencingFactoryFinder)
