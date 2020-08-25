@@ -1,5 +1,5 @@
 (ns magellan.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is use-fixtures]]
             [magellan.core :as mg]
             [clojure.java.io :as io])
   (:import (org.geotools.coverage.processing Operations)
