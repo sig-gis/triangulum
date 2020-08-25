@@ -24,7 +24,6 @@
                (io/delete-file f))]
     (func func (io/file fname))))
 
-
 ;;-----------------------------------------------------------------------------
 ;; Fixtures
 ;;-----------------------------------------------------------------------------
@@ -35,11 +34,11 @@
 
 (defn del-recur
   [fname]
-  (let [f (clojure.java.io/file fname)]
+  (let [f (io/file fname)]
     (when (.isDirectory f)
       (doseq [f2 (.listFiles f)]
         (del-recur f2)))
-    (clojure.java.io/delete-file f)))
+    (io/delete-file f)))
 
 (defn teardown-once
   []
