@@ -1,6 +1,6 @@
 (ns magellan.core-test
-  (:require [clojure.test :refer [deftest is use-fixtures]]
-            [io :as io]
+  (:require [clojure.test :refer [deftest is use-fixtures testing]]
+            [clojure.java.io :as io]
             [magellan.core :as mg])
   (:import (org.geotools.coverage.processing Operations)
            (org.geotools.geometry GeneralEnvelope Envelope2D)
@@ -22,7 +22,6 @@
 (defn setup-once
   []
   (.mkdir (java.io.File. "test/output")))
-
 
 (defn delete-directory
   [dirname]
