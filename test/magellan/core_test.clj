@@ -11,12 +11,12 @@
 ;; Utils
 ;;-----------------------------------------------------------------------------
 
-
 (defn file-path
   [filename]
   (str "test/data/" filename))
 
-(defn clear-dir [fname]
+(defn clear-dir
+  [fname]
   (let [func (fn [func f]
                (when (.isDirectory f)
                  (doseq [f2 (.listFiles f)]
