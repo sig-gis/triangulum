@@ -16,11 +16,9 @@
                         :main-opts  ["-m" "depot.outdated.main"]}
            :make-jar   {:extra-deps {seancorfield/depstar {:mvn/version "1.0.97"}}
                         :main-opts  ["-m" "hf.depstar.jar"
-                                     "target/magellan-0.2.0.jar"
-                                     "-C -m magellan.core"]}
-           :deploy     {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
-                        :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy"
                                      "target/magellan-0.2.0.jar"]}
+           :deploy     {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
+                        :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "target/magellan-0.2.0.jar"]}
            :test       {:extra-paths ["test"]
                         :extra-deps  {com.cognitect/test-runner
                                       {:git/url
