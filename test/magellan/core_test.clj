@@ -15,15 +15,6 @@
   [filename]
   (str "test/data/" filename))
 
-(defn clear-dir
-  [fname]
-  (let [func (fn [func f]
-               (when (.isDirectory f)
-                 (doseq [f2 (.listFiles f)]
-                   (func func f2)))
-               (io/delete-file f))]
-    (func func (io/file fname))))
-
 ;;-----------------------------------------------------------------------------
 ;; Fixtures
 ;;-----------------------------------------------------------------------------
@@ -32,17 +23,15 @@
   []
   (.mkdir (java.io.File. "test/output")))
 
-(defn del-recur
-  [fname]
-  (let [f (io/file fname)]
-    (when (.isDirectory f)
-      (doseq [f2 (.listFiles f)]
-        (del-recur f2)))
-    (io/delete-file f)))
+
+(defn delete-directory
+  [dirname]
+  (doseq [file (reverse (file-seq (io/file dirname)))]
+    (io/delete-file file)))
 
 (defn teardown-once
   []
-  (clear-dir "test/output"))
+  (delete-directory "test/output"))
 
 (defn fixture-once
   [test-fn]
