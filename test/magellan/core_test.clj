@@ -11,29 +11,24 @@
 ;; Utils
 ;;-----------------------------------------------------------------------------
 
-(defn file-path
-  [filename]
+(defn file-path [filename]
   (str "test/data/" filename))
 
 ;;-----------------------------------------------------------------------------
 ;; Fixtures
 ;;-----------------------------------------------------------------------------
 
-(defn setup-once
-  []
+(defn setup-once []
   (.mkdir (java.io.File. "test/output")))
 
-(defn delete-directory
-  [dirname]
+(defn delete-directory [dirname]
   (doseq [file (reverse (file-seq (io/file dirname)))]
     (io/delete-file file)))
 
-(defn teardown-once
-  []
+(defn teardown-once []
   (delete-directory "test/output"))
 
-(defn fixture-once
-  [test-fn]
+(defn fixture-once [test-fn]
   (setup-once)
   (test-fn)
   (teardown-once))
