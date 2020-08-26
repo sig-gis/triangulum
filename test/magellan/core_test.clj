@@ -2,10 +2,8 @@
   (:require [clojure.test :refer [deftest is use-fixtures testing]]
             [clojure.java.io :as io]
             [magellan.core :as mg])
-  (:import (org.geotools.coverage.processing Operations)
-           (org.geotools.geometry GeneralEnvelope Envelope2D)
-           (org.geotools.referencing CRS ReferencingFactoryFinder)
-           (org.geotools.referencing.factory.epsg AuthorityCodes)))
+  (:import (org.geotools.geometry GeneralEnvelope Envelope2D)
+           (org.geotools.referencing CRS)))
 
 ;;-----------------------------------------------------------------------------
 ;; Utils
