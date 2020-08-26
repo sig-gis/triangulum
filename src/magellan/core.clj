@@ -9,7 +9,7 @@
                                              ReferencingFactoryContainer)
            (org.geotools.referencing.operation.projection MapProjection)
            (org.geotools.metadata.iso.citation Citations)
-           (org.geotools.factory Hints)
+           (org.geotools.util.factory Hints)
            (org.geotools.geometry GeneralEnvelope Envelope2D)
            (org.geotools.coverage.processing Operations)
            (org.geotools.gce.geotiff GeoTiffWriter GeoTiffWriteParams)
@@ -80,7 +80,7 @@
     (ReferencingFactoryContainer.
      (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
     (Citations/fromName authority-name)
-    (io/resource filename)))
+    (io/as-url (io/file filename))))
   (ReferencingFactoryFinder/scanForPlugins))
 
 (s/defn make-envelope :- Envelope2D
@@ -117,46 +117,21 @@
 ;; FIXME: Throws a NullPointerException when writing a resampled coverage.
 ;; FIXME: Parameterize the compression and tiling operations.
 ;; REFERENCE: http://svn.osgeo.org/geotools/trunk/modules/plugin/geotiff/src/test/java/org/geotools/gce/geotiff/GeoTiffWriterTest.java
-(s/defn write-raster-old :- s/Any
-  [raster   :- Raster
-   filename :- s/Str]
-  (let [writer (GeoTiffWriter. (io/file filename))
-        params (-> writer
-                   (.getFormat)
-                   (.getWriteParameters))]
-    ;; Enable LZW compression and tiling to 256x16 cell tiles
-    #_(-> params
-          (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
-          (.setValue (doto (GeoTiffWriteParams.)
-                       (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
-                       (.setCompressionType "LZW")
-                       (.setCompressionQuality 1.0)
-                       (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
-                       (.setTiling 256 16))))
-    ;; Write the GeoTIFF to disk
-    (try (.write writer
-                 (:coverage raster)
-                 (into-array GeneralParameterValue (.values params)))
-         (catch Exception e
-           (println "Cannot write raster. Exception:" (class e))))))
-
-;; FIXME: Throws a NullPointerException when writing a resampled coverage.
-;; FIXME: Parameterize the compression and tiling operations.
-;; REFERENCE: http://svn.osgeo.org/geotools/trunk/modules/plugin/geotiff/src/test/java/org/geotools/gce/geotiff/GeoTiffWriterTest.java
 (s/defn write-raster :- s/Any
   [raster   :- Raster
    filename :- s/Str]
   (let [writer (GeoTiffWriter. (io/file filename))
         params (-> writer
                    (.getFormat)
-                   (.getWriteParameters)
-                   (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
-                   (.setValue (doto (GeoTiffWriteParams.)
-                                (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
-                                (.setCompressionType "LZW")
-                                (.setCompressionQuality 0.5)
-                                (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
-                                (.setTiling 256 16))))]
+                   (.getWriteParameters))]
+    (-> params
+        (.parameter (str (.getName AbstractGridFormat/GEOTOOLS_WRITE_PARAMS)))
+        (.setValue (doto (GeoTiffWriteParams.)
+                     (.setCompressionMode GeoTiffWriteParams/MODE_EXPLICIT)
+                     (.setCompressionType "LZW")
+                     (.setCompressionQuality 0.5)
+                     (.setTilingMode GeoTiffWriteParams/MODE_EXPLICIT)
+                     (.setTiling 256 16))))
     ;; Write the GeoTIFF to disk
     (try (.write writer
                  (:coverage raster)
@@ -171,36 +146,3 @@
     {:min    (.getMinimumValue band)
      :max    (.getMaximumValue band)
      :nodata (.getNoDataValues band)}))
-
-;;; ======================== Usage examples below here =============================
-
-(comment
-
-  (def asp-raster (read-raster "/home/gjohnson/sig/gisdata/landfire/asp.tif"))
-  (def fmod-iet (read-raster "/home/gjohnson/tmp/fuel_models/FMOD_IET_veg2015.tif"))
-  (def fmod-reax (read-raster "/home/gjohnson/tmp/fuel_models/FMOD_REAX_v2005.tif"))
-  (def lw-avg-20km (read-raster "/home/gjohnson/tmp/fuel_moisture_update/lw_avg_20km.tif"))
-  (s/explain Raster)
-  (s/validate Raster asp-raster)
-  (s/validate Raster fmod-iet)
-  (s/validate Raster fmod-reax)
-  (s/validate Raster lw-avg-20km)
-  (def fmod-iet-reprojected (reproject-raster fmod-iet (:crs fmod-reax)))
-  (def fmod-iet-reprojected-and-cropped (crop-raster fmod-iet-reprojected (:envelope fmod-reax)))
-  (s/validate Raster fmod-iet-reprojected)
-  (s/validate Raster fmod-iet-reprojected-and-cropped)
-  (register-new-crs-definitions-from-properties-file! "CALFIRE" "custom_projections.properties")
-  (write-raster asp-raster "/home/gjohnson/asp.tif")
-  (write-raster fmod-iet "/home/gjohnson/fmod-iet.tif")
-  (doseq [x (range 0 84)]
-    (println (map (comp #(.getSampleDouble (.getData %) x y 0) :image)
-                  [fire-spread-raster flame-length-raster fire-line-intensity-raster])))
-  (def fire-spread
-    (read-string (slurp "/home/gjohnson/fire_spread_111-207_25_25.tif.clj")))
-  (def fire-spread-raster
-    (matrix-to-raster "fire-spread-matrix" fire-spread test-envelope))
-  (let [data (.getData (:image fire-spread-raster))]
-    (filter pos? (for [x (range 0 84) y (range 0 85)]
-                   (.getSampleFloat data x y 0))))
-
-  )
