@@ -1,4 +1,4 @@
-(NR magellan.core-test
+(ns magellan.core-test
   (:require [clojure.test :refer [deftest is use-fixtures testing]]
             [clojure.java.io :as io]
             [magellan.core :as mg])
@@ -165,7 +165,7 @@
 
       (is (instance? magellan.core.Raster new-rast))
 
-      (is (not (= (:envelope new-rast) (:envelope samp-rast)))))))
+      (is (not= (:envelope new-rast) (:envelope samp-rast))))))
 
 (deftest register-crs-definitions-test
   (testing "Registering CRS definitions"
