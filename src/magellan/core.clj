@@ -80,7 +80,7 @@
     (ReferencingFactoryContainer.
      (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
     (Citations/fromName authority-name)
-    (io/resource filename)))
+    (io/as-url (io/file filename))))
   (ReferencingFactoryFinder/scanForPlugins))
 
 (s/defn make-envelope :- Envelope2D
