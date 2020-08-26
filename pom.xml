@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>sig-gis</groupId>
   <artifactId>magellan</artifactId>
-  <version>0.2.0</version>
+  <version>20200826.144413</version>
   <name>magellan</name>
   <description>
     Minimal API for Raster &amp; Vector Manipulation over GeoTools
@@ -64,7 +64,7 @@
       <url>https://repo.clojars.org/</url>
     </repository>
     <repository>
-      <id>OSGeo</id>
+      <id>osgeo</id>
       <url>https://repo.osgeo.org/repository/release/</url>
     </repository>
   </repositories>
