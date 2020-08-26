@@ -6,32 +6,39 @@
            (org.geotools.referencing CRS)))
 
 ;;-----------------------------------------------------------------------------
+;; Config
+;;-----------------------------------------------------------------------------
+
+(def input-dirname  "test/data/")
+(def output-dirname "test/output/")
+
+;;-----------------------------------------------------------------------------
 ;; Utils
 ;;-----------------------------------------------------------------------------
 
-(defn file-path [filename]
-  (str "test/data/" filename))
+(defn in-file-path [filename]
+  (str input-dirname filename))
 
-;;-----------------------------------------------------------------------------
-;; Fixtures
-;;-----------------------------------------------------------------------------
+(defn out-file-path [filename]
+  (str output-dirname filename))
 
-(defn setup-once []
-  (.mkdir (java.io.File. "test/output")))
+(defn make-directory [dirname]
+  (.mkdir (io/file dirname)))
 
 (defn delete-directory [dirname]
   (doseq [file (reverse (file-seq (io/file dirname)))]
     (io/delete-file file)))
 
-(defn teardown-once []
-  (delete-directory "test/output"))
+;;-----------------------------------------------------------------------------
+;; Fixtures
+;;-----------------------------------------------------------------------------
 
-(defn fixture-once [test-fn]
-  (setup-once)
+(defn with-temp-output-dir [test-fn]
+  (make-directory output-dirname)
   (test-fn)
-  (teardown-once))
+  (delete-directory output-dirname))
 
-(use-fixtures :once fixture-once)
+(use-fixtures :once with-temp-output-dir)
 
 ;;------------------------------------------------------------------------------
 ;; Tests
