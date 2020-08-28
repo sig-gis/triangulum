@@ -159,8 +159,9 @@
 (deftest crop-test
   (testing "Cropping a raster"
     (let [samp-rast (mg/read-raster (in-file-path "SRS-EPSG-3857.tif"))
-          lower     (-> ^GeneralEnvelope (:envelope samp-rast) .getLowerCorner .getCoordinate)
-          upper     (-> ^GeneralEnvelope (:envelope samp-rast) .getUpperCorner .getCoordinate)
+          envelope  ^GeneralEnvelope (:envelope samp-rast)
+          lower     (-> envelope .getLowerCorner .getCoordinate)
+          upper     (-> envelope .getUpperCorner .getCoordinate)
           new-upper (map #(/ (+ %1 %2) 2) lower upper)
           new-rast  (mg/crop-raster samp-rast (GeneralEnvelope. lower (double-array new-upper)))]
 
