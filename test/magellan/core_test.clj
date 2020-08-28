@@ -3,7 +3,8 @@
             [clojure.java.io :as io]
             [magellan.core :as mg])
   (:import (org.geotools.geometry GeneralEnvelope Envelope2D)
-           (org.geotools.referencing CRS)))
+           (org.geotools.referencing CRS)
+           (org.geotools.coverage.grid GridCoverage2D)))
 
 ;;-----------------------------------------------------------------------------
 ;; Config
@@ -102,7 +103,7 @@
           envelope       (mg/make-envelope "EPSG:3857" x-min y-min width height)
           matrix         (repeat height (repeat width 1.0))
           rast           (mg/matrix-to-raster "some-name" matrix envelope)
-          coverage       (:coverage rast)]
+          coverage       ^GridCoverage2D (:coverage rast)]
 
       (is (instance? magellan.core.Raster rast))
 
@@ -158,8 +159,8 @@
 (deftest crop-test
   (testing "Cropping a raster"
     (let [samp-rast (mg/read-raster (in-file-path "SRS-EPSG-3857.tif"))
-          lower     (-> (:envelope samp-rast) .getLowerCorner .getCoordinate)
-          upper     (-> (:envelope samp-rast) .getUpperCorner .getCoordinate)
+          lower     (-> ^GeneralEnvelope (:envelope samp-rast) .getLowerCorner .getCoordinate)
+          upper     (-> ^GeneralEnvelope (:envelope samp-rast) .getUpperCorner .getCoordinate)
           new-upper (map #(/ (+ %1 %2) 2) lower upper)
           new-rast  (mg/crop-raster samp-rast (GeneralEnvelope. lower (double-array new-upper)))]
 

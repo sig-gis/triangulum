@@ -4,6 +4,7 @@
   (:import (org.geotools.coverage.grid GridCoverage2D GridGeometry2D
                                        RenderedSampleDimension GridCoverageFactory)
            (org.geotools.coverage.grid.io GridFormatFinder AbstractGridFormat)
+           (org.geotools.coverage GridSampleDimension)
            (org.geotools.referencing CRS ReferencingFactoryFinder)
            (org.geotools.referencing.factory PropertyAuthorityFactory
                                              ReferencingFactoryContainer)
@@ -96,7 +97,10 @@
    matrix   :- [[double]]
    envelope :- Envelope2D]
   (let [float-matrix (into-array (map float-array matrix))]
-    (to-raster (.create (GridCoverageFactory.) name float-matrix envelope))))
+    (to-raster (.create (GridCoverageFactory.)
+                        ^String name
+                        ^"[[F" float-matrix
+                        envelope))))
 
 ;; FIXME: Throws a NoninvertibleTransformException when reprojecting to EPSG:4326.
 (s/defn reproject-raster :- Raster
@@ -112,7 +116,7 @@
 (s/defn crop-raster :- Raster
   [raster   :- Raster
    envelope :- GeneralEnvelope]
-  (to-raster (.crop Operations/DEFAULT (:coverage raster) envelope)))
+  (to-raster (.crop Operations/DEFAULT ^GridCoverage2D (:coverage raster) envelope)))
 
 ;; FIXME: Throws a NullPointerException when writing a resampled coverage.
 ;; FIXME: Parameterize the compression and tiling operations.
@@ -142,7 +146,7 @@
 (s/defn raster-band-stats :- {:min s/Num :max s/Num :nodata (s/maybe s/Num)}
   [raster   :- Raster
    band-num :- s/Int]
-  (let [band (nth (:bands raster) band-num)]
+  (let [^GridSampleDimension band (nth (:bands raster) band-num)]
     {:min    (.getMinimumValue band)
      :max    (.getMaximumValue band)
      :nodata (.getNoDataValues band)}))
