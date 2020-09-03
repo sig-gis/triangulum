@@ -76,12 +76,15 @@
 (s/defn register-new-crs-definitions-from-properties-file! :- s/Any
   [authority-name :- s/Str
    filename       :- s/Str]
-  (ReferencingFactoryFinder/addAuthorityFactory
-   (PropertyAuthorityFactory.
-    (ReferencingFactoryContainer.
-     (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
-    (Citations/fromName authority-name)
-    (io/as-url (io/file filename))))
+  (let [^java.net.URL file (if (instance? java.net.URL filename)
+                             filename
+                             (io/as-url (io/file filename)))]
+    (ReferencingFactoryFinder/addAuthorityFactory
+      (PropertyAuthorityFactory.
+        (ReferencingFactoryContainer.
+          (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
+        (Citations/fromName authority-name)
+        file)))
   (ReferencingFactoryFinder/scanForPlugins))
 
 (s/defn make-envelope :- Envelope2D
