@@ -4,7 +4,8 @@
             [magellan.core :as mg])
   (:import (org.geotools.geometry GeneralEnvelope Envelope2D)
            (org.geotools.referencing CRS)
-           (org.geotools.coverage.grid GridCoverage2D)))
+           (org.geotools.coverage.grid GridCoverage2D)
+           (magellan.core Raster)))
 
 ;;-----------------------------------------------------------------------------
 ;; Config
@@ -49,7 +50,7 @@
   (testing "Reading raster from file"
     (let [samp-raster (mg/read-raster (in-file-path "SRS-EPSG-3857.tif"))]
 
-      (is (instance? magellan.core.Raster samp-raster)))))
+      (is (instance? Raster samp-raster)))))
 
 (deftest write-raster-test
   (testing "Writing raster to file"
@@ -59,7 +60,7 @@
 
       (is (not (nil? my-rast)))
 
-      (is (instance? magellan.core.Raster my-rast))
+      (is (instance? Raster my-rast))
 
       (is (= (:crs samp-rast)
              (:crs my-rast)))
@@ -105,7 +106,7 @@
           rast           (mg/matrix-to-raster "some-name" matrix envelope)
           coverage       ^GridCoverage2D (:coverage rast)]
 
-      (is (instance? magellan.core.Raster rast))
+      (is (instance? Raster rast))
 
       (is (= (:crs rast) (.getCoordinateReferenceSystem coverage)))
 
@@ -129,7 +130,7 @@
           new-crs          (:crs (mg/read-raster (in-file-path "SRS-EPSG-32610.tif")))
           reprojected-rast (mg/reproject-raster samp-rast new-crs)]
 
-      (is (instance? magellan.core.Raster reprojected-rast))
+      (is (instance? Raster reprojected-rast))
 
       (is (not= (:crs samp-rast) new-crs)
           "New crs to be projected to should not be the same as the original")
@@ -165,7 +166,7 @@
           new-upper (map #(/ (+ %1 %2) 2) lower upper)
           new-rast  (mg/crop-raster samp-rast (GeneralEnvelope. lower (double-array new-upper)))]
 
-      (is (instance? magellan.core.Raster new-rast))
+      (is (instance? Raster new-rast))
 
       (is (not= (:envelope new-rast) (:envelope samp-rast))))))
 
