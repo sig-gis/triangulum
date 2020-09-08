@@ -1,7 +1,9 @@
 (ns magellan.core
   (:require [schema.core :as s]
             [clojure.java.io :as io])
-  (:import (org.geotools.coverage.grid GridCoverage2D GridGeometry2D
+  (:import (java.net URL)
+           (java.awt.image RenderedImage)
+           (org.geotools.coverage.grid GridCoverage2D GridGeometry2D
                                        RenderedSampleDimension GridCoverageFactory)
            (org.geotools.coverage.grid.io GridFormatFinder AbstractGridFormat)
            (org.geotools.coverage GridSampleDimension)
@@ -15,8 +17,7 @@
            (org.geotools.coverage.processing Operations)
            (org.geotools.gce.geotiff GeoTiffWriter GeoTiffWriteParams)
            (org.opengis.referencing.crs CoordinateReferenceSystem)
-           (org.opengis.parameter GeneralParameterValue)
-           (java.awt.image RenderedImage)))
+           (org.opengis.parameter GeneralParameterValue)))
 
 (s/defrecord Raster
     [coverage   :- GridCoverage2D
@@ -76,15 +77,15 @@
 (s/defn register-new-crs-definitions-from-properties-file! :- s/Any
   [authority-name :- s/Str
    filename       :- s/Str]
-  (let [^java.net.URL file (if (instance? java.net.URL filename)
-                             filename
-                             (io/as-url (io/file filename)))]
+  (let [^URL url (if (instance? URL filename)
+                   filename
+                   (io/as-url (io/file filename)))]
     (ReferencingFactoryFinder/addAuthorityFactory
       (PropertyAuthorityFactory.
         (ReferencingFactoryContainer.
           (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
         (Citations/fromName authority-name)
-        file)))
+        url)))
   (ReferencingFactoryFinder/scanForPlugins))
 
 (s/defn make-envelope :- Envelope2D
