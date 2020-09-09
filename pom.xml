@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>sig-gis</groupId>
   <artifactId>magellan</artifactId>
-  <version>20200902.112144</version>
+  <version>20200909.105353</version>
   <name>magellan</name>
   <description>
     Minimal API for Raster &amp; Vector Manipulation over GeoTools

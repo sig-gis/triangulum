@@ -1,4 +1,4 @@
-{:paths ["src" "resources"]
+{:paths ["src"]
 
  :deps {org.clojure/clojure       {:mvn/version "1.10.1"}
         org.geotools/gt-shapefile {:mvn/version "23.2"}
@@ -15,9 +15,9 @@
  :aliases {:check-deps {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
                         :main-opts  ["-m" "depot.outdated.main"]}
            :make-jar   {:extra-deps {seancorfield/depstar {:mvn/version "1.0.97"}}
-                        :main-opts  ["-m" "hf.depstar.jar" "target/magellan-20200902.112144.jar"]}
+                        :main-opts  ["-m" "hf.depstar.jar" "target/magellan-20200909.105353.jar"]}
            :deploy     {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
-                        :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "target/magellan-20200902.112144.jar"]}
+                        :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "target/magellan-20200909.105353.jar"]}
            :test       {:extra-paths ["test"]
                         :extra-deps  {com.cognitect/test-runner
                                       {:git/url "https://github.com/cognitect-labs/test-runner.git"
