@@ -41,3 +41,11 @@ clojure -A:check-deps
 #+BEGIN_SRC sh
 clojure -A:test
 #+END_SRC
+
+** License
+
+ Copyright © 2011-2020 Spatial Informatics Group, LLC.
+
+ GridFire is distributed by Spatial Informatics Group, LLC. under the
+ terms of the Eclipse Public License version 2.0 (EPLv2). See
+ LICENSE.txt in this directory for more information.
