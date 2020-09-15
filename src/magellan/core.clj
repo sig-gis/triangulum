@@ -3,8 +3,12 @@
             [clojure.java.io :as io])
   (:import (java.net URL)
            (java.awt.image RenderedImage)
-           (org.geotools.coverage.grid GridCoverage2D GridGeometry2D
-                                       RenderedSampleDimension GridCoverageFactory)
+           (org.geotools.coverage.grid GridCoordinates2D
+                                       GridCoverageFactory
+                                       GridEnvelope2D
+                                       GridGeometry2D
+                                       RenderedSampleDimension
+                                       GridCoverage2D)
            (org.geotools.coverage.grid.io GridFormatFinder AbstractGridFormat)
            (org.geotools.coverage GridSampleDimension)
            (org.geotools.referencing CRS ReferencingFactoryFinder)
@@ -30,20 +34,39 @@
      height     :- s/Int
      bands      :- [RenderedSampleDimension]])
 
+(defn- evaluate-at
+  [^GridCoverage2D coverage x y]
+  (first (vec (.evaluate coverage (GridCoordinates2D. x y) (float-array 1)))))
+
+(defn- get-bounds
+  [^GridEnvelope2D envelope dimension]
+  [(.getLow envelope dimension) (.getHigh envelope dimension)])
+
+(defn- evaluate-all
+  [coverage ^GridGeometry2D grid]
+  (let [grid-envelope (.getGridRange2D grid)
+        [x-min x-max] (get-bounds grid-envelope 0)
+        [y-min y-max] (get-bounds grid-envelope 1)]
+    (for [y (range y-min (inc y-max))]
+      (mapv #(evaluate-at coverage % y) (range x-min (inc x-max))))))
+
 (s/defn to-raster :- Raster
   [coverage :- GridCoverage2D]
-  (let [image (.getRenderedImage coverage)
-        crs   (.getCoordinateReferenceSystem coverage)]
+  (let [image  (.getRenderedImage coverage)
+        crs    (.getCoordinateReferenceSystem coverage)
+        grid   (.getGridGeometry coverage)]
+
     (map->Raster
-     {:coverage   coverage
-      :image      image
-      :crs        crs
-      :projection (CRS/getMapProjection crs)
-      :envelope   (.getEnvelope coverage)
-      :grid       (.getGridGeometry coverage)
-      :width      (.getWidth image)
-      :height     (.getHeight image)
-      :bands      (vec (.getSampleDimensions coverage))})))
+      {:coverage   coverage
+       :matrix     (evaluate-all coverage grid)
+       :image      image
+       :crs        crs
+       :projection (CRS/getMapProjection crs)
+       :envelope   (.getEnvelope coverage)
+       :grid       grid
+       :width      (.getWidth image)
+       :height     (.getHeight image)
+       :bands      (vec (.getSampleDimensions coverage))})))
 
 (s/defn read-raster :- Raster
   [filename :- s/Str]

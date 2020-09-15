@@ -102,7 +102,7 @@
     (let [[height width] [100 100]
           [x-min y-min]  [0.0 0.0]
           envelope       (mg/make-envelope "EPSG:3857" x-min y-min width height)
-          matrix         (repeat height (repeat width 1.0))
+          matrix         (repeat height (take width (iterate inc 1.0)))
           rast           (mg/matrix-to-raster "some-name" matrix envelope)
           coverage       ^GridCoverage2D (:coverage rast)]
 
@@ -122,7 +122,9 @@
 
       (is (= (:height rast) (.getHeight (.getRenderedImage coverage))))
 
-      (is (= (:bands rast) (vec (.getSampleDimensions coverage)))))))
+      (is (= (:bands rast) (vec (.getSampleDimensions coverage))))
+
+      (is (= (:matrix rast) matrix)))))
 
 (deftest reproject-raster-test
   (testing "Reprojecting a raster"
