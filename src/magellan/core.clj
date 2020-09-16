@@ -47,26 +47,28 @@
   (let [grid-envelope (.getGridRange2D grid)
         [x-min x-max] (get-bounds grid-envelope 0)
         [y-min y-max] (get-bounds grid-envelope 1)]
-    (for [y (range y-min (inc y-max))]
-      (mapv #(evaluate-at coverage % y) (range x-min (inc x-max))))))
+    (vec
+     (for [y (range y-min (inc y-max))]
+       (mapv #(evaluate-at coverage % y)
+             (range x-min (inc x-max)))))))
 
 (s/defn to-raster :- Raster
   [coverage :- GridCoverage2D]
-  (let [image  (.getRenderedImage coverage)
-        crs    (.getCoordinateReferenceSystem coverage)
-        grid   (.getGridGeometry coverage)]
+  (let [image (.getRenderedImage coverage)
+        crs   (.getCoordinateReferenceSystem coverage)
+        grid  (.getGridGeometry coverage)]
 
     (map->Raster
-      {:coverage   coverage
-       :matrix     (evaluate-all coverage grid)
-       :image      image
-       :crs        crs
-       :projection (CRS/getMapProjection crs)
-       :envelope   (.getEnvelope coverage)
-       :grid       grid
-       :width      (.getWidth image)
-       :height     (.getHeight image)
-       :bands      (vec (.getSampleDimensions coverage))})))
+     {:coverage   coverage
+      :matrix     (evaluate-all coverage grid)
+      :image      image
+      :crs        crs
+      :projection (CRS/getMapProjection crs)
+      :envelope   (.getEnvelope coverage)
+      :grid       grid
+      :width      (.getWidth image)
+      :height     (.getHeight image)
+      :bands      (vec (.getSampleDimensions coverage))})))
 
 (s/defn read-raster :- Raster
   [filename :- s/Str]
@@ -104,11 +106,11 @@
                    filename
                    (io/as-url (io/file filename)))]
     (ReferencingFactoryFinder/addAuthorityFactory
-      (PropertyAuthorityFactory.
-        (ReferencingFactoryContainer.
-          (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
-        (Citations/fromName authority-name)
-        url)))
+     (PropertyAuthorityFactory.
+      (ReferencingFactoryContainer.
+       (Hints. Hints/CRS_AUTHORITY_FACTORY PropertyAuthorityFactory))
+      (Citations/fromName authority-name)
+      url)))
   (ReferencingFactoryFinder/scanForPlugins))
 
 (s/defn make-envelope :- Envelope2D
