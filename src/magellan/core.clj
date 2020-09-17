@@ -2,7 +2,7 @@
   (:require [schema.core :as s]
             [clojure.java.io :as io])
   (:import (java.net URL)
-           (java.awt.image RenderedImage)
+           (java.awt.image DataBuffer RenderedImage)
            (org.geotools.coverage.grid GridCoordinates2D
                                        GridCoverageFactory
                                        GridEnvelope2D
@@ -52,6 +52,10 @@
        (mapv #(evaluate-at coverage % y)
              (range x-min (inc x-max)))))))
 
+;; TODO Add :envelope-2d (.getEnvelope2D coverage)
+;; FIXME: evaluate-all is extremely inefficient
+;; TODO Add a function that converts a Raster record into a simple Clojure map of literals
+;; TODO Add a function that converts a simple Clojure map of literals into a Raster record
 (s/defn to-raster :- Raster
   [coverage :- GridCoverage2D]
   (let [image (.getRenderedImage coverage)
@@ -60,7 +64,7 @@
 
     (map->Raster
      {:coverage   coverage
-      :matrix     (evaluate-all coverage grid)
+      ;; :matrix     (evaluate-all coverage grid)
       :image      image
       :crs        crs
       :projection (CRS/getMapProjection crs)
@@ -113,6 +117,65 @@
       url)))
   (ReferencingFactoryFinder/scanForPlugins))
 
+(defn describe-band [^GridSampleDimension band]
+  {:description (str (.getDescription band))
+   :type        (str (.getSampleDimensionType band))
+   :min         (.getMinimum (.getRange band))
+   :max         (.getMaximum (.getRange band))
+   :no-data     (.getNoDataValues band)
+   :offset      (.getOffset band)
+   :scale       (.getScale band)
+   :units       (.getUnits band)
+   :categories  (reduce (fn [acc cat]
+                          (let [range (.getRange cat)]
+                            (assoc acc
+                                   (str (.getName cat))
+                                   {:min (.getMinimum range)
+                                    :max (.getMaximum range)})))
+                        {}
+                        (.getCategories band))})
+
+;; NOTE: .getSamples isn't supported for byte-array or short-array, so
+;; we substitute int-array instead. If the type cannot be determined,
+;; we fall back to using a double array.
+(defn get-typed-array [data-buffer-type]
+  (condp = data-buffer-type
+    DataBuffer/TYPE_BYTE      int-array
+    DataBuffer/TYPE_USHORT    int-array
+    DataBuffer/TYPE_SHORT     int-array
+    DataBuffer/TYPE_INT       int-array
+    DataBuffer/TYPE_FLOAT     float-array
+    DataBuffer/TYPE_DOUBLE    double-array
+    DataBuffer/TYPE_UNDEFINED double-array
+    double-array))
+
+(defn describe-image [^RenderedImage image]
+  (let [min-x       (.getMinX image)
+        min-y       (.getMinY image)
+        height      (.getHeight image)
+        width       (.getWidth image)
+        bands       (.getNumBands (.getSampleModel image))
+        data        (.getData image)
+        typed-array (get-typed-array (.getDataType (.getDataBuffer data)))]
+    {:height height
+     :width  width
+     :bands  bands
+     :origin {:x min-x
+              :y min-y}
+     :tile   {:height (.getTileHeight image)
+              :width  (.getTileWidth image)
+              :min    {:x (.getMinTileX image)
+                       :y (.getMinTileY image)}
+              :max    {:x (.getMaxTileX image)
+                       :y (.getMaxTileY image)}
+              :total  {:x (.getNumXTiles image)
+                       :y (.getNumYTiles image)}
+              :offset {:x (.getTileGridXOffset image)
+                       :y (.getTileGridYOffset image)}}
+     :data   (into-array (for [b (range bands)]
+                           (into-array (for [y (range min-y (+ min-y height))]
+                                         (.getSamples data min-x y width 1 b (typed-array width))))))}))
+
 (s/defn make-envelope :- Envelope2D
   [srid       :- s/Str
    upperleftx :- Double
@@ -120,6 +183,17 @@
    width      :- Double
    height     :- Double]
   (Envelope2D. (srid-to-crs srid) upperleftx upperlefty width height))
+
+(defn describe-envelope [envelope]
+  (let [dimensions [:x :y :z]]
+    (reduce (fn [acc ordinate]
+              (assoc acc
+                     (dimensions ordinate)
+                     {:min  (.getMinimum envelope ordinate)
+                      :max  (.getMaximum envelope ordinate)
+                      :span (.getSpan    envelope ordinate)}))
+            {}
+            (range (.getDimension envelope)))))
 
 (s/defn matrix-to-raster :- GridCoverage2D
   [name     :- s/Str
@@ -130,6 +204,10 @@
                         ^String name
                         ^"[[F" float-matrix
                         envelope))))
+
+(defn make-raster [{:keys [name srid upperleftx upperlefty width height matrix]}]
+  (let [envelope (make-envelope srid upperleftx upperlefty width height)]
+    (matrix-to-raster name matrix envelope)))
 
 ;; FIXME: Throws a NoninvertibleTransformException when reprojecting to EPSG:4326.
 (s/defn reproject-raster :- Raster
@@ -179,3 +257,7 @@
     {:min    (.getMinimumValue band)
      :max    (.getMaximumValue band)
      :nodata (.getNoDataValues band)}))
+
+(defn show-raster [raster]
+  (let [^GridCoverage2D coverage (:coverage raster)]
+    (.show coverage nil)))
