@@ -2,7 +2,7 @@
   (:require [schema.core :as s]
             [clojure.java.io :as io])
   (:import (java.net URL)
-           (java.awt.image DataBuffer RenderedImage)
+           (java.awt.image RenderedImage)
            (org.geotools.coverage.grid GridCoordinates2D
                                        GridCoverageFactory
                                        GridGeometry2D
@@ -34,7 +34,6 @@
      bands      :- [RenderedSampleDimension]])
 
 ;; TODO Add :envelope-2d (.getEnvelope2D coverage)
-;; TODO Add a function that converts a Raster record into a simple Clojure map of literals
 ;; TODO Add a function that converts a simple Clojure map of literals into a Raster record
 (s/defn to-raster :- Raster
   [coverage :- GridCoverage2D]
