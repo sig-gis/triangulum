@@ -5,7 +5,6 @@
            (java.awt.image DataBuffer RenderedImage)
            (org.geotools.coverage.grid GridCoordinates2D
                                        GridCoverageFactory
-                                       GridEnvelope2D
                                        GridGeometry2D
                                        RenderedSampleDimension
                                        GridCoverage2D)
@@ -34,26 +33,7 @@
      height     :- s/Int
      bands      :- [RenderedSampleDimension]])
 
-(defn- evaluate-at
-  [^GridCoverage2D coverage x y]
-  (first (vec (.evaluate coverage (GridCoordinates2D. x y) (float-array 1)))))
-
-(defn- get-bounds
-  [^GridEnvelope2D envelope dimension]
-  [(.getLow envelope dimension) (.getHigh envelope dimension)])
-
-(defn- evaluate-all
-  [coverage ^GridGeometry2D grid]
-  (let [grid-envelope (.getGridRange2D grid)
-        [x-min x-max] (get-bounds grid-envelope 0)
-        [y-min y-max] (get-bounds grid-envelope 1)]
-    (vec
-     (for [y (range y-min (inc y-max))]
-       (mapv #(evaluate-at coverage % y)
-             (range x-min (inc x-max)))))))
-
 ;; TODO Add :envelope-2d (.getEnvelope2D coverage)
-;; FIXME: evaluate-all is extremely inefficient
 ;; TODO Add a function that converts a Raster record into a simple Clojure map of literals
 ;; TODO Add a function that converts a simple Clojure map of literals into a Raster record
 (s/defn to-raster :- Raster
@@ -61,10 +41,8 @@
   (let [image (.getRenderedImage coverage)
         crs   (.getCoordinateReferenceSystem coverage)
         grid  (.getGridGeometry coverage)]
-
     (map->Raster
      {:coverage   coverage
-      ;; :matrix     (evaluate-all coverage grid)
       :image      image
       :crs        crs
       :projection (CRS/getMapProjection crs)
