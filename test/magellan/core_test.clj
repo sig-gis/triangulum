@@ -122,9 +122,7 @@
 
       (is (= (:height rast) (.getHeight (.getRenderedImage coverage))))
 
-      (is (= (:bands rast) (vec (.getSampleDimensions coverage))))
-
-      (is (= (:matrix rast) matrix)))))
+      (is (= (:bands rast) (vec (.getSampleDimensions coverage)))))))
 
 (deftest reproject-raster-test
   (testing "Reprojecting a raster"

@@ -60,10 +60,10 @@
         envelope (describe-envelope (:envelope raster))
         bands    (mapv describe-band (:bands raster))
         srid     (crs-to-srid (:crs raster))]
-    {:image image
+    {:image    image
      :envelope envelope
-     :bands bands
-     :srid srid}))
+     :bands    bands
+     :srid     srid}))
 
 ;; NOTE: .getSamples isn't supported for byte-array or short-array, so
 ;; we substitute int-array instead. If the type cannot be determined,
@@ -80,11 +80,15 @@
     double-array))
 
 (defn extract-matrix [^Raster raster]
-  (let [image (:image raster)
-        data  (.getData image)
-        {:keys [height width bands origin]} (describe-image image)
-        {min-x :x min-y :y} origin
-        typed-array (get-typed-array (.getDataType (.getDataBuffer data)))]
+  (let [image            (:image raster)
+        {:keys [height
+                width
+                bands
+                origin]} (describe-image image)
+        {min-x :x
+         min-y :y}       origin
+        data             (.getData image)
+        typed-array      (get-typed-array (.getDataType (.getDataBuffer data)))]
     (into-array (for [b (range bands)]
                   (into-array (for [y (range min-y (+ min-y height))]
                                 (.getSamples data min-x y width 1 b (typed-array width))))))))
