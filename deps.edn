@@ -1,26 +1,25 @@
 {:paths ["src"]
 
  :deps {org.clojure/clojure       {:mvn/version "1.10.1"}
-        org.geotools/gt-shapefile {:mvn/version "23.2"}
-        org.geotools/gt-swing     {:mvn/version "23.2"}
-        org.geotools/gt-epsg-hsql {:mvn/version "23.2"}
-        org.geotools/gt-geotiff   {:mvn/version "23.2"}
-        org.geotools/gt-image     {:mvn/version "23.2"}
-        org.geotools/gt-wms       {:mvn/version "23.2"}
-        org.geotools/gt-coverage  {:mvn/version "23.2"}
+        org.geotools/gt-shapefile {:mvn/version "24.1"}
+        org.geotools/gt-swing     {:mvn/version "24.1"}
+        org.geotools/gt-epsg-hsql {:mvn/version "24.1"}
+        org.geotools/gt-geotiff   {:mvn/version "24.1"}
+        org.geotools/gt-image     {:mvn/version "24.1"}
+        org.geotools/gt-wms       {:mvn/version "24.1"}
+        org.geotools/gt-coverage  {:mvn/version "24.1"}
         prismatic/schema          {:mvn/version "1.1.12"}}
 
  :mvn/repos {"osgeo" {:url "https://repo.osgeo.org/repository/release/"}}
 
- :aliases {:check-deps {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
+ :aliases {:check-deps {:extra-deps {olical/depot {:mvn/version "2.1.0"}}
                         :main-opts  ["-m" "depot.outdated.main"]}
-           :make-jar   {:extra-deps {seancorfield/depstar {:mvn/version "1.0.97"}}
-                        :main-opts  ["-m" "hf.depstar.jar" "target/magellan-20200909.105353.jar"]}
-           :deploy     {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
-                        :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "target/magellan-20200909.105353.jar"]}
+           :deploy-jar {:extra-deps {seancorfield/depstar    {:mvn/version "2.0.165"}
+                                     deps-deploy/deps-deploy {:mvn/version "0.0.12"}}
+                        :main-opts  ["-m" "magellan.deploy" "sig-gis" "magellan"]}
            :test       {:extra-paths ["test"]
                         :extra-deps  {com.cognitect/test-runner
                                       {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                                       :sha     "209b64504cb3bd3b99ecfec7937b358a879f55c1"}}
+                                       :sha     "b6b3193fcc42659d7e46ecd1884a228993441182"}}
                         :main-opts   ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"
                                       "-m" "cognitect.test-runner"]}}}
