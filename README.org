@@ -1,51 +1,43 @@
 * Magellan
 
-A Clojure library for interacting with [[https://geotools.org/][GeoTools]], an open source Java library that provides tools for geospatial data.
+A Clojure library for interacting with [[https://geotools.org/][GeoTools]], an open source Java
+library that provides tools for geospatial data.
 
 ** Useful Aliases
-*** To build the (library) JAR run:
+*** check-deps
 
-#+BEGIN_SRC sh
-clojure -A:make-jar
-#+END_SRC
+To check for outdated dependencies, run:
 
-*** To deploy the JAR to clojars.org run:
+#+begin_src sh
+clojure -M:check-deps
+#+end_src
 
-*Note*: Make sure to build the library first.
+Remember to update deps.edn with any new versions that are found.
 
-First create a pom.xml file if you don't already have one.
+*** deploy-jar
 
-#+BEGIN_SRC sh
-clojure -Spom
-#+END_SRC
+To build a JAR from this library and deploy it to clojars.org, run:
 
-Then to deploy run:
+#+begin_src sh
+env CLOJARS_USERNAME=your-username CLOJARS_PASSWORD=your-clojars-token clojure -M:deploy-jar
+#+end_src
 
-#+BEGIN_SRC sh
-env CLOJARS_USERNAME=your-username CLOJARS_PASSWORD=your-clojars-token clojure -A:deploy
-#+END_SRC
+NOTE: As of 2020-06-27, Clojars will no longer accept your Clojars
+password when deploying. You will have to use a token instead. Please
+read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][here]].
 
-**** A note on Clojars tokens:
-     
-As of 2020-06-27, Clojars will no longer accept your Clojars password when
-deploying. You will have to use a token instead. Please read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][here]].
+*** test
 
-*** To check for outdated dependencies run:
-
-#+BEGIN_SRC sh
-clojure -A:check-deps
-#+END_SRC
-
-*** To launch the test suite run:
+To launch the test suite, run:
     
-#+BEGIN_SRC sh
-clojure -A:test
-#+END_SRC
+#+begin_src sh
+clojure -M:test
+#+end_src
 
 ** License
 
- Copyright © 2011-2020 Spatial Informatics Group, LLC.
+Copyright © 2011-2021 Spatial Informatics Group, LLC.
 
- Magellan is distributed by Spatial Informatics Group, LLC. under the
- terms of the Eclipse Public License version 2.0 (EPLv2). See
- LICENSE.txt in this directory for more information.
+Magellan is distributed by Spatial Informatics Group, LLC. under the
+terms of the Eclipse Public License version 2.0 (EPLv2). See
+LICENSE.txt in this directory for more information.
