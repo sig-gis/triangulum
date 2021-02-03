@@ -1,4 +1,4 @@
-(ns magellan.deploy
+(ns triangulum.deploy
   (:import java.text.SimpleDateFormat
            java.util.Date)
   (:require [hf.depstar.uberjar :refer [build-jar]]

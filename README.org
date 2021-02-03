@@ -1,7 +1,6 @@
-* Magellan
+* Triangulum
 
-A Clojure library for interacting with [[https://geotools.org/][GeoTools]], an open source Java
-library that provides tools for geospatial data.
+A Clojure library establishing a web app framwork around Jetty and ring.
 
 ** Useful Aliases
 *** check-deps
@@ -29,15 +28,15 @@ read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens
 *** test
 
 To launch the test suite, run:
-    
+
 #+begin_src sh
 clojure -M:test
 #+end_src
 
 ** License
 
-Copyright © 2011-2021 Spatial Informatics Group, LLC.
+Copyright © 2021-2021 Spatial Informatics Group, LLC.
 
-Magellan is distributed by Spatial Informatics Group, LLC. under the
+Triangulum is distributed by Spatial Informatics Group, LLC. under the
 terms of the Eclipse Public License version 2.0 (EPLv2). See
 LICENSE.txt in this directory for more information.
