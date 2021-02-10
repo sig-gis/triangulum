@@ -1,3 +1,6 @@
 (ns triangulum.core-test
-  (:require [clojure.test :refer [deftest is use-fixtures testing]]
-            [triangulum.core :as tri]))
+  (:require [triangulum.build-db]
+            [triangulum.database]
+            [triangulum.https]
+            [triangulum.logging]
+            [triangulum.utils]))

@@ -1,9 +1,16 @@
 {:paths ["src"]
 
- :deps {org.clojure/clojure {:mvn/version "1.10.1"}
-        prismatic/schema    {:mvn/version "1.1.12"}}
+ :deps {com.cognitect/transit-clj {:mvn/version "1.0.324"}
+        org.clojure/clojure       {:mvn/version "1.10.1"}
+        org.clojure/data.json     {:mvn/version "1.0.0"}
+        org.clojure/tools.cli     {:mvn/version "1.0.194"}
+        org.postgresql/postgresql {:mvn/version "42.2.10"}
+        org.xerial/sqlite-jdbc    {:mvn/version "3.30.1"}
+        seancorfield/next.jdbc    {:mvn/version "1.0.384"}}
 
- :aliases {:rebel      {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
+ :aliases {:build-db   {:main-opts ["-m" "triangulum.build-db"]}
+           :https      {:main-opts ["-m" "triangulum.https"]}
+           :rebel      {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
                         :main-opts  ["-m" "rebel-readline.main"]}
            :check-deps {:extra-deps {olical/depot {:mvn/version "2.1.0"}}
                         :main-opts  ["-m" "depot.outdated.main"]}
