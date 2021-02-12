@@ -1,9 +1,9 @@
 (ns triangulum.https
-  (:require [clojure.java.io     :as io]
-            [clojure.java.shell  :as sh]
-            [clojure.tools.cli   :refer [parse-opts]]
-            [triangulum.logging  :refer [log-str]]
-            [triangulum.utils    :refer [parse-as-sh-cmd]]))
+  (:require [clojure.java.io    :as io]
+            [clojure.java.shell :as sh]
+            [clojure.tools.cli  :refer [parse-opts]]
+            [triangulum.logging :refer [log-str]]
+            [triangulum.utils   :refer [parse-as-sh-cmd]]))
 
 (def path-env (System/getenv "PATH"))
 
@@ -80,4 +80,5 @@
       :else
       (do
         (println "You must indicate which action to take with either --certbot-init or --package-cert.")
-        (println (str "Usage:\n" summary))))))
+        (println (str "Usage:\n" summary)))))
+  (shutdown-agents))

@@ -2,7 +2,81 @@
 
 A Clojure library establishing a web app framework around Jetty and Ring.
 
-** Useful Aliases
+** Library Usage
+
+*** Using Triangulum package
+
+Add the package to dep.edn
+
+#+begin_src clojure
+sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
+                     :sha "5cc44fdb0aa43bb8613cb888dbb945fa57400ed9"}
+#+end_src
+
+*** triangulum.logging
+
+To send a message to the logger use ~log~ or ~log-str~.
+
+#+begin_src clojure
+(log "Hello world")
+(log-str "Hello" "world")
+#+end_src
+
+By default the above will log to standard out. If you would like to
+have the system log to YYYY-DD-MM.log, set a log path. You can either specify
+a path relative to the toplevel directory of the main project repository or an
+absolute path on your filesystem. The logger will keep the 10 most recent logs.
+To stop the logging server set path to "".
+
+#+begin_src clojure
+(set-log-path "logs")
+(set-log-path "")
+#+end_src
+
+*** triangulum.database
+
+To run a postgres sql command use ~call-sql~. Currently ~call-sql~
+only works with postgres. With the second parameter can be an
+optional settings map (default values shown below).
+
+#+begin_src clojure
+(call-sql "function" {:log? true :use-vec? false} "param1" "param2" ... "paramN")
+#+end_src
+
+To run a sqllite3 sql command use ~call-sqlite~. An existing sqllite3 database
+must be provided.
+
+#+begin_src clojure
+(call-sqlite "select * from table" "path/db-file")
+#+end_src
+
+To insert new rows or update existing rows use ~insert-rows!~ and
+~update-rows!~. If fields are not provided, the first row will be assumed to
+be the field names.
+
+#+begin_src clojure
+(insert-rows! table-name rows-vector fields-map)
+(update-rows! table-name rows-vector column-to-update fields-map)
+#+end_src
+
+*** triangulum.https / triangulum.build-db
+
+Add alias to ~deps.edn~.
+
+#+begin_src clojure
+{:aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}
+           :https    {:main-opts ["-m" "triangulum.https"]}}}
+#+end_src
+
+Then call the alias without any params to see the available commands.
+
+#+begin_src sh
+clojure -M:build-db
+clojure -M:https
+#+end_src
+
+** Useful Development Aliases
+
 *** check-deps
 
 To check for outdated dependencies, run:

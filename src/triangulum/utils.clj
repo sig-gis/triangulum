@@ -1,7 +1,7 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream)
   (:require [cognitect.transit :as transit]
-            [clojure.string :as str]
+            [clojure.string    :as str]
             [clojure.data.json :as json]))
 
 ;; Text parsing
@@ -43,7 +43,7 @@
 
 ;; Response building
 
-(defn body->transit [body]
+(defn- body->transit [body]
   (let [out    (ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]
     (transit/write writer body)

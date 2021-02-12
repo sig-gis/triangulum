@@ -1,14 +1,15 @@
 (ns triangulum.build-db
-  (:require [clojure.java.io :as io]
+  (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
-            [clojure.string :as str]
-            [triangulum.utils :refer [parse-as-sh-cmd]]))
+            [clojure.string     :as str]
+            [triangulum.utils   :refer [parse-as-sh-cmd]]))
 
 (def path-env (System/getenv "PATH"))
 
 ;; SH helper function
 
-(defn sh-wrapper [dir env verbose & commands]
+;; TODO consolidate sh-wrapper functions
+(defn- sh-wrapper [dir env verbose & commands]
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
       (reduce (fn [acc cmd] (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))] (str acc (when verbose out) err)))
@@ -17,17 +18,17 @@
 
 ;; Namespace file sorting functions
 
-(defn get-sql-files [dir-name]
+(defn- get-sql-files [dir-name]
   (->> (io/file dir-name)
        (file-seq)
        (filter #(str/ends-with? (.getName %) ".sql"))))
 
-(defn extract-toplevel-sql-comments [file]
+(defn- extract-toplevel-sql-comments [file]
   (->> (io/reader file)
        (line-seq)
        (take-while #(str/starts-with? % "-- "))))
 
-(defn parse-sql-comments [comments]
+(defn- parse-sql-comments [comments]
   (reduce (fn [params comment]
             (let [[k v] (-> comment
                             (subs 3)
@@ -37,7 +38,7 @@
           {}
           (filter #(str/includes? % ":") comments)))
 
-(defn params-to-dep-tree [file-params]
+(defn- params-to-dep-tree [file-params]
   (reduce (fn [dep-tree {:keys [namespace requires]}]
             (assoc dep-tree
                    namespace
@@ -49,11 +50,11 @@
 ;;       the sort method used doesn't end up comparing all values with each other.
 ;; Comparing dependency count works for now, but a true solution would be
 ;;       a breadth first tree walk.
-(defn requires? [[_ deps1] [ns2 deps2]]
+(defn- requires? [[_ deps1] [ns2 deps2]]
   (or (contains? deps1 ns2)
       (> (count deps1) (count deps2))))
 
-(defn topo-sort-namespaces [dep-tree]
+(defn- topo-sort-namespaces [dep-tree]
   (map first
        (sort (fn [file1 file2]
                (cond (requires? file1 file2)  1
@@ -61,12 +62,12 @@
                      :else                    0))
              dep-tree)))
 
-(defn warn-namespace [parsed file]
+(defn- warn-namespace [parsed file]
   (when-not (:namespace parsed)
     (println "Warning: Invalid or missing '-- NAMESPACE:' tag for file" file))
   parsed)
 
-(defn topo-sort-files-by-namespace [dir-name]
+(defn- topo-sort-files-by-namespace [dir-name]
   (let [sql-files   (get-sql-files dir-name)
         file-params (map #(-> %
                               (extract-toplevel-sql-comments)
@@ -81,28 +82,28 @@
 
 ;; Build functions
 
-(defn load-tables [verbose]
+(defn- load-tables [verbose]
   (println "Loading tables...")
-  (->> (map #(format "psql -h localhost -U carbon -d carbon -f %s" %)
+  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
             (topo-sort-files-by-namespace "./src/sql/tables"))
-       (apply sh-wrapper "./" {:PGPASSWORD "carbon"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
        (println)))
 
-(defn load-functions [verbose]
+(defn- load-functions [verbose]
   (println "Loading functions...")
-  (->> (map #(format "psql -h localhost -U carbon -d carbon -f %s" %)
+  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
             (topo-sort-files-by-namespace "./src/sql/functions"))
-       (apply sh-wrapper "./" {:PGPASSWORD "carbon"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
        (println)))
 
-(defn load-default-data [verbose]
+(defn- load-default-data [verbose]
   (println "Loading default data...")
-  (->> (map #(format "psql -h localhost -U carbon -d carbon -f %s" %)
+  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
             (topo-sort-files-by-namespace "./src/sql/default_data"))
-       (apply sh-wrapper "./" {:PGPASSWORD "carbon"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
        (println)))
 
-(defn build-everything [verbose]
+(defn- build-everything [verbose]
   (println "Building database...")
   (print "Please enter the postgres user's password:")
   (flush)
@@ -110,7 +111,7 @@
     (->> (sh-wrapper "./src/sql"
                      {:PGPASSWORD password}
                      verbose
-                     "psql -h localhost -U postgres -f create_carbon_db.sql")
+                     "psql -h localhost -U postgres -f create_pyregence_db.sql")
          (println)))
   (load-tables       verbose)
   (load-functions    verbose)
@@ -125,4 +126,5 @@
           (println "Valid options are:"
                    "\n  build-all            to build the database and all components"
                    "\n  only-functions       to only build functions"
-                   "\n  verbose              to show standard output from Postgres\n"))))
+                   "\n  verbose              to show standard output from Postgres\n")))
+  (shutdown-agents))

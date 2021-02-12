@@ -1,14 +1,13 @@
 (ns triangulum.database
-  (:require [clojure.string :as str]
-            [clojure.data.json :as json]
-            [next.jdbc :as jdbc]
+  (:require [clojure.string       :as str]
+            [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
-            [triangulum.logging :refer [log-str]]
-            [triangulum.utils   :refer [data-response kebab->snake format-%]]))
+            [triangulum.logging   :refer [log-str]]
+            [triangulum.utils     :refer [format-%]]))
 
 ;;; Helper Functions
 
-(defn str-places
+(defn- str-places
   "Creates a string with the pattern '(?, ?), (?, ?)'"
   [rows]
   (str/join ", " (repeat (count rows)
@@ -16,7 +15,7 @@
                               (str/join ", " (repeat (count (first rows)) "?"))
                               ")"))))
 
-(defn pg-partition [rows fields]
+(defn- pg-partition [rows fields]
   (partition-all (quot 32767 (count fields)) rows))
 
 (def sql-primitive (comp val first first))
@@ -25,9 +24,9 @@
 
 ;; FIXME, this will need to be defined somewhere
 (def pg-db {:dbtype                "postgresql"
-            :dbname                "carbon"
-            :user                  "carbon"
-            :password              "carbon"
+            :dbname                "pyregence"
+            :user                  "pyregence"
+            :password              "pyregence"
             :reWriteBatchedInserts true})
 
 ;;; Select Queries
@@ -54,17 +53,6 @@
                                   rs/as-unqualified-lower-arrays
                                   rs/as-unqualified-lower-maps)})))
 
-(defn sql-handler [{:keys [uri params content-type]}]
-  (let [[schema function] (->> (str/split uri #"/")
-                               (remove str/blank?)
-                               (map kebab->snake)
-                               (rest))
-        sql-args          (if (= content-type "application/edn")
-                            (:sql-args params [])
-                            (json/read-str (:sql-args params "[]")))
-        sql-result        (apply call-sql (str schema "." function) sql-args)]
-    (data-response sql-result {:type (if (= content-type "application/edn") :edn :json)})))
-
 ;; SQLite specific
 (defn call-sqlite [query file-path]
   (let [db-info {:dbtype "sqlite"
@@ -76,7 +64,8 @@
 
 ;;; Insert Queries
 
-(defn for-insert-multi!
+;; TODO I dont think we need two public functions for parallel and not.
+(defn- for-insert-multi!
   [table cols rows]
   (into [(format-% "INSERT INTO %1 (%2) VALUES %3"
                    table
@@ -101,7 +90,7 @@
 
 ;;; Update Queries
 
-(defn for-update-multi!
+(defn- for-update-multi!
   [table cols where-col rows]
   (let [col-names  (map name cols)
         where-name (name where-col)
@@ -115,6 +104,7 @@
           cat
           rows)))
 
+;; TODO I dont think we need two public functions for parallel and not.
 (defn update-rows!
   ([table rows id-key]
    (update-rows! table rows id-key (keys (first rows))))
