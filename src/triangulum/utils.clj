@@ -56,18 +56,18 @@
    otherwise the body and type are passed through."
   ([body]
    (data-response body {}))
-  ([body {:keys [status c-type session]
+  ([body {:keys [status type session]
           :or   {status 200
-                 c-type :edn}
+                 type :edn}
           :as   params}]
    (merge (when (contains? params :session) {:session session})
           {:status  status
-           :headers {"Content-Type" (condp = c-type
+           :headers {"Content-Type" (condp = type
                                       :edn     "application/edn"
                                       :transit "application/transit+json"
                                       :json    "application/json"
-                                      c-type)}
-           :body    (condp = c-type
+                                      type)}
+           :body    (condp = type
                       :edn     (pr-str         body)
                       :transit (body->transit  body)
                       :json    (json/write-str body)
