@@ -9,7 +9,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: clj -M:deps
-    - name: Run tests
-      run: clj -M:test
+    - name: tools.deps-builder
+      # You may pin to the exact commit or the version.
+      uses: vouch-opensource/tools.deps-build@aa0b444776fc18fa431567e93c46045dece05fd2
