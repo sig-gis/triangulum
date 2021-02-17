@@ -1,0 +1,15 @@
+name: Clojure CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: clj -M:deps
+    - name: Run tests
+      run: clj -M:test
