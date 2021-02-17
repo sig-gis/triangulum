@@ -4,4 +4,4 @@
 
 (deftest workflow-test
   (testing "A simple test"
-    (is (= 2 (+ 1 1)))))
+    (is (= 2 (+ 1 2)))))
