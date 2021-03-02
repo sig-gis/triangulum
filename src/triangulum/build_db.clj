@@ -7,7 +7,7 @@
 
 (def path-env (System/getenv "PATH"))
 
-;; SH helper function
+;; Helper functions
 
 ;; TODO consolidate sh-wrapper functions
 (defn- sh-wrapper [dir env verbose & commands]
@@ -106,67 +106,114 @@
        (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
        (println)))
 
-(defn- build-everything [database user verbose]
+(defn- build-everything [database user password verbose]
   (println "Building database...")
-  (print "Please enter the postgres user's password:")
-  (flush)
-  (let [password (String/valueOf (.readPassword (System/console)))]
-    (->> (sh-wrapper "/mshr/github/pyregence/src/sql"
-                     {:PGPASSWORD password}
-                     verbose
-                     (str "psql -h localhost -U postgres -f create_db.sql"))
-         (println)))
+  (->> (sh-wrapper "/mshr/github/pyregence/src/sql"
+                   {:PGPASSWORD password}
+                   verbose
+                   (str "psql -h localhost -U postgres -f create_db.sql"))
+       (println))
   (load-tables       database user verbose)
   (load-functions    database user verbose)
   (load-default-data database user verbose))
 
-;; CLI param parsing
+;; Backup / restore functions
+
+(defn- read-file-tag [file]
+  (with-open [is (io/input-stream file)]
+    (let [b-ary (byte-array 5)]
+      (.read is b-ary 0 5)
+      (String. b-ary))))
+
+(defn- run-backup [database file password verbose]
+  (println "Backing up database...")
+  (if (nil? file)
+    (println "Please specify a file destination with -f. The provided file name should use the extension .dump.")
+    (sh-wrapper "./"
+                {:PGPASSWORD password}
+                verbose
+                (format-% "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
+                          database
+                          file))))
+
+(defn- run-restore [_ file password verbose]
+  ;; TODO check database against 'pg_restore --list file'
+  (println "Restoring database...")
+  (cond
+    (nil? file)
+    (println "Please specify a .dump file to be restored with -f.")
+
+    (= "PGDMP" (read-file-tag file))
+    (sh-wrapper "./"
+                {:PGPASSWORD password}
+                verbose
+                (str "pg_restore -U postgres -d postgres --clean --if-exists --create --jobs=12 "
+                     file))
+    :else
+    (println "Invalid .dump file.")))
 
 (def cli-options
-  [["-d" "--database DB" "Database name. Required"
+  [["-d" "--database DB"       "Database name. Required."
     :missing "You must provide a database name."]
-   ["-u" "--user USER" "User for the database. Defaults to the same as the database name."]
-   ["-v" "--verbose" "Print verbose PostgreSQL output."]])
+   ["-f" "--file FILE"         "File used for backup and restore."]
+   ["-p" "--password PASSWORD" "Admin password for the postgres account."]
+   ["-u" "--user USER"         "User for the database. Defaults to the same as the database name."]
+   ["-v" "--verbose"           "Print verbose PostgreSQL output."]])
 
 (def actions
-  {:build-all "Build / rebuild the entire data base."
-   :functions "Build / rebuild all functions."})
+  {:backup    "Create backup file using pg_dump."
+   :build-all "Build / rebuild the entire data base."
+   :functions "Build / rebuild all functions."
+   :restore   "Restore a database created by pg_dump."})
 
-(defn print-usage [options-summary]
-  (->> (map (fn [[action description]]
-                       (str (name action) "    " description))
-                     actions)
-                (concat ["Usage: clojure -M:build-db [options] action"
-                         ""
-                         "Options:"
-                         options-summary
-                         ""
-                         "Actions:"])
-                (str/join \newline)))
+(def usage-str
+  (->> (concat ["Usage: clojure -M:build-db [options] action"
+                ""
+                "Options:"]
+               (map (fn [[shrt lng description]]
+                      (format "  %s, %-23s%s" shrt lng description))
+                    cli-options)
+               [""
+                "Actions:"]
+               (map (fn [[action description]]
+                      (format "   %-26s%s" (name action) description))
+                    actions))
+       (str/join \newline)))
 
 (defn check-errors [errors arguments action]
   (cond
     (seq errors)
     (str/join \newline errors)
 
-    (not (and (= 1 (count arguments))
-              (get actions action)))
+    (= 0 (count arguments))
+    "You must select an action."
+
+    (< 1 (count arguments))
+    "You only select one action at a time."
+
+    (not (get actions action))
     "Invalid action selection."))
 
 (defn -main [& args]
-  (let [{:keys [arguments options summary errors]} (parse-opts args cli-options)
-        {:keys [database user verbose]} options
+  (let [{:keys [arguments options errors]} (parse-opts args cli-options)
+        {:keys [database file password user verbose]} options
         action    (keyword (first arguments))
         error-msg (check-errors errors arguments action)]
     (cond
       error-msg
       (do
         (println "Error: " error-msg "\n")
-        (print-usage summary))
+        (println usage-str))
 
       (= :build-all action)
-      (build-everything database (or user database) verbose)
+      (build-everything database (or user database) password verbose)
 
       (= :functions action)
-      (load-functions database (or user database) verbose)))
+      (load-functions database (or user database) verbose)
+
+      (= :backup action)
+      (run-backup database file password verbose)
+
+      (= :restore action)
+      (run-restore database file password verbose)))
   (shutdown-agents))
