@@ -20,14 +20,8 @@
           (= err ""))))))
 
 (defn enable-systemd [repo path user offset]
-  (cond
-    (nil? user)
-    (println "You must specify a user with -u when enabling the systemd unit file.")
-
-    (nil? repo)
+  (if (nil? repo)
     (println "You must specify a repo with -r when enabling the systemd unit file.")
-
-    :else
     (let [unit-file (str "cljweb-" repo)]
       (spit (io/file "/etc/systemd/system/" (str unit-file ".service"))
             (format (str "[Unit]\n"
@@ -71,7 +65,8 @@
    ["-r" "--repo REPO" "Repository folder name in /sig or path specified with -p."]
    ["-S" "--start" "Start systemd service."]
    ["-T" "--stop" "Stop systemd service."]
-   ["-u" "--user USER" "The user which to run the server as. Require when -E is specified."]])
+   ["-u" "--user USER" "The user which to run the server as."
+    :default "sig"]])
 
 (defn -main [& args]
   (let [{:keys [options summary errors]} (parse-opts args cli-options)
