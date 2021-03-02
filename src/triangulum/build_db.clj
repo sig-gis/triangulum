@@ -2,7 +2,7 @@
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
-            [clojure.tools.cli  :refer [parse-opts]]
+            [triangulum.cli     :refer [get-cli-options]]
             [triangulum.utils   :refer [parse-as-sh-cmd format-%]]))
 
 (def path-env (System/getenv "PATH"))
@@ -162,82 +162,13 @@
    :restore   {:description "Restore a database from a .dump file created by pg_dump."
                :requires    [:file]}})
 
-(defn- single-option [required]
-  (let [[shrt lng _] (required cli-options)]
-   (format-% "%l (%s)" lng shrt)))
-
-(defn- error-str [action requires]
-  (format-% "The action %a requires %r."
-            (name action)
-            (case (count requires)
-              1 (single-option (first requires))
-
-              2 (str (single-option (first requires))
-                   " and "
-                   (single-option (second requires)))
-
-              (str (->> (butlast requires)
-                        (map #(single-option %))
-                        (str/join ", "))
-                   ", and "
-                   (single-option (last requires))))))
-
-(defn- usage-str [options actions]
-  (let [options (map (fn [[_ [shrt lng description]]]
-                       (format "  %s, %-23s%s" shrt lng description))
-                     options)
-        actions (map (fn [[action info]]
-                       (format "   %-26s%s" (name action) (:description info)))
-                     actions)]
-    (->> (concat ["Usage: clojure -M:build-db [options] action"
-                  ""
-                  "Options:"]
-                 options
-                 [""
-                  "Actions:"]
-                 actions)
-         (str/join "\n"))))
-
-(defn- check-errors [errors options actions arguments action]
-  (let [requires (get-in cli-actions [action :requires])]
-   (cond
-    (seq errors)
-    (str/join "\n" errors)
-
-    (= 0 (count arguments))
-    "You must select an action."
-
-    (< 1 (count arguments))
-    "You only select one action at a time."
-
-    (not (get actions action))
-    "Invalid action selection."
-
-    (not-every? options requires)
-    (error-str action requires))))
-
 (defn -main [& args]
-  (let [{:keys [arguments options errors]} (->> cli-options
-                                                (map second)
-                                                (parse-opts args))
-        {:keys [database file password user verbose]} options
-        action    (keyword (first arguments))
-        error-msg (check-errors errors options cli-actions arguments action)]
-    (cond
-      error-msg
-      (do
-        (println "Error: " error-msg "\n")
-        (println (usage-str cli-options cli-actions)))
-
-      (= :build-all action)
-      (build-everything database (or user database) password verbose)
-
-      (= :functions action)
-      (load-functions database (or user database) verbose)
-
-      (= :backup action)
-      (run-backup database file password verbose)
-
-      (= :restore action)
-      (run-restore file password verbose)))
+  (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "build-db")
+        {:keys [database file password user verbose]} options]
+    (case action
+      :build-all (build-everything database (or user database) password verbose)
+      :functions (load-functions database (or user database) verbose)
+      :backup    (run-backup database file password verbose)
+      :restore   (run-restore file password verbose)
+      nil))
   (shutdown-agents))
