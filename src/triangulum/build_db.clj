@@ -120,32 +120,53 @@
   (load-functions    database user verbose)
   (load-default-data database user verbose))
 
+;; CLI param parsing
+
 (def cli-options
-  [["-a" "--build-all" "Build / rebuild the entire data base."]
-   ["-d" "--database DB" "Database name. Required"
+  [["-d" "--database DB" "Database name. Required"
     :missing "You must provide a database name."]
-   ["-f" "--functions" "Build / rebuild all functions"]
    ["-u" "--user USER" "User for the database. Defaults to the same as the database name."]
    ["-v" "--verbose" "Print verbose PostgreSQL output."]])
 
+(def actions
+  {:build-all "Build / rebuild the entire data base."
+   :functions "Build / rebuild all functions."})
+
+(defn print-usage [options-summary]
+  (->> (map (fn [[action description]]
+                       (str (name action) "    " description))
+                     actions)
+                (concat ["Usage: clojure -M:build-db [options] action"
+                         ""
+                         "Options:"
+                         options-summary
+                         ""
+                         "Actions:"])
+                (str/join \newline)))
+
+(defn check-errors [errors arguments action]
+  (cond
+    (seq errors)
+    (str/join \newline errors)
+
+    (not (and (= 1 (count arguments))
+              (get actions action)))
+    "Invalid action selection."))
+
 (defn -main [& args]
-  (let [{:keys [options summary errors]} (parse-opts args cli-options)
-        {:keys [build-all database functions user verbose]} options]
+  (let [{:keys [arguments options summary errors]} (parse-opts args cli-options)
+        {:keys [database user verbose]} options
+        action    (keyword (first arguments))
+        error-msg (check-errors errors arguments action)]
     (cond
-      (not (= 1 (+ (if build-all 1 0)
-                   (if functions 1 0))))
+      error-msg
       (do
-        (println "You must indicate one, and only one, action to take.")
-        (println (str "Usage:\n" summary)))
+        (println "Error: " error-msg "\n")
+        (print-usage summary))
 
-      (seq errors)
-      (do
-        (run! println errors)
-        (println (str "Usage:\n" summary)))
-
-      build-all
+      (= :build-all action)
       (build-everything database (or user database) verbose)
 
-      functions
+      (= :functions action)
       (load-functions database (or user database) verbose)))
   (shutdown-agents))
