@@ -12,11 +12,7 @@
             (name action)
             (case (count requires)
               1 (single-option (first requires) cli-options)
-
-              2 (str (single-option (first requires) cli-options)
-                     " and "
-                     (single-option (second requires) cli-options))
-
+              2 (str/join " and " (map #(single-option % cli-options) requires))
               (str (->> (butlast requires)
                         (map #(single-option % cli-options))
                         (str/join ", "))
@@ -24,19 +20,19 @@
                    (single-option (last requires) cli-options)))))
 
 (defn- usage-str [cli-options cli-actions alias-str]
-  (let [option-str (map (fn [[_ [shrt lng description]]]
-                          (format "  %s, %-23s%s" shrt lng description))
-                        cli-options)
-        action-str (map (fn [[action info]]
-                          (format "   %-26s%s" (name action) (:description info)))
-                        cli-actions)]
-    (->> (concat [(str "Usage: clojure -M:" alias-str " [options] action")
+  (let [options (map (fn [[shrt lng description]]
+                       (format "  %s, %-23s%s" shrt lng description))
+                     (vals cli-options))
+        actions (map (fn [[action info]]
+                       (format "   %-26s%s" (name action) (:description info)))
+                     cli-actions)]
+    (->> (concat [(str "Usage: clojure -M:" alias-str " action [options]")
                   ""
-                  "Options:"]
-                 option-str
-                 [""
                   "Actions:"]
-                 action-str)
+                 actions
+                 [""
+                  "Options:"]
+                 options)
          (str/join "\n"))))
 
 (defn- check-errors [arguments errors options action cli-options cli-actions]
@@ -55,7 +51,7 @@
       (< 1 (count arguments))
       "You only select one action at a time."
 
-      (nil? requires)
+      (not (contains? cli-actions action))
       (str "\"" (name action) "\" is not a valid action.")
 
       (not-every? options requires)
@@ -63,7 +59,7 @@
 
 (defn get-cli-options [args cli-options cli-actions alias-str]
   (let [{:keys [arguments errors options]} (->> cli-options
-                                                (map second)
+                                                (vals)
                                                 (parse-opts args))
         action    (keyword (first arguments))
         error-msg (check-errors arguments errors options action cli-options cli-actions)]
