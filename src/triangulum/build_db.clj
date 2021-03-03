@@ -125,7 +125,10 @@
       (.read is b-ary 0 5)
       (String. b-ary))))
 
-(defn- run-backup [database file password verbose]
+(defn- run-backup
+  "Creates a Postgres backup for the given data base.
+   The format custom is used to create a compressed binary .dump file."
+  [database file password verbose]
   (println "Backing up database...")
   (if (nil? file)
     (println "Please specify a file destination with -f. The provided file name should use the extension .dump.")
@@ -136,7 +139,11 @@
                           database
                           file))))
 
-(defn- run-restore [_ file password verbose]
+(defn- run-restore
+  "Restores a Postgres backup from the compressed binary .dump file.
+   Database is not required because the .dump file contains the information
+   on where to restore the database."
+  [_ file password verbose]
   ;; TODO check database against 'pg_restore --list file'
   (println "Restoring database...")
   (cond
