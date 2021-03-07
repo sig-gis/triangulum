@@ -6,11 +6,13 @@
 
 ;; Text parsing
 
-(defn kebab->snake [kebab-str]
+(defn kebab->snake
+  "kebab-str -> snake_str"
+  [kebab-str]
   (str/replace kebab-str "-" "_"))
 
-(defn format-%
-  "Use any char after % for format."
+(defn format-str
+  "Use any char after % for format. All % are converted to %s (string)"
   [f-str & args]
   (apply format (str/replace f-str #"(%[^ ])" "%s") args))
 
@@ -43,7 +45,9 @@
 
 ;; Response building
 
-(defn- body->transit [body]
+(defn- clj->transit
+  "Converts a clj body to transit."
+  [body]
   (let [out    (ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]
     (transit/write writer body)
@@ -69,20 +73,24 @@
                                       type)}
            :body    (condp = type
                       :edn     (pr-str         body)
-                      :transit (body->transit  body)
+                      :transit (clj->transit  body)
                       :json    (json/write-str body)
                       body)})))
 
 ;; Equivalent FP functions for maps
 
-(defn mapm [f coll]
+(defn mapm
+  "Takes a map, applies f to each MapEntry, returns a map."
+  [f coll]
   (persistent!
    (reduce (fn [acc cur]
              (conj! acc (f cur)))
            (transient {})
            coll)))
 
-(defn filterm [pred coll]
+(defn filterm
+  "Takes a map, filters on pred for each MapEntry, returns a map."
+  [pred coll]
   (persistent!
    (reduce (fn [acc cur]
              (if (pred cur)

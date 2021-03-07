@@ -9,11 +9,14 @@
 (defonce output-path      (atom ""))
 (defonce clean-up-service (atom nil))
 
-(defn max-length [string length]
+(defn- max-length [string length]
   (subs string 0 (min length (count string))))
 
-(defn log [data & {:keys [newline? pprint? force-stdout?]
-                   :or {newline? true pprint? false force-stdout? false}}]
+(defn log
+  "Synchronously create a log entry. Logs will got to standard out as default.
+   A log file location can be specified with set-log-path!."
+  [data & {:keys [newline? pprint? force-stdout?]
+           :or {newline? true pprint? false force-stdout? false}}]
   (let [timestamp    (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))
         log-filename (str (.format (SimpleDateFormat. "YYYY-MM-dd") (Date.)) ".log")
         max-data     (max-length data 500)
@@ -27,7 +30,9 @@
                 (fn [_] (spit (io/file @output-path log-filename) line :append true)))))
   nil)
 
-(defn log-str [& data]
+(defn log-str
+  "A variadic version of log which concatenates all of the strings into one log line."
+  [& data]
   (log (apply str data)))
 
 (defn- start-clean-up-service! []
@@ -42,7 +47,11 @@
              (io/delete-file file))
            (catch Exception _)))))
 
-(defn set-log-path! [path]
+(defn set-log-path!
+  "Sets a path to create file logs. When set to a directory, log files will be
+   created with the date as part of the file name. When an empty string is set
+   logging will be sent to standard out."
+  [path]
   (cond
     (pos? (count path))
     (try
