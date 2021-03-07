@@ -1,5 +1,8 @@
 .cpcache/
 .nrepl-port
+.rebel_readline_history
+.clj-kondo/*
+!.clj-kondo/config.edn
+
 pom.xml
 target/
-.clj-kondo/.cache/**
