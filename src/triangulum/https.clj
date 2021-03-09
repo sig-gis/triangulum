@@ -5,7 +5,7 @@
             [clojure.tools.cli  :refer [parse-opts]]
             [triangulum.utils   :refer [parse-as-sh-cmd]]))
 
-(def path-env (System/getenv "PATH"))
+(def ^:private path-env (System/getenv "PATH"))
 
 ;; Helper functions
 
@@ -73,7 +73,7 @@
          (println "\n*** Initialization complete ***"
                   "\nYou must now update the permissions for the key file with 'sudo chown -R user:group .key'"))))
 
-(def cli-options
+(def ^:private cli-options
   [["-i" "--certbot-init" "Initialize certbot."]
    ["-c" "--package-cert" "Package certbot certificate."]
    ["-d" "--domain DOMAIN" "Domain for certbot registration."
@@ -81,7 +81,9 @@
    ["-p" "--path PATH" "Alternative path for certbot installation."
     :default "/etc/letsencrypt"]])
 
-(defn -main [& args]
+(defn -main
+  "A set of tools for using certbot as the server certificate manager."
+  [& args]
   (let [{:keys [options summary errors]} (parse-opts args cli-options)
         {:keys [certbot-init package-cert domain path]} options
         path          (.getAbsolutePath (io/file path))
