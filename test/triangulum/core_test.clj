@@ -1,6 +1,10 @@
 (ns triangulum.core-test
   (:require [clojure.test :refer [is deftest testing]]
-            [triangulum.core :as tri]))
+            [triangulum.build-db]
+            [triangulum.database]
+            [triangulum.https]
+            [triangulum.logging]
+            [triangulum.utils]))
 
 (deftest workflow-test
   (testing "A simple test"
