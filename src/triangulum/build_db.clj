@@ -2,9 +2,10 @@
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
-            [triangulum.utils   :refer [parse-as-sh-cmd]]))
+            [clojure.tools.cli  :refer [parse-opts]]
+            [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
 
-(def path-env (System/getenv "PATH"))
+(def ^:private path-env (System/getenv "PATH"))
 
 ;; SH helper function
 
@@ -12,7 +13,9 @@
 (defn- sh-wrapper [dir env verbose & commands]
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
-      (reduce (fn [acc cmd] (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))] (str acc (when verbose out) err)))
+      (reduce (fn [acc cmd]
+                (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
+                  (str acc (when verbose out) err)))
               ""
               commands))))
 
@@ -29,12 +32,12 @@
        (take-while #(str/starts-with? % "-- "))))
 
 (defn- parse-sql-comments [comments]
-  (reduce (fn [params comment]
-            (let [[k v] (-> comment
+  (reduce (fn [acc cur]
+            (let [[k v] (-> cur
                             (subs 3)
                             (str/lower-case)
                             (str/split #":"))]
-              (assoc params (keyword (str/trim k)) (str/trim v))))
+              (assoc acc (keyword (str/trim k)) (str/trim v))))
           {}
           (filter #(str/includes? % ":") comments)))
 
@@ -82,28 +85,28 @@
 
 ;; Build functions
 
-(defn- load-tables [verbose]
+(defn- load-tables [database user verbose]
   (println "Loading tables...")
-  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
+  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
             (topo-sort-files-by-namespace "./src/sql/tables"))
-       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
        (println)))
 
-(defn- load-functions [verbose]
+(defn- load-functions [database user verbose]
   (println "Loading functions...")
-  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
+  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
             (topo-sort-files-by-namespace "./src/sql/functions"))
-       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
        (println)))
 
-(defn- load-default-data [verbose]
+(defn- load-default-data [database user verbose]
   (println "Loading default data...")
-  (->> (map #(format "psql -h localhost -U pyregence -d pyregence -f %s" %)
+  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
             (topo-sort-files-by-namespace "./src/sql/default_data"))
-       (apply sh-wrapper "./" {:PGPASSWORD "pyregence"} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
        (println)))
 
-(defn- build-everything [verbose]
+(defn- build-everything [database user verbose]
   (println "Building database...")
   (print "Please enter the postgres user's password:")
   (flush)
@@ -111,20 +114,61 @@
     (->> (sh-wrapper "./src/sql"
                      {:PGPASSWORD password}
                      verbose
-                     "psql -h localhost -U postgres -f create_pyregence_db.sql")
+                     (str "psql -h localhost -U postgres -f create_db.sql"))
          (println)))
-  (load-tables       verbose)
-  (load-functions    verbose)
-  (load-default-data verbose))
+  (load-tables       database user verbose)
+  (load-functions    database user verbose)
+  (load-default-data database user verbose))
 
-(defn -main [& args]
-  (time (case (set args)
-          #{"build-all"}                (build-everything false)
-          #{"build-all" "verbose"}      (build-everything true)
-          #{"only-functions"}           (load-functions false)
-          #{"only-functions" "verbose"} (load-functions true)
-          (println "Valid options are:"
-                   "\n  build-all            to build the database and all components"
-                   "\n  only-functions       to only build functions"
-                   "\n  verbose              to show standard output from Postgres\n")))
+;; CLI param parsing
+
+(def ^:private cli-options
+  [["-d" "--database DB" "Database name. Required"
+    :missing "You must provide a database name."]
+   ["-u" "--user USER" "User for the database. Defaults to the same as the database name."]
+   ["-v" "--verbose" "Print verbose PostgreSQL output."]])
+
+(def ^:private actions
+  {:build-all "Build / rebuild the entire data base."
+   :functions "Build / rebuild all functions."})
+
+(defn- print-usage [options-summary]
+  (->> (map (fn [[action description]]
+                       (str (name action) "    " description))
+                     actions)
+                (concat ["Usage: clojure -M:build-db [options] action"
+                         ""
+                         "Options:"
+                         options-summary
+                         ""
+                         "Actions:"])
+                (str/join \newline)))
+
+(defn- check-errors [errors arguments action]
+  (cond
+    (seq errors)
+    (str/join \newline errors)
+
+    (not (and (= 1 (count arguments))
+              (get actions action)))
+    "Invalid action selection."))
+
+(defn -main
+  "A set of tools for building and maintaining the project database with Postgres"
+  [& args]
+  (let [{:keys [arguments options summary errors]} (parse-opts args cli-options)
+        {:keys [database user verbose]} options
+        action    (keyword (first arguments))
+        error-msg (check-errors errors arguments action)]
+    (cond
+      error-msg
+      (do
+        (println "Error: " error-msg "\n")
+        (print-usage summary))
+
+      (= :build-all action)
+      (build-everything database (or user database) verbose)
+
+      (= :functions action)
+      (load-functions database (or user database) verbose)))
   (shutdown-agents))
