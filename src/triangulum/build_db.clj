@@ -1,4 +1,5 @@
 (ns triangulum.build-db
+  (:import java.io.File)
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
@@ -21,7 +22,7 @@
 (defn- get-sql-files [dir-name]
   (->> (io/file dir-name)
        (file-seq)
-       (filter #(str/ends-with? (.getName %) ".sql"))))
+       (filter (fn [^File f] (str/ends-with? (.getName f) ".sql")))))
 
 (defn- extract-toplevel-sql-comments [file]
   (->> (io/reader file)
@@ -75,7 +76,7 @@
                               (warn-namespace %))
                          sql-files)
         ns-to-files (zipmap (map :namespace file-params)
-                            (map #(.getPath %) sql-files))
+                            (map (fn [^File f] (.getPath f)) sql-files))
         dep-tree    (params-to-dep-tree file-params)
         sorted-ns   (topo-sort-namespaces dep-tree)]
     (map ns-to-files sorted-ns)))
