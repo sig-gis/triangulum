@@ -142,6 +142,8 @@ clojure -M:build-db
 clojure -M:https
 #+end_src
 
+- Note, ~clojure -M:https~ needs to be run as sudo when executing a command.
+
 ** Useful Development Aliases
 
 *** check-deps
