@@ -5,16 +5,17 @@
             [clojure.pprint  :as pp]))
 
 (defonce synchronized-log-writer (agent nil))
-
-(defonce output-path      (atom ""))
-(defonce clean-up-service (atom nil))
+(defonce output-path             (atom ""))
+(defonce clean-up-service        (atom nil))
 
 (defn- max-length [string length]
   (subs string 0 (min length (count string))))
 
 (defn log
   "Synchronously create a log entry. Logs will got to standard out as default.
-   A log file location can be specified with set-log-path!."
+   A log file location can be specified with set-log-path!.
+
+   Default options are {:newline? true :pprint? false :force-stdout? false}"
   [data & {:keys [newline? pprint? force-stdout?]
            :or {newline? true pprint? false force-stdout? false}}]
   (let [timestamp    (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))
@@ -31,7 +32,8 @@
   nil)
 
 (defn log-str
-  "A variadic version of log which concatenates all of the strings into one log line."
+  "A variadic version of log which concatenates all of the strings into one log line.
+   Uses the default options for log."
   [& data]
   (log (apply str data)))
 
