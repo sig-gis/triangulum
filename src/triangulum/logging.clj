@@ -1,6 +1,7 @@
 (ns triangulum.logging
   (:import java.text.SimpleDateFormat
-           java.util.Date)
+           java.util.Date
+           java.io.File)
   (:require [clojure.java.io :as io]
             [clojure.pprint  :as pp]))
 
@@ -44,7 +45,7 @@
       (Thread/sleep (* 1000 60 60 24)) ; 24 hours in milliseconds.
       (try (doseq [file (as-> (io/file @output-path) files
                           (.listFiles files)
-                          (sort-by #(.lastModified %) files)
+                          (sort-by (fn [^File f] (.lastModified f)) files)
                           (take (- (count files) 10) files))]
              (io/delete-file file))
            (catch Exception _)))))
