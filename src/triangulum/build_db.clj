@@ -114,7 +114,7 @@
     (->> (sh-wrapper "./src/sql"
                      {:PGPASSWORD password}
                      verbose
-                     (str "psql -h localhost -U postgres -f create_db.sql"))
+                     "psql -h localhost -U postgres -f create_db.sql")
          (println)))
   (load-tables       database user verbose)
   (load-functions    database user verbose)
