@@ -17,11 +17,11 @@
    A log file location can be specified with set-log-path!.
 
    Default options are {:newline? true :pprint? false :force-stdout? false}"
-  [data & {:keys [newline? pprint? force-stdout?]
-           :or {newline? true pprint? false force-stdout? false}}]
+  [data & {:keys [newline? pprint? force-stdout? truncate?]
+           :or {newline? true pprint? false force-stdout? false truncate? true}}]
   (let [timestamp    (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))
         log-filename (str (.format (SimpleDateFormat. "YYYY-MM-dd") (Date.)) ".log")
-        max-data     (max-length data 500)
+        max-data     (if truncate? (max-length data 500) data)
         line         (str timestamp
                           " "
                           (if pprint? (with-out-str (pp/pprint data)) max-data)
