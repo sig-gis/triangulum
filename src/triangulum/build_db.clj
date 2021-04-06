@@ -3,8 +3,8 @@
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
-            [clojure.tools.cli  :refer [parse-opts]]
-            [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
+            [triangulum.cli   :refer [get-cli-options]]
+            [triangulum.utils :refer [parse-as-sh-cmd format-str]]))
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -122,54 +122,25 @@
   (load-default-data database user verbose))
 
 ;; CLI param parsing
-
+;;
 (def ^:private cli-options
-  [["-d" "--database DB" "Database name. Required"
-    :missing "You must provide a database name."]
-   ["-u" "--user USER" "User for the database. Defaults to the same as the database name."]
-   ["-v" "--verbose" "Print verbose PostgreSQL output."]])
+  {:database ["-d" "--database DB" "Database name."]
+   :user     ["-u" "--user USER"   "User for the database. Defaults to the same as the database name."]
+   :verbose  ["-v" "--verbose"      "Print verbose PostgreSQL output."]})
 
-(def ^:private actions
-  {:build-all "Build / rebuild the entire data base."
-   :functions "Build / rebuild all functions."})
-
-(defn- print-usage [options-summary]
-  (->> (map (fn [[action description]]
-                       (str (name action) "    " description))
-                     actions)
-                (concat ["Usage: clojure -M:build-db [options] action"
-                         ""
-                         "Options:"
-                         options-summary
-                         ""
-                         "Actions:"])
-                (str/join \newline)))
-
-(defn- check-errors [errors arguments action]
-  (cond
-    (seq errors)
-    (str/join \newline errors)
-
-    (not (and (= 1 (count arguments))
-              (get actions action)))
-    "Invalid action selection."))
+(def ^:private cli-actions
+  {:build-all {:description "Build / rebuild the entire data base."
+               :requires    [:database]}
+   :functions {:description "Build / rebuild all functions."
+               :requires    [:database]}})
 
 (defn -main
-  "A set of tools for building and maintaining the project database with Postgres"
+  "A set of actions related to building and maintaining Postgres."
   [& args]
-  (let [{:keys [arguments options summary errors]} (parse-opts args cli-options)
-        {:keys [database user verbose]} options
-        action    (keyword (first arguments))
-        error-msg (check-errors errors arguments action)]
-    (cond
-      error-msg
-      (do
-        (println "Error: " error-msg "\n")
-        (print-usage summary))
-
-      (= :build-all action)
-      (build-everything database (or user database) verbose)
-
-      (= :functions action)
-      (load-functions database (or user database) verbose)))
+  (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "build-db")
+        {:keys [database user verbose]} options]
+    (case action
+      :build-all (build-everything database (or user database) verbose)
+      :functions (load-functions database (or user database) verbose)
+      nil))
   (shutdown-agents))
