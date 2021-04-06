@@ -106,7 +106,11 @@ simply run the following command from your shell:
 clojure -M:https --certbot-init -d mydomain.com [-p certbot-dir]
 #+end_src
 
-TODO This section has not been updated to show new method for deploy hooks.
+The certbot creation process will run automatically and silently. After completion,
+a shell script, [mydomain].sh, will be created in the certbot deploy hooks folder
+(default /etc/letsencrypt/renewal-hooks/deploy). This script will run
+~clojure -M:https --package-cert~ Scripts in this folder will run automatically
+when a new certificate is created.
 
 Note: If your certbot installation stores its config files in a
 directory other than /etc/letsencrypt, you should specify it with the
@@ -141,6 +145,8 @@ Then call the alias without any params to see the available commands.
 clojure -M:build-db
 clojure -M:https
 #+end_src
+
+- Note, ~clojure -M:https~ needs to be run as sudo when executing a command.
 
 ** Useful Development Aliases
 
