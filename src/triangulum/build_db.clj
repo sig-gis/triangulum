@@ -122,11 +122,11 @@
   (load-default-data database user verbose))
 
 ;; CLI param parsing
-;;
+
 (def ^:private cli-options
   {:database ["-d" "--database DB" "Database name."]
    :user     ["-u" "--user USER"   "User for the database. Defaults to the same as the database name."]
-   :verbose  ["-v" "--verbose"      "Print verbose PostgreSQL output."]})
+   :verbose  ["-v" "--verbose"     "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
   {:build-all {:description "Build / rebuild the entire data base."
@@ -135,7 +135,7 @@
                :requires    [:database]}})
 
 (defn -main
-  "A set of actions related to building and maintaining Postgres."
+  "A set of tools for building and maintaining the project database with Postgres."
   [& args]
   (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "build-db")
         {:keys [database user verbose]} options]

@@ -49,7 +49,7 @@
       "You must select an action."
 
       (< 1 (count arguments))
-      "You only select one action at a time."
+      "You can only select one action at a time."
 
       (not (contains? cli-actions action))
       (str "\"" (name action) "\" is not a valid action.")
