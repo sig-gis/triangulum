@@ -3,57 +3,57 @@
   (:require [clojure.data.json :refer [read-str write-str]]))
 
 (defn val->int
-  "Converts a value to a java Integer.  Default value for failed conversion is -1."
+  "Converts a value to a java Integer. Default value for failed conversion is -1."
   ([v]
-   (val->int v (int -1)))
+   (val->int v -1))
   ([v default]
    (cond
      (instance? Integer v) v
      (number? v)           (int v)
-     :else                   (try
-                               (Integer/parseInt v)
-                               (catch Exception _ (int default))))))
+     :else                 (try
+                             (Integer/parseInt v)
+                             (catch Exception _ (int default))))))
 
 (defn val->long
-  "Converts a value to a java Long.  Default value for failed conversion is -1."
+  "Converts a value to a java Long. Default value for failed conversion is -1."
   ([v]
-   (val->long v (long -1)))
+   (val->long v -1))
   ([v default]
    (cond
      (instance? Long v) v
      (number? v)       (long v)
-     :else               (try
-                           (Long/parseLong v)
-                           (catch Exception _ (long default))))))
+     :else             (try
+                         (Long/parseLong v)
+                         (catch Exception _ (long default))))))
 
 (defn val->float
-  "Converts a value to a java Float.  Default value for failed conversion is -1.0.
+  "Converts a value to a java Float. Default value for failed conversion is -1.0.
    Note Postgres real is equivalent to java Float."
   ([v]
-   (val->float v (float -1.0)))
+   (val->float v -1.0))
   ([v default]
    (cond
      (instance? Float v) v
      (number? v)        (float v)
-     :else                (try
-                            (Float/parseFloat v)
-                            (catch Exception _ (float default))))))
+     :else              (try
+                          (Float/parseFloat v)
+                          (catch Exception _ (float default))))))
 
 (defn val->double
-  "Converts a value to a java Double.  Default value for failed conversion is -1.0.
-   Note Postgres type float is equivalent to java Double."
+  "Converts a value to a java Double. Default value for failed conversion is -1.0.
+   Note Postgres float is equivalent to java Double."
   ([v]
-   (val->double v (double -1.0)))
+   (val->double v -1.0))
   ([v default]
    (cond
      (instance? Double v) v
      (number? v)          (double v)
-     :else                  (try
-                              (Double/parseDouble v)
-                              (catch Exception _ (double default))))))
+     :else                (try
+                            (Double/parseDouble v)
+                            (catch Exception _ (double default))))))
 
 (defn val->bool
-  "Converts a value to a java Long.  Default value for failed conversion is false."
+  "Converts a value to a java Boolean. Default value for failed conversion is false."
   ([v]
    (val->bool v false))
   ([v default]
@@ -90,17 +90,17 @@
 
 (def clj->json "Convert clj to JSON string." write-str)
 
+(defn json->jsonb
+  "Convert JSON string to PG jsonb object."
+  [json]
+  (doto (PGobject.)
+    (.setType "jsonb")
+    (.setValue json)))
+
 (defn clj->jsonb
   "Convert clj to PG jsonb object."
   [clj]
-  (doto (PGobject.)
-    (.setType "jsonb")
-    (.setValue (clj->json clj))))
-
-(defn json->jsonb
-  "Convert JSON string to PG jsonb."
-  [json]
-  (-> json json->clj clj->jsonb))
+  (-> clj clj->json json->jsonb))
 
 (defn str->pg-uuid
   "Convert UUID string to PG UUID object."
