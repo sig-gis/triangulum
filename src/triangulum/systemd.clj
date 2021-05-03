@@ -1,6 +1,7 @@
 (ns triangulum.systemd
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
+            [clojure.string     :as str]
             [clojure.tools.cli  :refer [parse-opts]]
             [triangulum.logging :refer [log-str]]
             [triangulum.utils   :refer [parse-as-sh-cmd]]))
@@ -16,24 +17,29 @@
         (log-str cmd)
         (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
           (log-str "out: "   out)
-          (log-str "error: " err)
-          (= err ""))))))
+          (log-str "error: " err))))))
+
+(def unit-file-template (str/trim "
+[Unit]
+Description=A service to launch a server written in clojure
+After=network.target
+
+[Service]
+Type=simple
+User=%s
+WorkingDirectory=%s
+ExecStart=/usr/local/bin/clojure -M:run-server -p %s -P %s -o logs
+
+[Install]
+WantedBy=multi-user.target
+"))
 
 (defn enable-systemd [repo path user offset]
   (if (nil? repo)
     (println "You must specify a repo with -r when enabling the systemd unit file.")
-    (let [unit-file (str "cljweb-" repo)]
-      (spit (io/file "/etc/systemd/system/" (str unit-file ".service"))
-            (format (str "[Unit]\n"
-                         "Description=A service to launch a server written in clojure\n"
-                         "After=network.target\n\n"
-                         "[Service]\n"
-                         "Type=simple\n"
-                         "User=%s\n"
-                         "WorkingDirectory=%s\n"
-                         "ExecStart=/usr/local/bin/clojure -M:run-server -p %s -P %s -o logs\n"
-                         "[Install]\n\n"
-                         "WantedBy=multi-user.target\n")
+    (let [service-name (str "cljweb-" repo)]
+      (spit (io/file "/etc/systemd/system/" (str service-name ".service"))
+            (format unit-file-template
                     user
                     (.getAbsolutePath (io/file path repo))
                     (+ offset 8080)
@@ -41,19 +47,23 @@
       (sh-wrapper "/"
                   {}
                   "systemctl daemon-reload"
-                  (str "systemctl enable " unit-file)
-                  (str "systemctl restart " unit-file)))))
+                  (str "systemctl enable " service-name)))))
 
 (defn disable-systemd [repo]
-  (if repo
-    (sh-wrapper "/" {} (str "systemctl disable cljweb-" repo))
-    (println "You must specify a repo with -r when disabling the systemd unit file.")))
+  (if (nil? repo)
+    (println "You must specify a repo with -r when disabling the systemd unit file.")
+    (let [service-name (str "cljweb-" repo)]
+      (sh-wrapper "/"
+                  {}
+                  (str "systemctl disable " service-name)
+                  "systemctl daemon-reload")
+      (io/delete-file (io/file "/etc/systemd/system/" (str service-name ".service")) true))))
 
 (defn systemctl [repo command]
   (sh-wrapper "/" {} (str "systemctl " command " cljweb-" repo " --all")))
 
 (def cli-options
-  [["-a" "--all" "Disables, starts, or stops all cljweb services when specified with the corresponding action."]
+  [["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
    ["-D" "--disable" "Disable systemd service."]
    ["-E" "--enable" "Enable systemd service. The service will be created if it doesn't exist."]
    ["-o" "--offset OFFSET" "Numerical offset from the standard ports of 8080 and 8443."
@@ -63,9 +73,10 @@
    ["-p" "--path PATH" "Alternative path for git repo location."
     :default "/sig"]
    ["-r" "--repo REPO" "Repository folder name in /sig or path specified with -p."]
+   ["-X" "--restart" "Restart systemd service."]
    ["-S" "--start" "Start systemd service."]
    ["-T" "--stop" "Stop systemd service."]
-   ["-u" "--user USER" "The user which to run the server as."
+   ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."
     :default "sig"]])
 
 (defn -main [& args]
@@ -91,6 +102,6 @@
 
       :else
       (do
-        (println "You must indicate which action to take with either --disable or --enable.")
+        (println "You must indicate which action to take with either --disable, --enable, --start, --stop, or --restart.")
         (println (str "Usage:\n" summary)))))
   (shutdown-agents))
