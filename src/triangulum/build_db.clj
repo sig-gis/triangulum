@@ -8,7 +8,7 @@
 
 (def ^:private path-env (System/getenv "PATH"))
 
-;; SH helper function
+;; Helper functions
 
 ;; TODO consolidate sh-wrapper functions
 (defn- sh-wrapper [dir env verbose & commands]
@@ -107,40 +107,71 @@
        (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
        (println)))
 
-(defn- build-everything [database user verbose]
+(defn- build-everything [database user password verbose]
   (println "Building database...")
-  (print "Please enter the postgres user's password:")
-  (flush)
-  (let [password (String/valueOf (.readPassword (System/console)))]
-    (->> (sh-wrapper "./src/sql"
-                     {:PGPASSWORD password}
-                     verbose
-                     "psql -h localhost -U postgres -f create_db.sql")
-         (println)))
+  (->> (sh-wrapper "./src/sql"
+                   {:PGPASSWORD password}
+                   verbose
+                   "psql -h localhost -U postgres -f create_db.sql")
+       (println))
   (load-tables       database user verbose)
   (load-functions    database user verbose)
   (load-default-data database user verbose))
 
-;; CLI param parsing
+;; Backup / restore functions
+
+(defn- read-file-tag [file]
+  (with-open [is (io/input-stream file)]
+    (let [array (byte-array 5)]
+      (.read is array 0 5)
+      (String. array))))
+
+(defn- run-backup [database file password verbose]
+  (println "Backing up database...")
+  (sh-wrapper "./"
+              {:PGPASSWORD password}
+              verbose
+              (format-str "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
+                          database
+                          file)))
+
+(defn- run-restore [file password verbose]
+  ;; TODO check database against 'pg_restore --list file'
+  (println "Restoring database...")
+  (if (= "PGDMP" (read-file-tag file))
+    (sh-wrapper "./"
+                {:PGPASSWORD password}
+                verbose
+                (str "pg_restore -U postgres -d postgres --clean --if-exists --create --jobs=12 "
+                     file))
+    (println "Invalid .dump file.")))
 
 (def ^:private cli-options
-  {:database ["-d" "--database DB" "Database name."]
-   :user     ["-u" "--user USER"   "User for the database. Defaults to the same as the database name."]
-   :verbose  ["-v" "--verbose"     "Print verbose PostgreSQL output."]})
+  {:database ["-d" "--database DB"       "Database name."]
+   :file     ["-f" "--file FILE"         "File used for backup and restore."]
+   :password ["-p" "--password PASSWORD" "Admin password for the postgres account."]
+   :user     ["-u" "--user USER"         "User for the database. Defaults to the same as the database name."]
+   :verbose  ["-v" "--verbose"           "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
-  {:build-all {:description "Build / rebuild the entire data base."
+  {:backup    {:description "Create a .dump backup file using pg_dump."
+               :requires    [:database :file]}
+   :build-all {:description "Build / rebuild the entire data base."
                :requires    [:database]}
    :functions {:description "Build / rebuild all functions."
-               :requires    [:database]}})
+               :requires    [:database]}
+   :restore   {:description "Restore a database from a .dump file created by pg_dump."
+               :requires    [:file]}})
 
 (defn -main
   "A set of tools for building and maintaining the project database with Postgres."
   [& args]
   (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "build-db")
-        {:keys [database user verbose]} options]
+        {:keys [database file password user verbose]} options]
     (case action
-      :build-all (build-everything database (or user database) verbose)
+      :build-all (build-everything database (or user database) password verbose)
       :functions (load-functions database (or user database) verbose)
+      :backup    (run-backup database file password verbose)
+      :restore   (run-restore file password verbose)
       nil))
   (shutdown-agents))
