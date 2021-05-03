@@ -109,10 +109,10 @@
 
 (defn- build-everything [database user password verbose]
   (println "Building database...")
-  (->> (sh-wrapper "/mshr/github/pyregence/src/sql"
+  (->> (sh-wrapper "./src/sql"
                    {:PGPASSWORD password}
                    verbose
-                   (str "psql -h localhost -U postgres -f create_db.sql"))
+                   "psql -h localhost -U postgres -f create_db.sql")
        (println))
   (load-tables       database user verbose)
   (load-functions    database user verbose)
@@ -122,9 +122,9 @@
 
 (defn- read-file-tag [file]
   (with-open [is (io/input-stream file)]
-    (let [b-ary (byte-array 5)]
-      (.read is b-ary 0 5)
-      (String. b-ary))))
+    (let [array (byte-array 5)]
+      (.read is array 0 5)
+      (String. array))))
 
 (defn- run-backup [database file password verbose]
   (println "Backing up database...")
