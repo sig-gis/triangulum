@@ -22,12 +22,15 @@
 
 ;;; Static Data
 
-;; FIXME, this will need to be defined somewhere
-(def pg-db {:dbtype                "postgresql"
-            :dbname                "pyregence"
-            :user                  "pyregence"
-            :password              "pyregence"
-            :reWriteBatchedInserts true})
+(defonce pg-db (atom {:dbtype                nil
+                      :dbname                nil
+                      :user                  nil
+                      :password              nil
+                      :reWriteBatchedInserts true}))
+
+;; FIXME: Verify db-spec using clojure.spec
+(defn set-pg-db! [db-spec]
+  (swap! pg-db merge db-spec))
 
 ;;; Select Queries
 
@@ -49,7 +52,7 @@
                                     sql-fn-name
                                     (str/join "," (map pr-str args)))]
     (when log? (log-str "SQL Call: " query-with-args))
-    (jdbc/execute! (jdbc/get-datasource pg-db)
+    (jdbc/execute! (jdbc/get-datasource @pg-db)
                    (into [query] (map #(condp = (type %)
                                          java.lang.Long (int %)
                                          java.lang.Double (float %)
@@ -90,7 +93,7 @@
   ([table rows fields]
    (let [get-fields (apply juxt fields)]
      (doseq [sm-rows (pg-partition rows fields)]
-       (jdbc/execute-one! (jdbc/get-datasource pg-db)
+       (jdbc/execute-one! (jdbc/get-datasource @pg-db)
                           (for-insert-multi! table fields (map get-fields sm-rows))
                           {})))))
 
@@ -126,7 +129,7 @@
   ([table rows id-key fields]
    (let [get-fields (apply juxt fields)]
      (doseq [sm-rows (pg-partition rows fields)]
-       (jdbc/execute-one! (jdbc/get-datasource pg-db)
+       (jdbc/execute-one! (jdbc/get-datasource @pg-db)
                           (for-update-multi! table fields id-key (map get-fields sm-rows))
                           {})))))
 
