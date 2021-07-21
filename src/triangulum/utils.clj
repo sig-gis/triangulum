@@ -43,6 +43,13 @@
                     (remove str/blank?)
                     (into acc)))))))
 
+(defn end-with
+  "Appends 'end' to the end of the string, if it is not already the end of the string."
+  [s end]
+  (str s
+       (when-not (str/ends-with? s end)
+         end)))
+
 ;; Response building
 
 (defn- clj->transit
