@@ -2,7 +2,7 @@
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
-            [clojure.tools.cli  :refer [parse-opts]]
+            [triangulum.cli     :refer [get-cli-options]]
             [triangulum.utils   :refer [parse-as-sh-cmd]]))
 
 (def ^:private path-env (System/getenv "PATH"))
@@ -74,37 +74,29 @@
                   "\nYou must now update the permissions for the key file with 'sudo chown -R user:group .key'"))))
 
 (def ^:private cli-options
-  [["-i" "--certbot-init" "Initialize certbot."]
-   ["-c" "--package-cert" "Package certbot certificate."]
-   ["-d" "--domain DOMAIN" "Domain for certbot registration."
-    :missing "You must provide a domain to create an SSL key."]
-   ["-p" "--path PATH" "Alternative path for certbot installation."
-    :default "/etc/letsencrypt"]])
+  {:domain ["-d" "--domain DOMAIN" "Domain for certbot registration."]
+   :path   ["-p" "--path PATH" "Alternative path for certbot installation."
+            :default "/etc/letsencrypt"]})
+
+(def ^:private cli-actions
+  {:certbot-init {:description "Initialize certbot."
+                  :requires    [:domain]}
+   :package-cert {:description "Package certbot certificate."
+                  :requires    [:domain]}})
 
 (defn -main
   "A set of tools for using certbot as the server certificate manager."
   [& args]
-  (let [{:keys [options summary errors]} (parse-opts args cli-options)
-        {:keys [certbot-init package-cert domain path]} options
-        path          (.getAbsolutePath (io/file path))
+  (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "https")
+        {:keys [domain path]} options
         certbot-check (validate-certbot)]
     (cond
-      (seq errors)
-      (do
-        (run! println errors)
-        (println (str "Usage:\n" summary)))
-
       certbot-check
       (println certbot-check)
 
-      certbot-init
-      (initial-certificate domain path)
-
-      package-cert
-      (package-certificate domain path)
-
-      :else
-      (do
-        (println "You must indicate which action to take with either --certbot-init or --package-cert.")
-        (println (str "Usage:\n" summary)))))
+      options
+      (let [path (.getAbsolutePath (io/file path))]
+        (case action
+          :certbot-init (initial-certificate domain path)
+          :package-cert (package-certificate domain path)))))
   (shutdown-agents))
