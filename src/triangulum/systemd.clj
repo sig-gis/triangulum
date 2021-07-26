@@ -6,10 +6,10 @@
             [triangulum.logging :refer [log-str]]
             [triangulum.utils   :refer [parse-as-sh-cmd]]))
 
-(def path-env (System/getenv "PATH"))
+(def ^:private path-env (System/getenv "PATH"))
 
 ;; TODO consolidate sh-wrapper functions
-(defn sh-wrapper [dir env & commands]
+(defn- sh-wrapper [dir env & commands]
   (io/make-parents (str dir "/dummy"))
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
@@ -19,7 +19,7 @@
           (log-str "out: "   out)
           (log-str "error: " err))))))
 
-(def unit-file-template (str/trim "
+(def ^:private unit-file-template (str/trim "
 [Unit]
 Description=A service to launch a server written in clojure
 After=network.target
@@ -34,7 +34,7 @@ ExecStart=/usr/local/bin/clojure -M:run-server -p %s -P %s -o logs
 WantedBy=multi-user.target
 "))
 
-(defn enable-systemd [repo path user offset]
+(defn- enable-systemd [repo path user offset]
   (if (nil? repo)
     (println "You must specify a repo with -r when enabling the systemd unit file.")
     (let [service-name (str "cljweb-" repo)]
@@ -49,7 +49,7 @@ WantedBy=multi-user.target
                   "systemctl daemon-reload"
                   (str "systemctl enable " service-name)))))
 
-(defn disable-systemd [repo]
+(defn- disable-systemd [repo]
   (if (nil? repo)
     (println "You must specify a repo with -r when disabling the systemd unit file.")
     (let [service-name (str "cljweb-" repo)]
@@ -59,10 +59,10 @@ WantedBy=multi-user.target
                   "systemctl daemon-reload")
       (io/delete-file (io/file "/etc/systemd/system/" (str service-name ".service")) true))))
 
-(defn systemctl [repo command]
+(defn- systemctl [repo command]
   (sh-wrapper "/" {} (str "systemctl " command " cljweb-" repo " --all")))
 
-(def cli-options
+(def ^:private cli-options
   [["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
    ["-D" "--disable" "Disable systemd service."]
    ["-E" "--enable" "Enable systemd service. The service will be created if it doesn't exist."]
@@ -79,7 +79,9 @@ WantedBy=multi-user.target
    ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."
     :default "sig"]])
 
-(defn -main [& args]
+(defn -main
+  "The entry point for using the tools provided in systemd.clj."
+  [& args]
   (let [{:keys [options summary errors]} (parse-opts args cli-options)
         {:keys [all disable enable repo offset path restart start stop user]} options
         command (or (and restart "restart")

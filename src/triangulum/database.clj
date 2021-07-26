@@ -18,7 +18,9 @@
 (defn- pg-partition [rows fields]
   (partition-all (quot 32767 (count fields)) rows))
 
-(def sql-primitive (comp val first first))
+(def sql-primitive
+  "Returns single value for queries that return a value instead of a table."
+  (comp val first first))
 
 ;;; Static Data
 

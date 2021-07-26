@@ -13,7 +13,9 @@
                   (System/getenv "CLOJARS_PASSWORD")))
         "CLOJARS_USERNAME and CLOJARS_PASSWORD must be set."))
 
-(defn -main [group-id artifact-id & _]
+(defn -main
+  "The entry point for using the tools provided by deploy.clj."
+  [group-id artifact-id & _]
   (if-let [error-message (check-inputs group-id artifact-id)]
     (println "Error:" error-message)
     (let [software-version (.format (SimpleDateFormat. "yyyyMMdd") (Date.))
