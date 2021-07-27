@@ -62,7 +62,8 @@
                           " -d " domain))
 
          (when-not cert-only
-           ;; Certbot does not create its /etc folder until a certificate is created.
+           ;; The initial certificates are created without the deploy hook to repackage the cert.
+           ;; Create the hook, and then package then the first time.
            (nil? (spit sh-path
                        (str "#!/bin/sh"
                             "\ncd " repo-path
@@ -70,8 +71,6 @@
            (sh-wrapper "./"
                        {}
                        (str "chmod +x " sh-path))
-
-           ;; The initial certificates are created without the deploy hook. Package then the first time.
            (package-certificate domain certbot-dir)
            (println "\n*** Initialization complete ***"
                     "\nYou must now update the permissions for the key file with 'sudo chown -R user:group .key'")))))
