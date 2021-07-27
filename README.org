@@ -38,7 +38,7 @@ set path to "".
 
 *** triangulum.config
 
-To make organization application configurations simpler, you can create a
+To make organizing an application's configurations simpler, create a
 ~config.edn~ file in the project's root directory. The file is just a hashmap.
 
 #+begin_src clojure
@@ -58,11 +58,20 @@ configuration keys as follows:
 (triangulum.config/get-config :database :user) ;; Returns "triangulum"
 #+end_src
 
-If you are attempting to use either ~build-db~ or ~call-sql~, you will need a
-~config.edn~ file that includes the proper database entries. Refer to
-~config.default.edn~ to provide you with the necessary configuration entries.
-
 *** triangulum.database
+
+To use ~triangulum.database~, first add your database connection
+configurations to a ~config.edn~ file in your project's root directory.
+
+For example:
+#+begin_src clojure
+;; config.edn
+{:database {:host     "localhost"
+            :port     5432
+            :dbname   "pyregence"
+            :user     "pyregence"
+            :password "pyregence"}}
+#+end_src
 
 To run a postgres sql command use ~call-sql~. Currently ~call-sql~
 only works with postgres. With the second parameter can be an
