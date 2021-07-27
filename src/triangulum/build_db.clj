@@ -23,9 +23,12 @@
 ;; Namespace file sorting functions
 
 (defn- get-sql-files [dir-name]
-  (->> (io/file dir-name)
-       (file-seq)
-       (filter (fn [^File f] (str/ends-with? (.getName f) ".sql")))))
+  (let [file (io/file dir-name)]
+    (if (.exists file)
+      (filter (fn [^File f] (str/ends-with? (.getName f) ".sql"))
+              (file-seq file))
+      (do (println "Warning:" dir-name "is not found.")
+          []))))
 
 (defn- extract-toplevel-sql-comments [file]
   (->> (io/reader file)
@@ -109,14 +112,17 @@
 
 (defn- build-everything [database user password verbose]
   (println "Building database...")
-  (->> (sh-wrapper "./src/sql"
-                   {:PGPASSWORD password}
-                   verbose
-                   "psql -h localhost -U postgres -f create_db.sql")
-       (println))
-  (load-tables       database user verbose)
-  (load-functions    database user verbose)
-  (load-default-data database user verbose))
+  (let [file (io/file "./src/sql")]
+    (if (.exists file)
+      (do (->> (sh-wrapper "./src/sql"
+                           {:PGPASSWORD password}
+                           verbose
+                           "psql -h localhost -U postgres -f create_db.sql")
+               (println))
+          (load-tables       database user verbose)
+          (load-functions    database user verbose)
+          (load-default-data database user verbose))
+      (println "Error folder ./src/sql is missing."))))
 
 ;; Backup / restore functions
 
