@@ -5,9 +5,9 @@
   (:require [clojure.java.io :as io]
             [clojure.pprint  :as pp]))
 
-(defonce synchronized-log-writer (agent nil))
-(defonce output-path             (atom ""))
-(defonce clean-up-service        (atom nil))
+(defonce ^:private synchronized-log-writer (agent nil))
+(defonce ^:private output-path             (atom ""))
+(defonce ^:private clean-up-service        (atom nil))
 
 (defn- max-length [string length]
   (subs string 0 (min length (count string))))
