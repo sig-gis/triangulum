@@ -2,6 +2,7 @@
   (:require [clojure.string       :as str]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
+            [triangulum.config    :refer [get-config]]
             [triangulum.logging   :refer [log-str]]
             [triangulum.utils     :refer [format-str]]))
 
@@ -24,11 +25,12 @@
 
 ;;; Static Data
 
-;; FIXME, this will need to be defined somewhere
 (def pg-db {:dbtype                "postgresql"
-            :dbname                "pyregence"
-            :user                  "pyregence"
-            :password              "pyregence"
+            :host                  (get-config :database :host)
+            :port                  (get-config :database :port)
+            :dbname                (get-config :database :dbname)
+            :user                  (get-config :database :user)
+            :password              (get-config :database :password)
             :reWriteBatchedInserts true})
 
 ;;; Select Queries
