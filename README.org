@@ -58,6 +58,8 @@ configuration keys as follows:
 (triangulum.config/get-config :database :user) ;; Returns "triangulum"
 #+end_src
 
+See each section below for an example configuration if one is required for use.
+
 *** triangulum.database
 
 To use ~triangulum.database~, first add your database connection
