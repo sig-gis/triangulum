@@ -25,13 +25,14 @@
 
 ;;; Static Data
 
-(def pg-db {:dbtype                "postgresql"
-            :host                  (get-config :database :host)
-            :port                  (get-config :database :port)
-            :dbname                (get-config :database :dbname)
-            :user                  (get-config :database :user)
-            :password              (get-config :database :password)
-            :reWriteBatchedInserts true})
+(def ^:private
+  pg-db {:dbtype                "postgresql"
+         :host                  (get-config :database :host)
+         :port                  (get-config :database :port)
+         :dbname                (get-config :database :dbname)
+         :user                  (get-config :database :user)
+         :password              (get-config :database :password)
+         :reWriteBatchedInserts true})
 
 ;;; Select Queries
 
