@@ -27,6 +27,5 @@
    Examples:
      (get-config :mail) -> {:host \"google.com\" :port 543}
      (get-config :mail :host) -> \"google.com\""
-  [k & all-keys]
-  (get-in (cache-config)
-          (conj (if (seq? all-keys) all-keys '()) k)))
+  [& all-keys]
+  (get-in (cache-config) all-keys))
