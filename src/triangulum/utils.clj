@@ -1,9 +1,8 @@
 (ns triangulum.utils
-  (:import java.io.ByteArrayInputStream
-           java.io.ByteArrayOutputStream)
-  (:require [cognitect.transit :as transit]
-            [clojure.string    :as str]
-            [clojure.data.json :as json]))
+  (:import java.io.ByteArrayOutputStream)
+  (:require [cognitect.transit  :as transit]
+            [clojure.string     :as str]
+            [clojure.data.json  :as json]))
 
 ;; Text parsing
 
@@ -53,20 +52,13 @@
 
 ;; Response building
 
-(defn clj->transit
+(defn- clj->transit
   "Converts a clj body to transit."
   [body]
   (let [out    (ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]
     (transit/write writer body)
     (.toString out)))
-
-(defn transit->clj
-  "Converts a transit body to clj"
-  [^java.lang.String body]
-  (let [in (ByteArrayInputStream. (.getBytes body))
-        reader (transit/reader in :json)]
-    (transit/read reader)))
 
 (defn data-response
   "Create a response object.
