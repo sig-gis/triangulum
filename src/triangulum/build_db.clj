@@ -98,7 +98,7 @@
 
 (defn- load-functions [database user verbose]
   (println "Loading functions...")
-  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" database user database %)
+  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
             (topo-sort-files-by-namespace "./src/sql/functions"))
        (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
        (println)))
@@ -123,7 +123,7 @@
           (load-tables       database user verbose)
           (load-functions    database user verbose)
           (load-default-data database user verbose))
-      (println "Error folder ./src/sql/create_db.sql is missing."))))
+      (println "Error file ./src/sql/create_db.sql is missing."))))
 
 ;; Backup / restore functions
 
