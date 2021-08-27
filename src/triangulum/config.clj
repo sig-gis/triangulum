@@ -24,11 +24,10 @@
 (defn load-config
   "Re/loads a configuration file. Defaults to `config.edn`."
   ([]
-   (load-config config-file))
+   (load-config @config-file))
   ([new-config-file]
    (reset! config-file new-config-file)
-   (reset! config-cache nil)
-   (cache-config)))
+   (reset! config-cache nil)))
 
 (defn get-config
   "Retrieves the key `k` from the config file.
