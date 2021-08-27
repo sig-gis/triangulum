@@ -1,10 +1,21 @@
 (ns triangulum.database
   (:require [clojure.string       :as str]
+            [clojure.spec.alpha   :as s]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
             [triangulum.config    :refer [get-config]]
             [triangulum.logging   :refer [log-str]]
             [triangulum.utils     :refer [format-str]]))
+
+;;; Specs
+
+(s/def ::host string?)
+(s/def ::port nat-int?)
+(s/def ::dbname string?)
+(s/def ::user string?)
+(s/def ::password string?)
+(s/def ::db-config (s/keys :req-un [::dbname ::user ::password]
+                           :opt-un [::host ::port]))
 
 ;;; Helper Functions
 
@@ -25,14 +36,15 @@
 
 ;;; Static Data
 
-(def ^:private
-  pg-db {:dbtype                "postgresql"
-         :host                  (get-config :database :host)
-         :port                  (get-config :database :port)
-         :dbname                (get-config :database :dbname)
-         :user                  (get-config :database :user)
-         :password              (get-config :database :password)
-         :reWriteBatchedInserts true})
+(defn- pg-db []
+  (let [db-config (s/conform ::db-config (get-config :database))]
+    (if (= :clojure.spec.alpha/invalid db-config)
+      (throw (Exception. "config.edn is invalid. Error: " (s/explain ::db-config (get-config :database))))
+      (merge {:dbtype                "postgresql"
+              :host                  "localhost"
+              :port                  5432
+              :reWriteBatchedInserts true}
+             db-config))))
 
 ;;; Select Queries
 
@@ -54,7 +66,7 @@
                                     sql-fn-name
                                     (str/join "," (map pr-str args)))]
     (when log? (log-str "SQL Call: " query-with-args))
-    (jdbc/execute! (jdbc/get-datasource pg-db)
+    (jdbc/execute! (jdbc/get-datasource (pg-db))
                    (into [query] (map #(condp = (type %)
                                          java.lang.Long (int %)
                                          java.lang.Double (float %)
@@ -95,7 +107,7 @@
   ([table rows fields]
    (let [get-fields (apply juxt fields)]
      (doseq [sm-rows (pg-partition rows fields)]
-       (jdbc/execute-one! (jdbc/get-datasource pg-db)
+       (jdbc/execute-one! (jdbc/get-datasource (pg-db))
                           (for-insert-multi! table fields (map get-fields sm-rows))
                           {})))))
 
