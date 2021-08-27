@@ -114,19 +114,18 @@ the database server's superuser account is named "postgres" and that
 you know its database connection password before proceeding.
 
 Once the Postgresql database server is running on your machine, you
-should navigate to the toplevel directory (i.e., the directory
+should navigate to the top level directory (i.e., the directory
 containing this README) and run the database build command as follows:
 
 #+begin_src sh
-clojure -M:build-db build-all
+clojure -M:build-db build-all -d database [-u user] [-p admin password]
 #+end_src
 
-This will begin by creating a new database and role called ceo and
-then add the postgis and pgcrypto extensions to it. Next, the script
-will populate the database with the schemas, tables, and functions
-that are necessary for storing and processing ceo's data. Finally, it
-will load some default data into these tables that is necessary for
-the website to function properly.
+This will call ./src/sql/create_db.sql, stored in the individual project
+repository.  A variable ~database~ is set for the command line call to
+create_db.sql.  This allows your project to generate the project database
+with a different name, depending on your deployment.  To use this variable
+type ~:database~ in create_db.sql where needed.
 
 *** triangulum.https
 
@@ -172,7 +171,7 @@ format.
 Add alias to ~deps.edn~.
 
 #+begin_src clojure
-{:aliases {:build-db {:main-opts ["-m" "triangulum.build-db" "-d" "MYDB"]}
+{:aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}
            :https    {:main-opts ["-m" "triangulum.https"]}}}
 #+end_src
 
