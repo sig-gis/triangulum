@@ -1,6 +1,9 @@
 name: clj-kondo linter
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   clj-lint:
