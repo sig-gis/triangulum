@@ -7,16 +7,6 @@
             [triangulum.logging   :refer [log-str]]
             [triangulum.utils     :refer [format-str]]))
 
-;;; Specs
-
-(s/def ::host string?)
-(s/def ::port nat-int?)
-(s/def ::dbname string?)
-(s/def ::user string?)
-(s/def ::password string?)
-(s/def ::db-config (s/keys :req-un [::dbname ::user ::password]
-                           :opt-un [::host ::port]))
-
 ;;; Helper Functions
 
 (defn- str-places
@@ -37,14 +27,11 @@
 ;;; Static Data
 
 (defn- pg-db []
-  (let [db-config (s/conform ::db-config (get-config :database))]
-    (if (= :clojure.spec.alpha/invalid db-config)
-      (throw (Exception. "config.edn is invalid. Error: " (s/explain ::db-config (get-config :database))))
-      (merge {:dbtype                "postgresql"
-              :host                  "localhost"
-              :port                  5432
-              :reWriteBatchedInserts true}
-             db-config))))
+  (merge {:dbtype                "postgresql"
+          :host                  "localhost"
+          :port                  5432
+          :reWriteBatchedInserts true}
+         (get-config :database)))
 
 ;;; Select Queries
 

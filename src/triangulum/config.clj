@@ -1,6 +1,23 @@
 (ns triangulum.config
-  (:require [clojure.java.io :as io]
-            [clojure.edn     :as edn]))
+  (:require [clojure.java.io    :as io]
+            [clojure.edn        :as edn]
+            [clojure.spec.alpha :as s]))
+
+;;; Specs
+
+(s/def ::host     string?)
+(s/def ::port     nat-int?)
+(s/def ::dbname   string?)
+(s/def ::user     string?)
+(s/def ::password string?)
+(s/def ::domain   string?)
+
+(s/def ::database (s/keys :req-un [::dbname ::user ::password]
+                           :opt-un [::host ::port]))
+(s/def ::http     (s/keys :req-un [::port]))
+(s/def ::ssl      (s/keys :req-un [::domain]))
+
+(s/def ::config (s/keys :opt-un [::database ::http ::ssl]))
 
 ;;; Private vars
 
@@ -10,10 +27,12 @@
 ;;; Helper Fns
 
 (defn- read-config []
-  (if (.exists (io/file config-file))
-    (edn/read-string (slurp config-file))
-    (do (println "Error: Cannot find file config.edn.")
-        {})))
+  (if-not (.exists (io/file config-file))
+    (println "Error: Cannot find file config.edn.")
+    (let [config (->> (slurp config-file) (edn/read-string) (s/conform ::config))]
+      (if (= :clojure.spec.alpha/invalid config)
+        (do (println "Error: Invalid config.edn file") (s/explain ::config config))
+        config))))
 
 (defn- cache-config []
   (or @config-cache
