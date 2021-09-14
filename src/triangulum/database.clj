@@ -135,6 +135,8 @@
 
 (defn p-update-rows!
   "A parallel implementation of update-rows!"
-  [table rows id-key fields]
-  (doall (pmap (fn [row-group] (update-rows! table row-group id-key fields))
-               (pg-partition rows fields))))
+  ([table rows id-key]
+   (p-update-rows! table rows id-key (keys (first rows))))
+  ([table rows id-key fields]
+   (doall (pmap (fn [row-group] (update-rows! table row-group id-key fields))
+                (pg-partition rows fields)))))
