@@ -90,21 +90,20 @@
 
 (def clj->json "Convert clj to JSON string." write-str)
 
+(defn str->pg
+  "Convert string to PG object of pg-type"
+  [s pg-type]
+  {:pre [(every? string? [s pg-type])]}
+  (doto (PGobject.)
+    (.setType pg-type)
+    (.setValue s)))
+
 (defn json->jsonb
   "Convert JSON string to PG jsonb object."
   [json]
-  (doto (PGobject.)
-    (.setType "jsonb")
-    (.setValue json)))
+  (str->pg json "jsonb"))
 
 (defn clj->jsonb
   "Convert clj to PG jsonb object."
   [clj]
   (-> clj clj->json json->jsonb))
-
-(defn str->pg-uuid
-  "Convert UUID string to PG UUID object."
-  [uuid-str]
-  (doto (PGobject.)
-    (.setType "uuid")
-    (.setValue uuid-str)))
