@@ -1,6 +1,5 @@
 (ns triangulum.database
   (:require [clojure.string       :as str]
-            [clojure.spec.alpha   :as s]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
             [triangulum.config    :refer [get-config]]
@@ -28,8 +27,6 @@
 
 (defn- pg-db []
   (merge {:dbtype                "postgresql"
-          :host                  "localhost"
-          :port                  5432
           :reWriteBatchedInserts true}
          (get-config :database)))
 
