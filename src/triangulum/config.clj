@@ -12,7 +12,7 @@
 (defn- read-config [new-config-file]
   (if (.exists (io/file new-config-file))
     (edn/read-string (slurp new-config-file))
-    (do (println "Error: Cannot find file config.edn.")
+    (do (println "Error: Cannot find file " new-config-file)
         {})))
 
 (defn- cache-config []
@@ -22,7 +22,7 @@
 ;;; Public Fns
 
 (defn load-config
-  "Re/loads a configuration file. Defaults to `config.edn`."
+  "Re/loads a configuration file. Defaults to the last loaded file, or config.edn."
   ([]
    (load-config @config-file))
   ([new-config-file]
