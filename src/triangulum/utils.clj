@@ -1,8 +1,8 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream)
-  (:require [cognitect.transit  :as transit]
-            [clojure.string     :as str]
-            [clojure.data.json  :as json]))
+  (:require [cognitect.transit :as transit]
+            [clojure.string    :as str]
+            [clojure.data.json :as json]))
 
 ;; Text parsing
 
