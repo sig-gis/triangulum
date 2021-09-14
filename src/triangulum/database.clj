@@ -97,9 +97,11 @@
 
 (defn p-insert-rows!
   "A parallel implementation of insert-rows!"
-  [table rows fields]
-  (doall (pmap (fn [row-group] (insert-rows! table row-group fields))
-               (pg-partition rows fields))))
+  ([table rows]
+   (p-insert-rows! table rows (keys (first rows))))
+  ([table rows fields]
+   (doall (pmap (fn [row-group] (insert-rows! table row-group fields))
+                (pg-partition rows fields)))))
 
 ;;; Update Queries
 
@@ -133,6 +135,8 @@
 
 (defn p-update-rows!
   "A parallel implementation of update-rows!"
-  [table rows id-key fields]
-  (doall (pmap (fn [row-group] (update-rows! table row-group id-key fields))
-               (pg-partition rows fields))))
+  ([table rows id-key]
+   (p-update-rows! table rows id-key (keys (first rows))))
+  ([table rows id-key fields]
+   (doall (pmap (fn [row-group] (update-rows! table row-group id-key fields))
+                (pg-partition rows fields)))))
