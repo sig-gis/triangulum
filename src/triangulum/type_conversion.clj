@@ -93,6 +93,7 @@
 (defn str->pg
   "Convert string to PG object of pg-type"
   [s pg-type]
+  {:pre [(every? string? [s pg-type])]}
   (doto (PGobject.)
     (.setType pg-type)
     (.setValue s)))
@@ -106,8 +107,3 @@
   "Convert clj to PG jsonb object."
   [clj]
   (-> clj clj->json json->jsonb))
-
-(defn str->pg-uuid
-  "Convert UUID string to PG UUID object."
-  [uuid-str]
-  (str->pg uuid-str "uuid"))
