@@ -97,9 +97,11 @@
 
 (defn p-insert-rows!
   "A parallel implementation of insert-rows!"
-  [table rows fields]
-  (doall (pmap (fn [row-group] (insert-rows! table row-group fields))
-               (pg-partition rows fields))))
+  ([table rows]
+   (p-insert-rows! table rows (keys (first rows))))
+  ([table rows fields]
+   (doall (pmap (fn [row-group] (insert-rows! table row-group fields))
+                (pg-partition rows fields)))))
 
 ;;; Update Queries
 
