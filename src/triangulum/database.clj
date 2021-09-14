@@ -25,14 +25,10 @@
 
 ;;; Static Data
 
-(def ^:private
-  pg-db {:dbtype                "postgresql"
-         :host                  (get-config :database :host)
-         :port                  (get-config :database :port)
-         :dbname                (get-config :database :dbname)
-         :user                  (get-config :database :user)
-         :password              (get-config :database :password)
-         :reWriteBatchedInserts true})
+(defn- pg-db []
+  (merge {:dbtype                "postgresql"
+          :reWriteBatchedInserts true}
+         (get-config :database)))
 
 ;;; Select Queries
 
@@ -54,7 +50,7 @@
                                     sql-fn-name
                                     (str/join "," (map pr-str args)))]
     (when log? (log-str "SQL Call: " query-with-args))
-    (jdbc/execute! (jdbc/get-datasource pg-db)
+    (jdbc/execute! (jdbc/get-datasource (pg-db))
                    (into [query] (map #(condp = (type %)
                                          java.lang.Long (int %)
                                          java.lang.Double (float %)
@@ -95,7 +91,7 @@
   ([table rows fields]
    (let [get-fields (apply juxt fields)]
      (doseq [sm-rows (pg-partition rows fields)]
-       (jdbc/execute-one! (jdbc/get-datasource pg-db)
+       (jdbc/execute-one! (jdbc/get-datasource (pg-db))
                           (for-insert-multi! table fields (map get-fields sm-rows))
                           {})))))
 

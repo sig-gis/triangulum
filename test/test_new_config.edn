@@ -1,2 +1,6 @@
 {:testing 4321
- :database {:host "production"}}
+ :database {:host     "production"
+            :port     5432
+            :dbname   "dbname"
+            :user     "user"
+            :password "password"}}
