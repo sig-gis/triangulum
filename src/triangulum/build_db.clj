@@ -3,8 +3,9 @@
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
-            [triangulum.cli   :refer [get-cli-options]]
-            [triangulum.utils :refer [parse-as-sh-cmd format-str]]))
+            [triangulum.cli    :refer [get-cli-options]]
+            [triangulum.config :refer [get-config]]
+            [triangulum.utils  :refer [parse-as-sh-cmd format-str]]))
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -89,40 +90,40 @@
 
 ;; Build functions
 
-(defn- load-tables [database user verbose]
+(defn- load-tables [database user user-pass verbose]
   (println "Loading tables...")
   (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
             (topo-sort-files-by-namespace "./src/sql/tables"))
-       (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
        (println)))
 
-(defn- load-functions [database user verbose]
+(defn- load-functions [database user user-pass verbose]
   (println "Loading functions...")
   (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
             (topo-sort-files-by-namespace "./src/sql/functions"))
-       (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
        (println)))
 
-(defn- load-default-data [database user verbose]
+(defn- load-default-data [database user user-pass verbose]
   (println "Loading default data...")
   (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
             (topo-sort-files-by-namespace "./src/sql/default_data"))
-       (apply sh-wrapper "./" {:PGPASSWORD user} verbose)
+       (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
        (println)))
 
-(defn- build-everything [database user password verbose]
+(defn- build-everything [database user user-pass admin-pass verbose]
   (println "Building database...")
   (let [file (io/file "./src/sql/create_db.sql")]
     (if (.exists file)
       (do (->> (sh-wrapper "./src/sql"
-                           {:PGPASSWORD password}
+                           {:PGPASSWORD admin-pass}
                            verbose
                            (format "psql -h localhost --set=database=%s -U postgres -f create_db.sql"
                                    database))
                (println))
-          (load-tables       database user verbose)
-          (load-functions    database user verbose)
-          (load-default-data database user verbose))
+          (load-tables       database user user-pass verbose)
+          (load-functions    database user user-pass verbose)
+          (load-default-data database user user-pass verbose))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
 ;; Backup / restore functions
@@ -133,52 +134,64 @@
       (.read is array 0 5)
       (String. array))))
 
-(defn- run-backup [database file password verbose]
+(defn- run-backup [database file admin-pass verbose]
   (println "Backing up database...")
   (sh-wrapper "./"
-              {:PGPASSWORD password}
+              {:PGPASSWORD admin-pass}
               verbose
               (format-str "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
                           database
                           file)))
 
-(defn- run-restore [file password verbose]
+(defn- run-restore [file admin-pass verbose]
   ;; TODO check database against 'pg_restore --list file'
   (println "Restoring database...")
   (if (= "PGDMP" (read-file-tag file))
     (sh-wrapper "./"
-                {:PGPASSWORD password}
+                {:PGPASSWORD admin-pass}
                 verbose
                 (str "pg_restore -U postgres -d postgres --clean --if-exists --create --jobs=12 "
                      file))
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
-  {:database ["-d" "--database DB"       "Database name."]
-   :file     ["-f" "--file FILE"         "File used for backup and restore."]
-   :password ["-p" "--password PASSWORD" "Admin password for the postgres account."]
-   :user     ["-u" "--user USER"         "User for the database. Defaults to the same as the database name."]
-   :verbose  ["-v" "--verbose"           "Print verbose PostgreSQL output."]})
+  {:dbname     ["-d" "--dbname DB"         "Database name."]
+   :file       ["-f" "--file FILE"           "File used for backup and restore."]
+   :admin-pass ["-a" "--admin-pass PASSWORD" "Admin password for the postgres account."]
+   :user       ["-u" "--user USER"           "User for the database. Defaults to the same as the database name."]
+   :password   ["-p" "--password PASSWORD"   "Password for the database. Defaults to the same as the database name."]
+   :verbose    ["-v" "--verbose"             "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
   {:backup    {:description "Create a .dump backup file using pg_dump."
-               :requires    [:database :file]}
+               :requires    [:dbname :file]}
    :build-all {:description "Build / rebuild the entire data base."
-               :requires    [:database]}
+               :requires    [:dbname]}
    :functions {:description "Build / rebuild all functions."
-               :requires    [:database]}
+               :requires    [:dbname]}
    :restore   {:description "Restore a database from a .dump file created by pg_dump."
                :requires    [:file]}})
 
 (defn -main
   "A set of tools for building and maintaining the project database with Postgres."
   [& args]
-  (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "build-db")
-        {:keys [database file password user verbose]} options]
+  (let [{:keys [action options]} (get-cli-options args
+                                                  cli-options
+                                                  cli-actions
+                                                  "build-db"
+                                                  (get-config :database))
+        {:keys [dbname file password admin-pass user verbose]} options]
     (case action
-      :build-all (build-everything database (or user database) password verbose)
-      :functions (load-functions database (or user database) verbose)
-      :backup    (run-backup database file password verbose)
-      :restore   (run-restore file password verbose)
+      :build-all (build-everything dbname
+                                   (or user dbname)
+                                   (or password dbname) ; user-pass
+                                   admin-pass
+                                   verbose)
+      :functions (load-functions dbname
+                                 (or user dbname)
+                                 (or password dbname) ; user-pass
+                                 verbose)
+      :backup    (run-backup dbname file admin-pass verbose)
+      :restore   (run-restore file admin-pass verbose)
       nil))
   (shutdown-agents))

@@ -26,7 +26,8 @@
         actions (map (fn [[action info]]
                        (format "   %-26s%s" (name action) (:description info)))
                      cli-actions)]
-    (->> (concat [(str "Usage: clojure -M:" alias-str " action [options]")
+    (->> (concat [(str "Usage: `clojure -M:" alias-str " action [options]`.")
+                  "Note that all options can also be read in from config.end"
                   ""
                   "Actions:"]
                  actions
