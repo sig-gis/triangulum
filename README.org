@@ -13,29 +13,6 @@ sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
                      :sha "5cc44fdb0aa43bb8613cb888dbb945fa57400ed9"}
 #+end_src
 
-*** triangulum.logging
-
-To send a message to the logger use ~log~ or ~log-str~. ~log~ can take an
-optional argument to specify not default behavior. The default values are
-shown below. ~log-str~ always uses the default values.
-
-#+begin_src clojure
-(log "Hello world" {:newline? true :pprint? false :force-stdout? false})
-(log-str "Hello" "world")
-#+end_src
-
-By default the above will log to standard out. If you would like to
-have the system log to YYYY-DD-MM.log, set a log path. You can either specify
-a path relative to the toplevel directory of the main project repository or an
-absolute path on your filesystem. The logger will keep the 10 most recent logs
-(where a new log is created every day at midnight). To stop the logging server
-set path to "".
-
-#+begin_src clojure
-(set-log-path "logs")
-(set-log-path "")
-#+end_src
-
 *** triangulum.config
 
 To make organizing an application's configurations simpler, create a
@@ -59,6 +36,29 @@ configuration keys as follows:
 #+end_src
 
 See each section below for an example configuration if one is required for use.
+
+*** triangulum.logging
+
+To send a message to the logger use ~log~ or ~log-str~. ~log~ can take an
+optional argument to specify not default behavior. The default values are
+shown below. ~log-str~ always uses the default values.
+
+#+begin_src clojure
+(log "Hello world" {:newline? true :pprint? false :force-stdout? false})
+(log-str "Hello" "world")
+#+end_src
+
+By default the above will log to standard out. If you would like to
+have the system log to YYYY-DD-MM.log, set a log path. You can either specify
+a path relative to the toplevel directory of the main project repository or an
+absolute path on your filesystem. The logger will keep the 10 most recent logs
+(where a new log is created every day at midnight). To stop the logging server
+set path to "".
+
+#+begin_src clojure
+(set-log-path "logs")
+(set-log-path "")
+#+end_src
 
 *** triangulum.database
 
@@ -126,6 +126,9 @@ repository.  A variable ~database~ is set for the command line call to
 create_db.sql.  This allows your project to generate the project database
 with a different name, depending on your deployment.  To use this variable
 type ~:database~ in create_db.sql where needed.
+
+triangulum.build-db can also be configured through config.edn.  It uses
+the same configuration as triangulum.database (see above).
 
 *** triangulum.https
 
