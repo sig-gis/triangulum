@@ -26,7 +26,8 @@
         actions (map (fn [[action info]]
                        (format "   %-26s%s" (name action) (:description info)))
                      cli-actions)]
-    (->> (concat [(str "Usage: clojure -M:" alias-str " action [options]")
+    (->> (concat [(str "Usage: `clojure -M:" alias-str " action [options]`.")
+                  "Note that all options can also be passed into get-cli-options as config."
                   ""
                   "Actions:"]
                  actions
@@ -59,15 +60,16 @@
 
 (defn get-cli-options
   "Checks for a valid call from the CLI and returns the users options."
-  [args cli-options cli-actions alias-str]
+  [args cli-options cli-actions alias-str & [config]]
   (let [{:keys [arguments errors options]} (->> cli-options
                                                 (vals)
                                                 (parse-opts args))
-        action    (keyword (first arguments))
-        error-msg (check-errors arguments errors options action cli-options cli-actions)]
+        combined-options (merge config options) ; config file is default, cli params can overwrite.
+        action           (keyword (first arguments))
+        error-msg        (check-errors arguments errors combined-options action cli-options cli-actions)]
     (if error-msg
       (do
         (println "Error:" error-msg "\n")
         (println (usage-str cli-options cli-actions alias-str)))
-      {:options options
+      {:options combined-options
        :action  action})))
