@@ -67,7 +67,7 @@
            (nil? (spit sh-path
                        (str "#!/bin/sh"
                             "\ncd " repo-path
-                            "\nclojure -M:https --package-cert -d " domain " -p " certbot-dir)))
+                            "\nclojure -M:https package-cert -d " domain " -p " certbot-dir)))
            (sh-wrapper "./"
                        {}
                        (str "chmod +x " sh-path))

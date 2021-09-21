@@ -139,32 +139,44 @@ To automatically create an SSL certificate signed by [[https://letsencrypt.org][
 simply run the following command from your shell:
 
 #+begin_src sh
-clojure -M:https --certbot-init -d mydomain.com [-p certbot-dir]
+sudo clojure -M:https certbot-init -d mydomain.com [-p certbot-dir] [--cert-only]
 #+end_src
 
-The certbot creation process will run automatically and silently. After completion,
-a shell script, [mydomain].sh, will be created in the certbot deploy hooks folder
-(default /etc/letsencrypt/renewal-hooks/deploy). This script will run
-~clojure -M:https --package-cert~ Scripts in this folder will run automatically
-when a new certificate is created.
+The certbot creation process will run automatically and silently.
 
 Note: If your certbot installation stores its config files in a
 directory other than /etc/letsencrypt, you should specify it with the
 optional certbot-dir argument to certbot-init.
+
+Certbot runs as a background task every 12 hours and will renew any
+certificate that is set to expire in 30 days or less. Each time the
+certificate is renewed, any script in ~/etc/letsencrypt/renewal-hooks/deploy~
+will be run automatically to repackage the updated certificate into the correct
+format.
+
+**** Default renewal hook
+
+If certbot runs successfully, and if --cert-only is not specified a shell script,
+[mydomain].sh, will be created in the certbot deploy hooks folder.
+This script will run ~clojure -M:https package-cert~. Scripts in this folder will
+run automatically when a new certificate is created.
 
 While there should be no need to do so, if you ever want to perform
 this repackaging step manually, simply run this command from your
 shell:
 
 #+begin_src sh
-clojure -M:https --package-cert -d mydomain.com [-p certbot-dir]
+sudo clojure -M:https package-cert -d mydomain.com [-p certbot-dir]
 #+end_src
 
-Certbot runs as a background task every 12 hours and will renew any
-certificate that is set to expire in 30 days or less. Each time the
-certificate is renewed, certbot-deploy-hook.sh will be run
-automatically to repackage the updated certificate into the correct
-format.
+**** Custom renewal hook
+
+Create a shell script in ~/etc/letsencrypt/renewal-hooks/deploy~ and update permissions.
+
+#+begin_src sh
+sudo nano /etc/letsencrypt/renewal-hooks/deploy/custom.sh
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/custom.sh
+#+end_src
 
 *** triangulum.https / triangulum.build-db aliases
 
