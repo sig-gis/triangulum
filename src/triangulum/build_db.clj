@@ -1,11 +1,12 @@
 (ns triangulum.build-db
-  (:import java.io.File)
+  (:import [java.io File])
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
-            [triangulum.cli    :refer [get-cli-options]]
-            [triangulum.config :refer [get-config]]
-            [triangulum.utils  :refer [parse-as-sh-cmd format-str]]))
+            [triangulum.cli     :refer [get-cli-options]]
+            [triangulum.config  :refer [get-config]]
+            [triangulum.migrate :refer [migrate!]]
+            [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -159,14 +160,16 @@
    :verbose    ["-v" "--verbose"             "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
-  {:backup    {:description "Create a .dump backup file using pg_dump."
-               :requires    [:dbname :file]}
-   :build-all {:description "Build / rebuild the entire data base."
-               :requires    [:dbname]}
-   :functions {:description "Build / rebuild all functions."
-               :requires    [:dbname]}
-   :restore   {:description "Restore a database from a .dump file created by pg_dump."
-               :requires    [:file]}})
+  {:backup        {:description "Create a .dump backup file using pg_dump."
+                   :requires    [:dbname :file]}
+   :build-all     {:description "Build / rebuild the entire data base."
+                   :requires    [:dbname]}
+   :functions     {:description "Build / rebuild all functions."
+                   :requires    [:dbname]}
+   :restore       {:description "Restore a database from a .dump file created by pg_dump."
+                   :requires    [:file]}
+   :apply-changes {:description "Applies the migration files under `src/sql/changes` in chronological order."
+                   :requires    [:dbname :user :password]}})
 
 (defn -main
   "A set of tools for building and maintaining the project database with Postgres."
@@ -191,5 +194,9 @@
                               verbose)
       :backup    (run-backup dbname file admin-pass verbose)
       :restore   (run-restore file admin-pass verbose)
+      :migrate   (migrate! dbname
+                           (or user dbname)
+                           (or password dbname) ; user-pass
+                           verbose)
       nil))
   (shutdown-agents))

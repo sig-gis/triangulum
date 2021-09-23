@@ -5,6 +5,12 @@
             [clojure.set       :as set]
             [clojure.data.json :as json]))
 
+(defmacro nil-on-error
+  "Uses try to catch and return nil on error"
+  [& body]
+  (let [_ (gensym)]
+    `(try ~@body (catch Exception ~_ nil))))
+
 ;; Text parsing
 
 (defn kebab->snake
