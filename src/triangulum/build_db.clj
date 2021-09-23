@@ -1,11 +1,14 @@
 (ns triangulum.build-db
   (:import java.io.File)
   (:require [clojure.java.io    :as io]
+            [clojure.edn        :as edn]
+            [clojure.set        :refer [difference]]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
+            [next.jdbc :as jdbc]
             [triangulum.cli    :refer [get-cli-options]]
             [triangulum.config :refer [get-config]]
-            [triangulum.utils  :refer [parse-as-sh-cmd format-str]]))
+            [triangulum.utils  :refer [nil-on-error parse-as-sh-cmd format-str]]))
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -121,6 +124,80 @@
             (load-folder :dev database user user-pass verbose)))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
+;; Apply changes
+
+(def ^:private migrations-dir "./src/sql/changes")
+(def ^:private change-file    ".build-db-changes")
+(def ^:private rollback?      (atom false))
+
+(defn- get-migrations-dir []
+  (.mkdirs (File. migrations-dir))
+  migrations-dir)
+
+(defn- get-migration-files []
+  (->> (get-migrations-dir)
+       (io/file)
+       (file-seq)
+       (filter #(.isFile %))
+       (map #(.getName %))
+       (filter #(str/ends-with? % ".sql"))
+       (set)))
+
+(defn- get-completed-changes []
+  (let [file (io/file change-file)]
+    (if (.exists file)
+      (-> file (slurp) (edn/read-string))
+      #{})))
+
+(defn- set-completed-changes [new-changes]
+  (spit change-file (prn-str new-changes)))
+
+(defn- get-ds [database user user-pass]
+  (jdbc/get-datasource {:dbtype                "postgresql"
+                        :dbname                database
+                        :user                  user
+                        :password              user-pass
+                        :reWriteBatchedInserts true}))
+
+(defn- check-conn [database user user-pass]
+  (jdbc/get-connection (get-ds database user user-pass)))
+
+(defn- apply-change-sql-file [database user user-pass verbose? file]
+  (when verbose? (println (format "Migrating change %s " file)))
+  (let [ds (get-ds database user user-pass)]
+    (jdbc/with-transaction [tx ds]
+      (jdbc/execute! tx [(slurp (str migrations-dir "/" file))]))))
+
+(defn- apply-changes [database user user-pass verbose?]
+  (when verbose? (println "Applying changes..."))
+  (let [all-changes       (get-migration-files)
+        completed-changes (get-completed-changes)
+        new-changes       (sort (difference all-changes completed-changes))]
+
+    (when verbose? (println (format "Found %s new change files." (count new-changes))))
+
+    (when (nil? (nil-on-error (check-conn database user user-pass)))
+      (throw (Exception. "Error: Invalid database configuration. Please check your config.edn file.")))
+
+    (when (< 0 (count new-changes))
+      (loop [file      (first new-changes)
+             changes   (rest new-changes)
+             completed completed-changes]
+        (when-not (nil? file)
+          (let [result (nil-on-error (apply-change-sql-file database user user-pass verbose? file))]
+            (when-not (nil? result)
+              (set-completed-changes (conj completed file))
+              (when-not (empty? changes)
+                (recur (first changes) (rest changes) (conj completed file))))))))
+    (when verbose? (println "Completed migrations."))))
+
+(defn- reset-changes []
+  (println "Resetting change file...")
+  (set-completed-changes #{}))
+
+(defn- last-change []
+  (println "Last change:" (-> (get-completed-changes) (sort) (last))))
+
 ;; Backup / restore functions
 
 (defn- read-file-tag [file]
@@ -159,14 +236,20 @@
    :verbose    ["-v" "--verbose"             "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
-  {:backup    {:description "Create a .dump backup file using pg_dump."
-               :requires    [:dbname :file]}
-   :build-all {:description "Build / rebuild the entire data base."
-               :requires    [:dbname]}
-   :functions {:description "Build / rebuild all functions."
-               :requires    [:dbname]}
-   :restore   {:description "Restore a database from a .dump file created by pg_dump."
-               :requires    [:file]}})
+  {:backup        {:description "Create a .dump backup file using pg_dump."
+                   :requires    [:dbname :file]}
+   :build-all     {:description "Build / rebuild the entire data base."
+                   :requires    [:dbname]}
+   :functions     {:description "Build / rebuild all functions."
+                   :requires    [:dbname]}
+   :restore       {:description "Restore a database from a .dump file created by pg_dump."
+                   :requires    [:file]}
+   :apply-changes {:description "Applies the migration files under `src/sql/changes` in chronological order."
+                   :requires    [:dbname :user :password]}
+   :reset-changes {:description "Resets the existing change file, which allows all migrations to be re-run."
+                   :requires    []}
+   :last-change   {:description "Returns the last entry (in chronological order) from the change file."
+                   :requires    []}})
 
 (defn -main
   "A set of tools for building and maintaining the project database with Postgres."
@@ -191,5 +274,11 @@
                               verbose)
       :backup    (run-backup dbname file admin-pass verbose)
       :restore   (run-restore file admin-pass verbose)
+      :apply-changes (apply-changes dbname
+                                    (or user dbname)
+                                    (or password dbname) ; user-pass
+                                    verbose)
+      :reset-changes (reset-changes)
+      :last-change   (last-change)
       nil))
   (shutdown-agents))
