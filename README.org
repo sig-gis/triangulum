@@ -27,6 +27,11 @@ To make organizing an application's configurations simpler, create a
 Add config.edn to your ~.gitignore~ file to keep sensitive information out of
 the git history.
 
+To validate the config.edn file, run:
+#+begin_src sh
+clojure -M:config validate [-f FILE]
+#+end_src
+
 To retrieve a configuration, use ~get-config~. You can supply nested
 configuration keys as follows:
 

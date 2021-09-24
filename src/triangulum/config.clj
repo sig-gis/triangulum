@@ -1,23 +1,29 @@
 (ns triangulum.config
   (:require [clojure.java.io    :as io]
             [clojure.edn        :as edn]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [triangulum.cli     :refer [get-cli-options]]))
 
 ;;; Specs
 
-(s/def ::host     string?)
-(s/def ::port     nat-int?)
-(s/def ::dbname   string?)
-(s/def ::user     string?)
-(s/def ::password string?)
-(s/def ::domain   string?)
+(s/def ::host       string?)
+(s/def ::port       (s/and nat-int? #(< % 0x10000)))
+(s/def ::https-port (s/and nat-int? #(< % 0x10000)))
+(s/def ::dbname     string?)
+(s/def ::user       string?)
+(s/def ::password   string?)
+(s/def ::domain     string?)
+(s/def ::mode       (s/and string? #{"prod" "dev"}))
+(s/def ::output-dir (s/and string? #(.isDirectory (io/file %))))
 
 (s/def ::database (s/keys :req-un [::dbname ::user ::password]
                           :opt-un [::host ::port]))
 (s/def ::http     (s/keys :req-un [::port]))
 (s/def ::ssl      (s/keys :req-un [::domain]))
+(s/def ::server   (s/keys :req-un [::mode ::port]
+                          :opt-un [::https-port ::output-dir]))
 
-(s/def ::config (s/keys :opt-un [::database ::http ::ssl]))
+(s/def ::config (s/keys :opt-un [::database ::http ::ssl ::server]))
 
 ;;; Private vars
 
@@ -60,3 +66,31 @@
    ```"
   [& all-keys]
   (get-in (cache-config) all-keys))
+
+(defn validate
+  "Validates `file` as a configuration file. Defaults to the "
+  [{:keys [file] :or {file @config-file}}]
+  (if-not (.exists (io/file file))
+    (println "Unable to find config file: %s" file)
+    (let [config (->> (slurp file) (edn/read-string))]
+      (if (s/valid? ::config config)
+        (println (format "Config file %s is valid" file))
+        (do
+          (println (format "Invalid config file: %s" file))
+          (s/explain ::config config))))))
+
+(def ^:private cli-options
+  {:validate ["-f" "--file FILE" "Configuration file to validate."]})
+
+(def ^:private cli-actions
+  {:validate {:description "Validates the configuration file (default: config.edn)."
+              :requires    []}})
+
+(defn -main
+  "Configuration management."
+  [& args]
+  (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "config")]
+    (case action
+      :validate (validate options)
+      nil))
+  (shutdown-agents))
