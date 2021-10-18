@@ -156,8 +156,8 @@ format.
 
 **** Default renewal hook
 
-If certbot runs successfully, and if --cert-only is not specified a shell script,
-[mydomain].sh, will be created in the certbot deploy hooks folder.
+If certbot runs successfully and --cert-only is not specified, then a shell script
+[mydomain].sh will be created in the certbot deploy hooks folder.
 This script will run ~clojure -M:https package-cert~. Scripts in this folder will
 run automatically when a new certificate is created.
 
