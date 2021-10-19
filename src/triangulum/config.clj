@@ -62,11 +62,10 @@
   [& all-keys]
   (get-in (cache-config) all-keys))
 
-(defn validate
-  "Validates `file` as a configuration file. Defaults to the "
+(defn valid-config?
+  "Validates `file` as a configuration file."
   [{:keys [file] :or {file @config-file}}]
-  (when (map? (read-config file))
-    (println "Valid config file:" file)))
+  (map? (read-config file)))
 
 (def ^:private cli-options
   {:validate ["-f" "--file FILE" "Configuration file to validate."]})
@@ -80,6 +79,6 @@
   [& args]
   (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "config")]
     (case action
-      :validate (validate options)
+      :validate (valid-config? options)
       nil))
   (shutdown-agents))
