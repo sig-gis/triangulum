@@ -1,7 +1,8 @@
 (ns triangulum.config
   (:require [clojure.java.io    :as io]
             [clojure.edn        :as edn]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [triangulum.cli     :refer [get-cli-options]]))
 
 ;;; Specs
 
@@ -26,15 +27,15 @@
 
 ;;; Helper Fns
 
-(defn- read-config [new-config-file]
-  (if (.exists (io/file new-config-file))
-    (let [config (->> (slurp new-config-file) (edn/read-string))]
+(defn- read-config [file]
+  (if (.exists (io/file file))
+    (let [config (->> (slurp file) (edn/read-string))]
       (if (s/valid? ::config config)
         config
         (do
-          (println "Error: Invalid config.edn file")
+          (println "Invalid config file:" file)
           (s/explain ::config config))))
-    (println "Error: Cannot find file config.edn.")))
+    (println "Error: Cannot find file" file)))
 
 (defn- cache-config []
   (or @config-cache
@@ -60,3 +61,24 @@
    ```"
   [& all-keys]
   (get-in (cache-config) all-keys))
+
+(defn valid-config?
+  "Validates `file` as a configuration file."
+  [{:keys [file] :or {file @config-file}}]
+  (map? (read-config file)))
+
+(def ^:private cli-options
+  {:validate ["-f" "--file FILE" "Configuration file to validate."]})
+
+(def ^:private cli-actions
+  {:validate {:description "Validates the configuration file (default: config.edn)."
+              :requires    []}})
+
+(defn -main
+  "Configuration management."
+  [& args]
+  (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "config")]
+    (case action
+      :validate (valid-config? options)
+      nil))
+  (shutdown-agents))
