@@ -21,7 +21,9 @@ To make organizing an application's configurations simpler, create a
 #+begin_src clojure
 ;; config.edn
 {:database {:user "triangulum"
-            :pass "secretpassword"}}
+            :pass "secretpassword"}
+ :server   {:port 8080
+            :mode "dev"}}
 #+end_src
 
 Add config.edn to your ~.gitignore~ file to keep sensitive information out of
@@ -36,8 +38,11 @@ To retrieve a configuration, use ~get-config~. You can supply nested
 configuration keys as follows:
 
 #+begin_src clojure
-(triangulum.config/get-config :database) ;; Returns {:user "triangulum" :pass "..."}
-(triangulum.config/get-config :database :user) ;; Returns "triangulum"
+(triangulum.config/get-config :database) ;; -> {:user "triangulum" :pass "..."}
+(triangulum.config/get-config :database :user) ;; -> "triangulum"
+
+(triangulum.config/get-config :server) ;; -> {:port 8080 :mode "dev"}
+(triangulum.config/get-config :server :port) ;; -> 8080
 #+end_src
 
 See each section below for an example configuration if one is required for use.
