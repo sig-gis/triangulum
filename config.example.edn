@@ -2,4 +2,8 @@
             :port     5432
             :dbname   "pyregence"
             :user     "pyregence"
-            :password "pyregence"}}
+            :password "pyregence"}
+ :server   {:port       8080
+            :https-port 8443
+            :mode       "<dev/prod>"
+            :output-dir "./logs"}}

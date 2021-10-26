@@ -6,19 +6,24 @@
 
 ;;; Specs
 
-(s/def ::host     string?)
-(s/def ::port     nat-int?)
-(s/def ::dbname   string?)
-(s/def ::user     string?)
-(s/def ::password string?)
-(s/def ::domain   string?)
+(s/def ::host       string?)
+(s/def ::port       (s/and nat-int? #(< % 0x10000)))
+(s/def ::https-port (s/and nat-int? #(< % 0x10000)))
+(s/def ::dbname     string?)
+(s/def ::user       string?)
+(s/def ::password   string?)
+(s/def ::domain     string?)
+(s/def ::mode       (s/and string? #{"prod" "dev"}))
+(s/def ::output-dir (s/and string? #(.isDirectory (io/file %))))
 
 (s/def ::database (s/keys :req-un [::dbname ::user ::password]
                           :opt-un [::host ::port]))
 (s/def ::http     (s/keys :req-un [::port]))
 (s/def ::ssl      (s/keys :req-un [::domain]))
+(s/def ::server   (s/keys :req-un [::mode ::port]
+                          :opt-un [::https-port ::output-dir]))
 
-(s/def ::config (s/keys :opt-un [::database ::http ::ssl]))
+(s/def ::config (s/keys :opt-un [::database ::http ::ssl ::server]))
 
 ;;; Private vars
 
