@@ -9,15 +9,11 @@
 
 ;; Helper functions
 
-(defn- validate-certbot
-  "Check if certbot is installed and is called with sufficient permissions."
+(defn- as-sudo?
+  "Check if user is running as sudo."
   []
-  (try
-    (let [{:keys [err]} (sh/sh "certbot")]
-      (when (str/includes? err "[Errno 13]")
-        err))
-    (catch Exception _
-      "Invalid or missing certbot installation.")))
+  (let [{:keys [out]} (sh/sh "id" "-u")]
+    (= (str/trim out) "0")))
 
 ;; TODO consolidate sh-wrapper functions
 (defn- sh-wrapper [dir env & commands]
@@ -91,15 +87,13 @@
   "A set of tools for using certbot as the server certificate manager."
   [& args]
   (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "https")
-        {:keys [domain path cert-only]} options
-        certbot-check (validate-certbot)]
-    (cond
-      certbot-check
-      (println certbot-check)
-
-      options
-      (let [path (.getAbsolutePath (io/file path))]
-        (case action
-          :certbot-init (initial-certificate domain path cert-only)
-          :package-cert (package-certificate domain path)))))
+        {:keys [domain path cert-only]} options]
+    (and action
+         options
+         (if (as-sudo?)
+           (let [path (.getAbsolutePath (io/file path))]
+             (case action
+               :certbot-init (initial-certificate domain path cert-only)
+               :package-cert (package-certificate domain path)))
+           (println "You must run as sudo."))))
   (shutdown-agents))
