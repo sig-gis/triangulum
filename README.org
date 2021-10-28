@@ -111,10 +111,33 @@ be the field names.
 
 *** triangulum.build-db
 
+**** Required Prerequisites
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 
-Use CEO as example on how to set up the folder and file structure for use with
-build-db. [[https://github.com/openforis/collect-earth-online][CEO github]]
+To set up the folder and file structure for use with ~build-db~, use the following directory structure:
+
+#+begin_src sh
+src/
+|___clj/
+| |___<project namespace>
+|
+|___cljs/
+| |___<project namespace>
+|
+|___sql/
+  |___create_db.sql
+  |___changes/
+  |___default_data/
+  |___dev_data/
+  |___functions/
+  |___tables/
+#+end_src
+
+You may also run this command in your project root directory:
+~mkdir -p src/sql/{changes,default_data,dev_data,functions,tables}~
+
+Then add ~"src/sql"~ directory to the ~:paths~ section in your
+~deps.edn~ file.
 
 *Postgresql* needs to be installed on the machine that will be hosting
 this website. This installation task is system specific and is beyond
@@ -125,28 +148,43 @@ you know its database connection password before proceeding.
 
 Once the Postgresql database server is running on your machine, you
 should navigate to the top level directory (i.e., the directory
-containing this README) and run the database build command as follows:
+containing this README) and add the following alias to your ~deps.edn~ file:
+
+#+begin_src clojure
+{:aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}}}
+#+end_src
+
+Then run the database build command as follows:
 
 #+begin_src sh
 clojure -M:build-db build-all -d database [-u user] [-p admin password]
 #+end_src
 
-This will call ./src/sql/create_db.sql, stored in the individual project
+This will call ~./src/sql/create_db.sql~, stored in the individual project
 repository.  A variable ~database~ is set for the command line call to
 create_db.sql.  This allows your project to generate the project database
 with a different name, depending on your deployment.  To use this variable
-type ~:database~ in create_db.sql where needed.
+type ~:database~ in ~create_db.sql~ where needed. You can check out
+[[https://github.com/openforis/collect-earth-online/blob/main/src/sql/create_db.sql][Collect Earth Online]]
+to view an example.
 
 triangulum.build-db can also be configured through config.edn.  It uses
-the same configuration as triangulum.database (see above).
+the same configuration as [[#triangulumdatabase][triangulum.database]] (see above).
 
 *** triangulum.https
 
+**** Required Prerequisites
 - [[https://certbot.eff.org/][certbot]]
 - [[https://www.openssl.org/source/][openssl]]
 
 If you have not already created a SSL certificate, you must start a server
-without a https port specified.
+without a https port specified. (e.g. ~clojure -M:run-server~).
+
+Add the following alias to your ~deps.edn~ file:
+
+#+begin_src clojure
+{:aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}}}
+#+end_src
 
 To automatically create an SSL certificate signed by [[https://letsencrypt.org][Let's Encrypt]],
 simply run the following command from your shell:
@@ -191,20 +229,50 @@ sudo nano /etc/letsencrypt/renewal-hooks/deploy/custom.sh
 sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/custom.sh
 #+end_src
 
-*** triangulum.https / triangulum.build-db aliases
+*** triangulum.systemd
 
-Add alias to ~deps.edn~.
+To make sure your application starts up on system reboot, you can use
+Triangulum to create a ~.service~ file by adding the following to
+your ~:aliases~ section in the ~deps.edn~ file:
+
+#+begin_src clojure
+{:aliases {:build-db {:main-opts ["-m" "triangulum.systemd"]}}}
+#+end_src
+
+And then running:
+#+begin_src sh
+clojure -M:systemd --enable -p <PATH> -r <REPO> -u <USER> [-o OFFSET]
+#+end_src
+
+This will install a file named ~cljweb-<repo>.service~ into the
+~/etc/systemd/system/~ directory, reload the systemctl daemon, and have
+enabled your service. Now your service will be enabled at startup.
+
+You can also start,, stop, and restart your service with the following commands:
+#+begin_src sh
+clojure -M:systemd --start -r <REPO>
+clojure -M:systemd --stop -r <REPO>
+clojure -M:systemd --restart -r <REPO>
+#+end_src
+
+*** triangulum aliases
+
+Add to the ~:aliases~ section in ~deps.edn~.
 
 #+begin_src clojure
 {:aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}
-           :https    {:main-opts ["-m" "triangulum.https"]}}}
+           :config   {:main-opts ["-m" "triangulum.config"]}}
+           :https    {:main-opts ["-m" "triangulum.https"]}}
+           :systemd  {:main-opts ["-m" "triangulum.systemd"]}}}
 #+end_src
 
 Then call the alias without any params to see the available commands.
 
 #+begin_src sh
 clojure -M:build-db
+clojure -M:config
 clojure -M:https
+clojure -M:systemd
 #+end_src
 
 - Note, ~clojure -M:https~ needs to be run as sudo when executing a command.
