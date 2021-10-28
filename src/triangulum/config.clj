@@ -14,7 +14,7 @@
 (s/def ::password   string?)
 (s/def ::domain     string?)
 (s/def ::mode       (s/and string? #{"prod" "dev"}))
-(s/def ::output-dir (s/and string? #(.isDirectory (io/file %))))
+(s/def ::output-dir string?)
 
 (s/def ::database (s/keys :req-un [::dbname ::user ::password]
                           :opt-un [::host ::port]))
