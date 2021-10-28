@@ -1,6 +1,10 @@
-{:testing 1234
- :database {:host     "localhost"
+{:database {:host     "localhost"
             :port     5432
             :dbname   "dbname"
             :user     "user"
-            :password "password"}}
+            :password "testing-password"}
+ :mode     "testing"
+ :server   {:port       8080
+            :https-port 8443
+            :mode       "dev"
+            :output-dir "./logs"}}

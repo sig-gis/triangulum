@@ -105,3 +105,17 @@
                acc))
            (transient {})
            coll)))
+
+;; Equality checking
+
+(defn =keys
+  "Whether m1 and m2 contain the same keys."
+  [m1 m2]
+  (and (= (keys m1) (keys m2))
+       (reduce (fn [acc [k v]]
+                 (and acc
+                      (if (map? v)
+                        (=keys v (get m2 k))
+                        true)))
+               true
+               m1)))

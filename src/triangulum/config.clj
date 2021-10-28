@@ -2,7 +2,8 @@
   (:require [clojure.java.io    :as io]
             [clojure.edn        :as edn]
             [clojure.spec.alpha :as s]
-            [triangulum.cli     :refer [get-cli-options]]))
+            [triangulum.cli     :refer [get-cli-options]]
+            [triangulum.utils   :refer [=keys]]))
 
 ;;; Specs
 
@@ -34,12 +35,18 @@
 
 (defn- read-config [file]
   (if (.exists (io/file file))
-    (let [config (->> (slurp file) (edn/read-string))]
-      (if (s/valid? ::config config)
-        config
-        (do
-          (println "Invalid config file:" file)
-          (s/explain ::config config))))
+    (let [example-config (->> (slurp "config.example.edn") (edn/read-string))
+          config         (->> (slurp file) (edn/read-string))]
+      (cond
+        (not (s/valid? ::config config))
+        (do (println "Error: Invalid config file:" file)
+            (s/explain ::config config))
+
+        (not (=keys example-config config))
+        (println "Error: Keys from config.example.edn are missing from:" file)
+
+        :else
+        config))
     (println "Error: Cannot find file" file)))
 
 (defn- cache-config []
@@ -54,7 +61,7 @@
    (load-config @config-file))
   ([new-config-file]
    (reset! config-file new-config-file)
-   (reset! config-cache nil)))
+   (reset! config-cache (read-config @config-file))))
 
 (defn get-config
   "Retrieves the key `k` from the config file.
