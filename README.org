@@ -136,9 +136,6 @@ src/
 You may also run this command in your project root directory:
 ~mkdir -p src/sql/{changes,default_data,dev_data,functions,tables}~
 
-Then add ~"src/sql"~ directory to the ~:paths~ section in your
-~deps.edn~ file.
-
 *Postgresql* needs to be installed on the machine that will be hosting
 this website. This installation task is system specific and is beyond
 the scope of this README, so please follow the instructions for your
@@ -183,7 +180,7 @@ without a https port specified. (e.g. ~clojure -M:run-server~).
 Add the following alias to your ~deps.edn~ file:
 
 #+begin_src clojure
-{:aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}}}
+{:aliases {:https {:main-opts ["-m" "triangulum.https"]}}}
 #+end_src
 
 To automatically create an SSL certificate signed by [[https://letsencrypt.org][Let's Encrypt]],
@@ -236,46 +233,24 @@ Triangulum to create a ~.service~ file by adding the following to
 your ~:aliases~ section in the ~deps.edn~ file:
 
 #+begin_src clojure
-{:aliases {:build-db {:main-opts ["-m" "triangulum.systemd"]}}}
+{:aliases {:systemd {:main-opts ["-m" "triangulum.systemd"]}}}
 #+end_src
 
 And then running:
 #+begin_src sh
-clojure -M:systemd --enable -p <PATH> -r <REPO> -u <USER> [-o OFFSET]
+sudo clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-o OFFSET]
 #+end_src
 
 This will install a file named ~cljweb-<repo>.service~ into the
 ~/etc/systemd/system/~ directory, reload the systemctl daemon, and have
 enabled your service. Now your service will be enabled at startup.
 
-You can also start,, stop, and restart your service with the following commands:
+You can also start, stop, and restart your service with the following commands:
 #+begin_src sh
-clojure -M:systemd --start -r <REPO>
-clojure -M:systemd --stop -r <REPO>
-clojure -M:systemd --restart -r <REPO>
+sudo clojure -M:systemd start -r <REPO>
+sudo clojure -M:systemd stop -r <REPO>
+sudo clojure -M:systemd restart -r <REPO>
 #+end_src
-
-*** triangulum aliases
-
-Add to the ~:aliases~ section in ~deps.edn~.
-
-#+begin_src clojure
-{:aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}
-           :config   {:main-opts ["-m" "triangulum.config"]}}
-           :https    {:main-opts ["-m" "triangulum.https"]}}
-           :systemd  {:main-opts ["-m" "triangulum.systemd"]}}}
-#+end_src
-
-Then call the alias without any params to see the available commands.
-
-#+begin_src sh
-clojure -M:build-db
-clojure -M:config
-clojure -M:https
-clojure -M:systemd
-#+end_src
-
-- Note, ~clojure -M:https~ needs to be run as sudo when executing a command.
 
 ** Useful Development Aliases
 
