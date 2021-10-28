@@ -8,17 +8,6 @@
 
 (def ^:private path-env (System/getenv "PATH"))
 
-;; TODO consolidate sh-wrapper functions
-(defn- sh-wrapper [dir env & commands]
-  (io/make-parents (str dir "/dummy"))
-  (sh/with-sh-dir dir
-    (sh/with-sh-env (merge {:PATH path-env} env)
-      (doseq [cmd commands]
-        (log-str cmd)
-        (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
-          (log-str "out: "   out)
-          (log-str "error: " err))))))
-
 (def ^:private unit-file-template (str/trim "
 [Unit]
 Description=A service to launch a server written in clojure
@@ -33,6 +22,26 @@ ExecStart=/usr/local/bin/clojure -M:run-server %s %s -o logs
 [Install]
 WantedBy=multi-user.target
 "))
+
+;; Helper functions
+
+;; TODO consolidate sh-wrapper functions
+(defn- sh-wrapper [dir env & commands]
+  (io/make-parents (str dir "/dummy"))
+  (sh/with-sh-dir dir
+    (sh/with-sh-env (merge {:PATH path-env} env)
+      (doseq [cmd commands]
+        (log-str cmd)
+        (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
+          (log-str "out: "   out)
+          (log-str "error: " err))))))
+
+
+(defn- as-sudo?
+  "Check if user is running as sudo."
+  []
+  (let [{:keys [out]} (sh/sh "id" "-u")]
+    (= (str/trim out) "0")))
 
 (defn- enable-systemd [{:keys [repo user http https]}]
   (if (and repo
@@ -93,8 +102,10 @@ WantedBy=multi-user.target
   (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "systemd")
         {:keys [all repo]} options]
     (and action
-         (case action
-           :enable  (enable-systemd options)
-           :disable (disable-systemd repo)
-           (systemctl (if all "*" repo) action))))
+         (if (as-sudo?)
+           (case action
+             :enable  (enable-systemd options)
+             :disable (disable-systemd repo)
+             (systemctl (if all "*" repo) action))
+           (println "You must run systemd as sudo."))))
   (shutdown-agents))
