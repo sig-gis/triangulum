@@ -6,7 +6,8 @@
                                       kebab->snake
                                       filterm
                                       parse-as-sh-cmd
-                                      mapm]]))
+                                      mapm
+                                      =keys]]))
 
 (deftest end-with-test
   (testing "Appends end-value when string doesn't end with end-value."
@@ -63,3 +64,11 @@
   (testing "Filter map using pred, returns a map"
     (is (= (filterm (fn [[_ v]] (odd? v)) test-map)
            {:a 1 :c 3}))))
+
+(deftest =keys-test
+  (testing "Two nested maps with same keys have =keys"
+    (is (= true
+           (=keys {:a "b" :c {:e "d"}} {:a "g" :c {:e "f"}}))))
+  (testing "Maps without the same keys do NOT have =keys"
+    (is (= false
+           (=keys {:a "b" :c {:e "d"}} {:a "g" :c {:y "z"}})))))
