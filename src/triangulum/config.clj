@@ -35,8 +35,8 @@
 
 (defn- read-config [file]
   (if (.exists (io/file file))
-    (let [example-config (->> (slurp "config.example.edn") (edn/read-string))
-          config         (->> (slurp file) (edn/read-string))]
+    (let [example-config (-> (slurp "config.example.edn") (edn/read-string))
+          config         (-> (slurp file) (edn/read-string))]
       (cond
         (not (s/valid? ::config config))
         (do (println "Error: Invalid config file:" file)

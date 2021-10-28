@@ -3,7 +3,6 @@
             [triangulum.config :refer [get-config load-config]]))
 
 (defn- load-test-config [f]
-  (println "Loading test_config.edn")
   (load-config "test/test_config.edn")
   (f))
 
