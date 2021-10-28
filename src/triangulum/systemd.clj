@@ -34,7 +34,7 @@ ExecStart=/usr/local/bin/clojure -M:run-server %s %s -o logs
 WantedBy=multi-user.target
 "))
 
-(defn- enable-systemd [{:keys [repo user offset no-http no-https]}]
+(defn- enable-systemd [{:keys [repo user http https]}]
   (if (and repo
            (.exists (io/file repo "deps.edn")))
     (let [full-path (.getAbsolutePath (io/file repo))
@@ -47,8 +47,8 @@ WantedBy=multi-user.target
             (format unit-file-template
                     user
                     (.getAbsolutePath (io/file repo))
-                    (if no-http ""  (str "-p " (+ offset 8080)))
-                    (if no-https "" (str "-P " (+ offset 8443)))))
+                    (if http (str "-p " http) "")
+                    (if https (str "-P " https) "")))
       (sh-wrapper "/"
                   {}
                   "systemctl daemon-reload"
@@ -70,14 +70,8 @@ WantedBy=multi-user.target
 
 (def ^:private cli-options
   {:all      ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
-   :offset   ["-o"
-              "--offset OFFSET"
-              "Numerical offset from the standard ports of 8080 and 8443. This can be used to run multiple servers on the same machine."
-              :default 0
-              :parse-fn #(if (int? %) % (Integer/parseInt %))
-              :validate [#(< 0 % 100) "Must be a number between 0 and 100."]]
-   :no-http  ["-p" "--no-http" "Disable http."]
-   :no-https ["-P" "--no-https" "Disable https."]
+   :no-http  ["-p" "--http HTTP" "Optional http port to run the server."]
+   :no-https ["-P" "--https HTTPS" "Optional https port to run the server."]
    :repo     ["-r" "--repo REPO" "Repository folder that contains deps.edn.  With enable, this must be a complete path."]
    :user     ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."]})
 
