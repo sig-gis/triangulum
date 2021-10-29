@@ -4,7 +4,7 @@
             [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
             [triangulum.logging :refer [log-str]]
-            [triangulum.utils   :refer [parse-as-sh-cmd]]))
+            [triangulum.utils   :refer [parse-as-sh-cmd end-with remove-end]]))
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -43,46 +43,50 @@ WantedBy=multi-user.target
   (let [{:keys [out]} (sh/sh "id" "-u")]
     (= (str/trim out) "0")))
 
-(defn- enable-systemd [{:keys [repo user http https]}]
-  (if (and repo
-           (.exists (io/file repo "deps.edn")))
-    (let [full-path (.getAbsolutePath (io/file repo))
-          service-name (as-> full-path %
-                         (str/split % #"/")
-                         (filter #(re-matches #"\w*" %) %)
-                         (last %)
-                         (str "cljweb-" %))]
-      (spit (io/file "/etc/systemd/system/" (str service-name ".service"))
-            (format unit-file-template
-                    user
-                    (.getAbsolutePath (io/file repo))
-                    (if http (str "-p " http) "")
-                    (if https (str "-P " https) "")))
-      (sh-wrapper "/"
-                  {}
-                  "systemctl daemon-reload"
-                  (str "systemctl enable " service-name)))
-    (println "A repository directory containing deps.edn must be supplied.")))
+(defn- enable-systemd [{:keys [repo user http https dir]}]
+  (let [full-dir      (-> dir
+                          (io/file)
+                          (.getAbsolutePath)
+                          (remove-end "."))
+        repo-dir      (if (str/includes? full-dir repo)
+                        full-dir
+                        (-> full-dir
+                            (end-with "/")
+                            (str repo)))
+        service-name (str "cljweb-" repo)]
+    (if (.exists (io/file repo-dir "deps.edn"))
+      (do
+        (spit (io/file "/etc/systemd/system/" (str service-name ".service"))
+              (format unit-file-template
+                      user
+                      repo-dir
+                      (if http (str "-p " http) "")
+                      (if https (str "-P " https) "")))
+        (sh-wrapper "/"
+                    {}
+                    "systemctl daemon-reload"
+                    (str "systemctl enable " service-name)))
+      (println "A repository and directory containing deps.edn must be supplied."))))
 
 (defn- disable-systemd [repo]
-  (if (nil? repo)
-    (println "You must specify a repo with -r when disabling the systemd unit file.")
-    (let [service-name (str "cljweb-" repo)]
-      (sh-wrapper "/"
-                  {}
-                  (str "systemctl disable " service-name)
-                  "systemctl daemon-reload")
-      (io/delete-file (io/file "/etc/systemd/system/" (str service-name ".service")) true))))
+  (let [service-name (str "cljweb-" repo)]
+    (sh-wrapper "/"
+                {}
+                (str "systemctl disable " service-name)
+                "systemctl daemon-reload")
+    (io/delete-file (io/file "/etc/systemd/system/" (str service-name ".service")) true)))
 
 (defn- systemctl [repo command]
   (sh-wrapper "/" {} (str "systemctl " (name command) " cljweb-" repo " --all")))
 
 (def ^:private cli-options
-  {:all      ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
-   :no-http  ["-p" "--http HTTP" "Optional http port to run the server."]
-   :no-https ["-P" "--https HTTPS" "Optional https port to run the server."]
-   :repo     ["-r" "--repo REPO" "Repository folder that contains deps.edn.  With enable, this must be a complete path."]
-   :user     ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."]})
+  {:all       ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
+   :directory ["-d" "--dir DIR" "Optional path to repo directory when enabling the service. Will default to the current directory."
+               :default "./"]
+   :no-http   ["-p" "--http HTTP" "Optional http port to run the server."]
+   :no-https  ["-P" "--https HTTPS" "Optional https port to run the server."]
+   :repo      ["-r" "--repo REPO" "Repository folder that contains deps.edn.  This will be used to name the service"]
+   :user      ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."]})
 
 (def ^:private cli-actions
   {:disable {:description "Disable systemd service."

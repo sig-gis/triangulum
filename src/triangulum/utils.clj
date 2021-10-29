@@ -50,6 +50,13 @@
        (when-not (str/ends-with? s end)
          end)))
 
+(defn remove-end
+  "Removes 'end' from string, only if it exists."
+  [s end]
+  (if (str/ends-with? s end)
+    (subs s 0 (- (count s) (count end)))
+    s))
+
 ;; Response building
 
 (defn- clj->transit
