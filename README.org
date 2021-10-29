@@ -245,7 +245,7 @@ This will install a file named ~cljweb-<repo>.service~ into the
 ~/etc/systemd/system/~ directory, reload the systemctl daemon, and have
 enabled your service. Now your service will be enabled at startup.  By default
 the current directory will be used in the service as the working directory.
-To supply and alternative, you can use ~-d~.  This will look for a clojure
+To supply an alternative, you can use ~-d~.  This will look for a clojure
 project in that directory.
 
 You can also start, stop, and restart your service with the following commands:
