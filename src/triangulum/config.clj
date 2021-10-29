@@ -45,7 +45,7 @@
             (s/explain ::config config))
 
         (not (=keys example-config config))
-        (println "Error: Keys from config.example.edn are missing from:" file)
+        (println "Error: Keys from config.default.edn are missing from:" file)
 
         :else
         config))

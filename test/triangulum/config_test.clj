@@ -2,10 +2,10 @@
   (:require [clojure.test    :refer [are is deftest testing use-fixtures]]
             [clojure.java.io :as io]
             [clojure.string  :as str]
-            [triangulum.config :refer [get-config load-config] :as config]))
+            [triangulum.config :refer [get-config load-config]]))
 
 (defn- load-test-config [f]
-  (binding [config/*default-file* "config.example.edn"]
+  (binding [triangulum.config/*default-file* "config.example.edn"]
     (load-config "test/data/test_config.edn")
     (f)))
 
@@ -33,5 +33,5 @@
 
   (testing "Invalid configurations"
       (are [config-file error] (str/starts-with? (load-config-output config-file) error)
-           "test_missing_keys_config.edn" "Error: Keys from config.example.edn are missing"
+           "test_missing_keys_config.edn" "Error: Keys from config.default.edn are missing"
            "test_invalid_spec_config.edn" "Error: Invalid config file")))
