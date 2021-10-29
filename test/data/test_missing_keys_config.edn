@@ -1,0 +1,11 @@
+{:database {:host     "localhost"
+            :port     5432
+            :dbname   "dbname"
+            :user     "user"
+            :password "testing-password"}
+ ; :mode   MISSING
+ :server   {:port       8080
+            :https-port 8443
+            :mode       "dev"
+            :output-dir "./logs"}}
+
