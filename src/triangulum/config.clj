@@ -28,6 +28,8 @@
 
 ;;; Private vars
 
+(def ^:private ^:dynamic *default-file* "config.default.edn")
+
 (def ^:private config-file  (atom "config.edn"))
 (def ^:private config-cache (atom nil))
 
@@ -35,7 +37,7 @@
 
 (defn- read-config [file]
   (if (.exists (io/file file))
-    (let [example-config (-> (slurp "config.example.edn") (edn/read-string))
+    (let [example-config (-> (slurp *default-file*) (edn/read-string))
           config         (-> (slurp file) (edn/read-string))]
       (cond
         (not (s/valid? ::config config))

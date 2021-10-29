@@ -1,10 +1,11 @@
 (ns ^:eftest/synchronized triangulum.config-test
-  (:require [clojure.test :refer [are is deftest testing use-fixtures]]
-            [triangulum.config :refer [get-config load-config]]))
+  (:require [clojure.test :refer [is deftest testing use-fixtures]]
+            [triangulum.config :refer [get-config load-config] :as config]))
 
 (defn- load-test-config [f]
-  (load-config "test/test_config.edn")
-  (f))
+  (binding [config/*default-file* "config.example.edn"]
+    (load-config "test/test_config.edn")
+    (f)))
 
 (use-fixtures :each load-test-config)
 
