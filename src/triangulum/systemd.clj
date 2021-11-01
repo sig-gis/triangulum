@@ -48,7 +48,7 @@ WantedBy=multi-user.target
                           (io/file)
                           (.getAbsolutePath)
                           (remove-end "."))
-        repo-dir      (if (str/includes? full-dir repo)
+        repo-dir      (if (= (.getName (io/file full-dir)) repo)
                         full-dir
                         (-> full-dir
                             (end-with "/")
@@ -66,7 +66,7 @@ WantedBy=multi-user.target
                     {}
                     "systemctl daemon-reload"
                     (str "systemctl enable " service-name)))
-      (println "A repository and directory containing deps.edn must be supplied."))))
+      (println "The directory generated" repo-dir "does not contain a deps.edn file."))))
 
 (defn- disable-systemd [repo]
   (let [service-name (str "cljweb-" repo)]
