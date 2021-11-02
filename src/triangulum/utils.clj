@@ -2,6 +2,7 @@
   (:import java.io.ByteArrayOutputStream)
   (:require [cognitect.transit :as transit]
             [clojure.string    :as str]
+            [clojure.set       :as set]
             [clojure.data.json :as json]))
 
 ;; Text parsing
@@ -119,7 +120,7 @@
 (defn =keys
   "Whether m1 and m2 contain the same keys."
   [m1 m2]
-  (and (= (keys m1) (keys m2))
+  (and (set/subset? (-> m1 (keys) (set)) (-> m2 (keys) (set)))
        (reduce (fn [acc [k v]]
                  (and acc
                       (if (map? v)

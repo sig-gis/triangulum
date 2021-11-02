@@ -68,7 +68,13 @@
 (deftest =keys-test
   (testing "Two nested maps with same keys have =keys"
     (is (= true
-           (=keys {:a "b" :c {:e "d"}} {:a "g" :c {:e "f"}}))))
+           (=keys {:a "b" :c {:d "e"}} {:a "g" :c {:d "f"}}))))
+  (testing "Two nested maps with same keys in different order have =keys"
+    (is (= true
+           (=keys {:c {:d "e"} :a "b"} {:a "g" :c {:d "f"}}))))
+  (testing "Two nested maps, one with more keys have =keys"
+    (is (= true
+           (=keys {:a "b" :c {:d "e"}} {:a "g" :c {:d "f" :h "i"}}))))
   (testing "Maps without the same keys do NOT have =keys"
     (is (= false
-           (=keys {:a "b" :c {:e "d"}} {:a "g" :c {:y "z"}})))))
+           (=keys {:a "b" :c {:d "e"}} {:a "g" :c {:y "z"}})))))
