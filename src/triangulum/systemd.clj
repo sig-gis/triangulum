@@ -17,7 +17,8 @@ After=network.target
 Type=simple
 User=%s
 WorkingDirectory=%s
-ExecStart=/usr/local/bin/clojure -M:run-server %s %s -o logs
+ExecStart=/usr/local/bin/clojure -M:server start %s %s -o logs
+ExecStop=/usr/local/bin/clojure -M:server stop
 
 [Install]
 WantedBy=multi-user.target
