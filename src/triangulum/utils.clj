@@ -67,6 +67,7 @@
     (transit/write writer body)
     (.toString out)))
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defn data-response
   "Create a response object.
    Body is required. Status, type, and session are optional.
