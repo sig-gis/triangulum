@@ -46,6 +46,7 @@
           {}
           (filter #(str/includes? % ":") comments)))
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defn- params-to-dep-tree [file-params]
   (reduce (fn [dep-tree {:keys [namespace requires]}]
             (assoc dep-tree
