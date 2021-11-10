@@ -2,6 +2,7 @@
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
+            [triangulum.config  :refer [get-config]]
             [triangulum.cli     :refer [get-cli-options]]
             [triangulum.utils   :refer [parse-as-sh-cmd]]))
 
@@ -89,7 +90,11 @@
 (defn -main
   "A set of tools for using certbot as the server certificate manager."
   [& args]
-  (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "https")
+  (let [{:keys [action options]} (get-cli-options args
+                                                  cli-options
+                                                  cli-actions
+                                                  "https"
+                                                  (get-config :https))
         {:keys [email domain path cert-only webroot]} options]
     (and action
          options

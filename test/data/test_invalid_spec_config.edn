@@ -3,8 +3,4 @@
             :dbname   "dbname"
             :user     "user"
             :password "testing-password"}
- :mode     "testing"
- :server   {:port       "NOT A NUMBER"
-            :https-port "ALSO NOT A NUMBER"
-            :mode       "dev"
-            :output-dir "./logs"}}
+ :mode     "testing"}
