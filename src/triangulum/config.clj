@@ -6,25 +6,33 @@
             [triangulum.utils   :refer [=keys]]))
 
 ;;; Specs
+;; Base spec
+(s/def ::port   (s/and nat-int? #(< % 0x10000)))
+(s/def ::string (s/and string? #(not (re-matches #"<.*>" %))))
 
-(s/def ::host       string?)
-(s/def ::port       (s/and nat-int? #(< % 0x10000)))
-(s/def ::https-port (s/and nat-int? #(< % 0x10000)))
-(s/def ::dbname     string?)
-(s/def ::user       string?)
-(s/def ::password   string?)
-(s/def ::domain     string?)
-(s/def ::mode       (s/and string? #{"prod" "dev"}))
-(s/def ::output-dir string?)
+;; Values
+(s/def ::dbname     ::string)
+(s/def ::domain     ::string)
+(s/def ::email      ::string) ; TODO, make an email base spec
+(s/def ::host       ::string)
+(s/def ::http-port  ::port)
+(s/def ::https-port ::port)
+(s/def ::mode       (s/and ::string #{"prod" "dev"}))
+(s/def ::log-dir    ::string)
+(s/def ::password   ::string)
+(s/def ::pass       ::string)
+(s/def ::user       ::string)
 
+;; Sections
 (s/def ::database (s/keys :req-un [::dbname ::user ::password]
                           :opt-un [::host ::port]))
-(s/def ::http     (s/keys :req-un [::port]))
-(s/def ::ssl      (s/keys :req-un [::domain]))
-(s/def ::server   (s/keys :req-un [::mode ::port]
-                          :opt-un [::https-port ::output-dir]))
+(s/def ::https    (s/keys :req-un [::domain ::email]))
+(s/def ::mail     (s/keys :req-un [::host ::user ::pass]
+                          :opt-un [::port]))
+(s/def ::server   (s/keys :opt-un [::mode ::http-port ::https-port ::log-dir]))
 
-(s/def ::config (s/keys :opt-un [::database ::http ::ssl ::server]))
+;; Config file
+(s/def ::config (s/keys :opt-un [::database ::https ::server ::mail]))
 
 ;;; Private vars
 

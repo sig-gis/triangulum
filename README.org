@@ -20,10 +20,16 @@ To make organizing an application's configurations simpler, create a
 
 #+begin_src clojure
 ;; config.edn
-{:database {:user "triangulum"
-            :pass "secretpassword"}
- :server   {:port 8080
-            :mode "dev"}}
+{:database {:host     "localhost"
+            :port     5432
+            :dbname   "dbname"
+            :user     "user"
+            :password "super-secret-password"}
+ :mode     "dev"
+ :mail     {:host "smtp.gmail.com"
+            :user "test@example.com"
+            :pass "3492734923742"
+            :port 587}}
 #+end_src
 
 Add config.edn to your ~.gitignore~ file to keep sensitive information out of
@@ -41,8 +47,8 @@ configuration keys as follows:
 (triangulum.config/get-config :database) ;; -> {:user "triangulum" :pass "..."}
 (triangulum.config/get-config :database :user) ;; -> "triangulum"
 
-(triangulum.config/get-config :server) ;; -> {:port 8080 :mode "dev"}
-(triangulum.config/get-config :server :port) ;; -> 8080
+(triangulum.config/get-config :server) ;; -> {:http-port 8080 :mode "dev"}
+(triangulum.config/get-config :server :http-port) ;; -> 8080
 #+end_src
 
 See each section below for an example configuration if one is required for use.

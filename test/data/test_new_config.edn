@@ -3,8 +3,4 @@
             :dbname   "dbname"
             :user     "user"
             :password "super-secret-password"}
- :mode     "production"
- :server   {:port       8080
-            :https-port 8443
-            :mode       "prod"
-            :output-dir "./logs"}}
+ :mode     "production"}

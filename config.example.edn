@@ -1,10 +1,7 @@
+;; This is an example config file for testing.
 {:database {:host     "localhost"
             :port     5432
-            :dbname   "pyregence"
-            :user     "pyregence"
-            :password "pyregence"}
- :mode     "development"
- :server   {:port       8080
-            :https-port 8443
-            :mode       "<dev/prod>"
-            :output-dir "./logs"}}
+            :dbname   "dbname"
+            :user     "user"
+            :password "testing-password"}
+ :mode     "testing"}

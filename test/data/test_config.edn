@@ -3,8 +3,4 @@
             :dbname   "dbname"
             :user     "user"
             :password "testing-password"}
- :mode     "testing"
- :server   {:port       8080
-            :https-port 8443
-            :mode       "dev"
-            :output-dir "./logs"}}
+ :mode     "testing"}

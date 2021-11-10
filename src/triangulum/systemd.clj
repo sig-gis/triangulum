@@ -84,8 +84,8 @@ WantedBy=multi-user.target
   {:all       ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
    :directory ["-d" "--dir DIR" "Optional path to repo directory when enabling the service. Will default to the current directory."
                :default "./"]
-   :no-http   ["-p" "--http HTTP" "Optional http port to run the server."]
-   :no-https  ["-P" "--https HTTPS" "Optional https port to run the server."]
+   :http      ["-p" "--http HTTP" "Optional http port to run the server."]
+   :https     ["-P" "--https HTTPS" "Optional https port to run the server."]
    :repo      ["-r" "--repo REPO" "Repository folder that contains deps.edn.  This will be used to name the service"]
    :user      ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."]})
 
