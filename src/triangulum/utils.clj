@@ -117,14 +117,18 @@
 
 ;; Equality checking
 
-(defn =keys
-  "Whether m1 and m2 contain the same keys."
+(defn subset-keys?
+  "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
+   also maintain the same property.
+
+   Example:
+   `(subset-keys? {:a {:b \"c\"} :d 0} {:a {:b \"e\" :g 42} :d 1 :h 2}) ; => true`"
   [m1 m2]
   (and (set/subset? (-> m1 (keys) (set)) (-> m2 (keys) (set)))
        (reduce (fn [acc [k v]]
                  (and acc
                       (if (map? v)
-                        (=keys v (get m2 k))
+                        (subset-keys? v (get m2 k))
                         true)))
                true
                m1)))
