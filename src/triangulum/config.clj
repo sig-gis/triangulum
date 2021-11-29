@@ -3,7 +3,7 @@
             [clojure.edn        :as edn]
             [clojure.spec.alpha :as s]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [=keys]]))
+            [triangulum.utils   :refer [subset-keys?]]))
 
 ;;; Specs
 ;; Base spec
@@ -52,7 +52,7 @@
         (do (println "Error: Invalid config file:" file)
             (s/explain ::config config))
 
-        (not (=keys example-config config))
+        (not (subset-keys? example-config config))
         (println "Error: Keys from config.default.edn are missing from:" file)
 
         :else

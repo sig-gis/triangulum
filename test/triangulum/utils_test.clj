@@ -7,7 +7,7 @@
                                       filterm
                                       parse-as-sh-cmd
                                       mapm
-                                      =keys]]))
+                                      subset-keys?]]))
 
 (deftest end-with-test
   (testing "Appends end-value when string doesn't end with end-value."
@@ -65,10 +65,16 @@
     (is (= (filterm (fn [[_ v]] (odd? v)) test-map)
            {:a 1 :c 3}))))
 
-(deftest =keys-test
-  (testing "Two nested maps with same keys have =keys"
+(deftest subset-keys?-test
+  (testing "Two nested maps with same keys have subset-keys?"
     (is (= true
-           (=keys {:a "b" :c {:e "d"}} {:a "g" :c {:e "f"}}))))
-  (testing "Maps without the same keys do NOT have =keys"
+           (subset-keys? {:a "b" :c {:d "e"}} {:a "g" :c {:d "f"}}))))
+  (testing "Two nested maps with same keys in different order have subset-keys?"
+    (is (= true
+           (subset-keys? {:c {:d "e"} :a "b"} {:a "g" :c {:d "f"}}))))
+  (testing "Two nested maps, one with more keys have subset-keys?"
+    (is (= true
+           (subset-keys? {:a "b" :c {:d "e"}} {:a "g" :c {:d "f" :h "i"}}))))
+  (testing "Maps without the same keys do NOT have subset-keys?"
     (is (= false
-           (=keys {:a "b" :c {:e "d"}} {:a "g" :c {:y "z"}})))))
+           (subset-keys? {:a "b" :c {:d "e"}} {:a "g" :c {:y "z"}})))))
