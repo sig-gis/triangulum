@@ -91,28 +91,20 @@
 
 ;; Build functions
 
-(defn- load-tables [database user user-pass verbose]
-  (println "Loading tables...")
-  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
-            (topo-sort-files-by-namespace "./src/sql/tables"))
-       (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
-       (println)))
+(def ^:private folders {:tables    "./src/sql/tables"
+                        :functions "./src/sql/functions"
+                        :defaults  "./src/sql/default_data"
+                        :dev       "./src/sql/dev_data"})
 
-(defn- load-functions [database user user-pass verbose]
-  (println "Loading functions...")
-  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
-            (topo-sort-files-by-namespace "./src/sql/functions"))
-       (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
-       (println)))
+(defn- load-folder [sql-type database user user-pass verbose]
+  (let [folder (sql-type folders)]
+    (println (str "Loading " folder "..."))
+    (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
+              (topo-sort-files-by-namespace folder))
+         (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
+         (println))))
 
-(defn- load-default-data [database user user-pass verbose]
-  (println "Loading default data...")
-  (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
-            (topo-sort-files-by-namespace "./src/sql/default_data"))
-       (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
-       (println)))
-
-(defn- build-everything [database user user-pass admin-pass verbose]
+(defn- build-everything [database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
   (let [file (io/file "./src/sql/create_db.sql")]
     (if (.exists file)
@@ -122,9 +114,11 @@
                            (format "psql -h localhost --set=database=%s -U postgres -f create_db.sql"
                                    database))
                (println))
-          (load-tables       database user user-pass verbose)
-          (load-functions    database user user-pass verbose)
-          (load-default-data database user user-pass verbose))
+          (load-folder :tables    database user user-pass verbose)
+          (load-folder :functions database user user-pass verbose)
+          (load-folder :defaults  database user user-pass verbose)
+          (when dev-data?
+            (load-folder :dev database user user-pass verbose)))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
 ;; Backup / restore functions
@@ -156,7 +150,8 @@
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
-  {:dbname     ["-d" "--dbname DB"         "Database name."]
+  {:dbname     ["-d" "--dbname DB"           "Database name."]
+   :dev-data   ["-x" "--dev-data"            "Load dev data."]
    :file       ["-f" "--file FILE"           "File used for backup and restore."]
    :admin-pass ["-a" "--admin-pass PASSWORD" "Admin password for the postgres account."]
    :user       ["-u" "--user USER"           "User for the database. Defaults to the same as the database name."]
@@ -181,17 +176,19 @@
                                                   cli-actions
                                                   "build-db"
                                                   (get-config :database))
-        {:keys [dbname file password admin-pass user verbose]} options]
+        {:keys [dbname dev-data file password admin-pass user verbose]} options]
     (case action
       :build-all (build-everything dbname
                                    (or user dbname)
                                    (or password dbname) ; user-pass
                                    admin-pass
+                                   dev-data
                                    verbose)
-      :functions (load-functions dbname
-                                 (or user dbname)
-                                 (or password dbname) ; user-pass
-                                 verbose)
+      :functions (load-folder :functions
+                              dbname
+                              (or user dbname)
+                              (or password dbname) ; user-pass
+                              verbose)
       :backup    (run-backup dbname file admin-pass verbose)
       :restore   (run-restore file admin-pass verbose)
       nil))
