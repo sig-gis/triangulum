@@ -117,18 +117,24 @@
 
 ;; Equality checking
 
-(defn subset-keys?
+(defn find-missing-keys
   "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
    also maintain the same property.
 
    Example:
-   `(subset-keys? {:a {:b \"c\"} :d 0} {:a {:b \"e\" :g 42} :d 1 :h 2}) ; => true`"
+   `(find-missing-keys {:a {:b \"c\"} :d 0} {:a {:b \"e\" :g 42} :d 1 :h 2}) ; => true`"
   [m1 m2]
-  (and (set/subset? (-> m1 (keys) (set)) (-> m2 (keys) (set)))
-       (reduce (fn [acc [k v]]
-                 (and acc
-                      (if (map? v)
-                        (subset-keys? v (get m2 k))
-                        true)))
-               true
-               m1)))
+  (cond
+    (and (map? m1) (map? m2))
+    (let [header-diff (set/difference (-> m1 (keys) (set)) (-> m2 (keys) (set)))]
+      (into header-diff
+            (reduce (fn [acc [k v]]
+                      (into acc (find-missing-keys v (get m2 k))))
+                    #{}
+                    m1)))
+
+    (map? m1)
+    (-> m1 (keys) (set))
+
+    :else
+    #{}))

@@ -3,7 +3,8 @@
             [clojure.edn        :as edn]
             [clojure.spec.alpha :as s]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [subset-keys?]]))
+            [triangulum.utils   :refer [find-missing-keys]]
+            [clojure.string :as str]))
 
 ;;; Specs
 ;; Base spec
@@ -43,21 +44,31 @@
 
 ;;; Helper Fns
 
+(defn- wrap-throw [& strs]
+  (-> (apply str strs)
+      (ex-info {})
+      (throw)))
+
 (defn- read-config [file]
   (if (.exists (io/file file))
     (let [example-config (-> (slurp *default-file*) (edn/read-string))
-          config         (-> (slurp file) (edn/read-string))]
+          config         (-> (slurp file) (edn/read-string))
+          missing-keys   (find-missing-keys example-config config)]
       (cond
+        (seq missing-keys)
+        (wrap-throw "Error: The following keys from config.default.edn are missing from:"
+                    file
+                    "\n"
+                    (str/join "', '" missing-keys))
+
         (not (s/valid? ::config config))
         (do (println "Error: Invalid config file:" file)
-            (s/explain ::config config))
-
-        (not (subset-keys? example-config config))
-        (println "Error: Keys from config.default.edn are missing from:" file)
+            (s/explain ::config config)
+            (wrap-throw ""))
 
         :else
         config))
-    (println "Error: Cannot find file" file)))
+    (wrap-throw "Error: Cannot find file" file)))
 
 (defn- cache-config []
   (or @config-cache
