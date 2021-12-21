@@ -32,6 +32,6 @@
     (is (= "super-secret-password" (get-config :database :password))))
 
   (testing "Invalid configurations"
-      (are [config-file error] (str/starts-with? (load-config-output config-file) error)
-           "test_missing_keys_config.edn" "Error: Keys from config.default.edn are missing"
-           "test_invalid_spec_config.edn" "Error: Invalid config file")))
+    (are [config-file] (thrown? java.lang.Exception (load-config-output config-file))
+      "test_missing_keys_config.edn"
+      "test_invalid_spec_config.edn")))

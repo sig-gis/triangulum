@@ -7,16 +7,16 @@
                                       filterm
                                       parse-as-sh-cmd
                                       mapm
-                                      subset-keys?]]))
+                                      find-missing-keys]]))
 
 (deftest end-with-test
   (testing "Appends end-value when string doesn't end with end-value."
     (is (= (end-with "path" "/")
-           "path/"))
+           "path/")))
 
   (testing "Does not append end-value when string does end with end-value."
     (is (= (end-with "path/" "/")
-           "path/")))))
+           "path/"))))
 
 (deftest format-str-test
   (testing "Allows any char after % to be used in formatting"
@@ -65,16 +65,17 @@
     (is (= (filterm (fn [[_ v]] (odd? v)) test-map)
            {:a 1 :c 3}))))
 
-(deftest subset-keys?-test
-  (testing "Two nested maps with same keys have subset-keys?"
-    (is (= true
-           (subset-keys? {:a "b" :c {:d "e"}} {:a "g" :c {:d "f"}}))))
-  (testing "Two nested maps with same keys in different order have subset-keys?"
-    (is (= true
-           (subset-keys? {:c {:d "e"} :a "b"} {:a "g" :c {:d "f"}}))))
-  (testing "Two nested maps, one with more keys have subset-keys?"
-    (is (= true
-           (subset-keys? {:a "b" :c {:d "e"}} {:a "g" :c {:d "f" :h "i"}}))))
-  (testing "Maps without the same keys do NOT have subset-keys?"
-    (is (= false
-           (subset-keys? {:a "b" :c {:d "e"}} {:a "g" :c {:y "z"}})))))
+(deftest find-missing-keys-test
+  (testing "Two nested maps with same keys return empty set."
+    (is (= #{}
+           (find-missing-keys {:a "b" :c {:d "e"}} {:a "g" :c {:d "f"}}))))
+  (testing "Two nested maps with same keys in different order return empty set."
+    (is (= #{}
+           (find-missing-keys {:c {:d "e"} :a "b"} {:a "g" :c {:d "f"}}))))
+  (testing "Two nested maps, one with more keys return empty set."
+    (is (= #{}
+           (find-missing-keys {:a "b" :c {:d "e"}} {:a "g" :c {:d "f" :h "i"}}))))
+  (testing "Maps without the same keys return invalid keys as set."
+    (is (= #{:d :e :f :g :i}
+           (find-missing-keys {:a "b" :c {:d "e"} :e {:f "f" :g "g"} :h {:i "i"}}
+                              {:a "g" :c {:y "z"} :h nil})))))
