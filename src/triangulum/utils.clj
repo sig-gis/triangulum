@@ -127,11 +127,10 @@
   (cond
     (and (map? m1) (map? m2))
     (let [header-diff (set/difference (-> m1 (keys) (set)) (-> m2 (keys) (set)))]
-      (into header-diff
-            (reduce (fn [acc [k v]]
-                      (into acc (find-missing-keys v (get m2 k))))
-                    #{}
-                    m1)))
+      (reduce (fn [acc [k v]]
+                (into acc (find-missing-keys v (get m2 k))))
+              header-diff
+              m1))
 
     (map? m1)
     (-> m1 (keys) (set))
