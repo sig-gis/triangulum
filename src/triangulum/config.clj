@@ -64,6 +64,7 @@
         (not (s/valid? ::config config))
         (do (println "Error: Invalid config file:" file)
             (s/explain ::config config)
+            (flush)
             (wrap-throw ""))
 
         :else
