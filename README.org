@@ -10,7 +10,7 @@ Add the package to dep.edn
 
 #+begin_src clojure
 sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
-                     :sha "5cc44fdb0aa43bb8613cb888dbb945fa57400ed9"}
+                     :sha "copy-current-sha-here"}
 #+end_src
 
 *** triangulum.config
