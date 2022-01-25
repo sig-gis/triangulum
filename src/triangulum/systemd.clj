@@ -14,10 +14,10 @@ Description=A service to launch a server written in clojure
 After=network.target
 
 [Service]
-Type=simple
+Type=notify
 User=%s
 WorkingDirectory=%s
-ExecStart=/usr/local/bin/clojure -M:server start %s %s -o logs
+ExecStart=/usr/local/bin/clojure -M:server start %s %s
 ExecStop=/usr/local/bin/clojure -M:server stop
 
 [Install]
