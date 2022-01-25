@@ -295,7 +295,7 @@ clojure -M:test
 
 ** License
 
-Copyright © 2021 Spatial Informatics Group, LLC.
+Copyright © 2021-2022 Spatial Informatics Group, LLC.
 
 Triangulum is distributed by Spatial Informatics Group, LLC. under the
 terms of the Eclipse Public License version 2.0 (EPLv2). See
