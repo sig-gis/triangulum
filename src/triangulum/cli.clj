@@ -58,13 +58,40 @@
       (not-every? options requires)
       (error-str action requires cli-options))))
 
+(defn- get-option-default [option]
+  (loop [cur     (first option)
+         tail    (next option)
+         result  []]
+    (cond
+      (nil? cur)
+      {:option result :default nil}
+
+      (= :default cur)
+      {:option  (vec (concat result (next tail)))
+       :default (first tail)}
+
+      :else
+      (recur (first tail)
+             (next tail)
+             (conj result cur)))))
+
+(defn- separate-options-defaults [options]
+  (reduce (fn [acc [k v]]
+            (let [{:keys [option default]} (get-option-default v)]
+              (-> acc
+                  (assoc-in [:options k] option)
+                  (assoc-in [:defaults k] default))))
+          {:options {} :defaults {}}
+          options))
+
 (defn get-cli-options
   "Checks for a valid call from the CLI and returns the users options."
   [args cli-options cli-actions alias-str & [config]]
-  (let [{:keys [arguments errors options]} (->> cli-options
+  (let [{:keys [options defaults]} (separate-options-defaults cli-options)
+        {:keys [arguments errors options]} (->> options
                                                 (vals)
                                                 (parse-opts args))
-        combined-options (merge config options) ; config file is default, cli params can overwrite.
+        combined-options (merge defaults config options) ; defaults, config file, then cli params can overwrite.
         action           (keyword (first arguments))
         error-msg        (check-errors arguments errors combined-options action cli-options cli-actions)]
     (if error-msg
