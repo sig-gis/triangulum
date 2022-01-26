@@ -242,7 +242,21 @@ your ~:aliases~ section in the ~deps.edn~ file:
 {:aliases {:systemd {:main-opts ["-m" "triangulum.systemd"]}}}
 #+end_src
 
-And then running:
+Modify your app code to call ~(triangulum.notify/ready!)~ after all of your
+application's services are started:
+#+begin_src clojure
+(ns <app>.server
+  (:require [triangulum.notify :as notify]))
+...
+
+(defn app-start []
+  (reset! db (jdbc/connect!))
+  (reset! queues (q/start!))
+  (reset! server (ring/start-server!)
+  (when (notify/available?) (notify/ready!))))
+#+end_src
+
+And then run:
 #+begin_src sh
 sudo clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-d REPO DIRECTORY]
 #+end_src
