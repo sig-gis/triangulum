@@ -1,8 +1,8 @@
 (ns triangulum.cli-test
-  (:require [clojure.test    :refer [are deftest testing]]
+  (:require [clojure.test    :refer [are is deftest testing]]
             [triangulum.cli  :refer [get-cli-options]]))
 
-(def ^:private cli-actions {:test {:description "Starts the test."}})
+(def ^:private cli-actions {:run-test {:description "Starts the test."}})
 
 (def ^:private cli-options
   {:int  ["-i" "--int INT" "Integer option, defaults to 1"
@@ -17,47 +17,28 @@
           :validate [#{"big" "medium" "small"} "Must be \"big\", \"medium\", or \"small\""]]})
 
 (deftest test-cli-options
+  (let [defaults {:int 1 :str "test" :flag false :set "small"}
+        sut (fn [args config]
+              (get-cli-options (concat ["run-test"] args) cli-options cli-actions "run-test" config))]
+
     (testing "Config uses default values."
-      (let [config   {}
-            f        #(get-cli-options (concat ["test"] %) cli-options cli-actions "server" config)]
-        (are [result args] (let [{:keys [options]} (f args)]
-                             (= ((first result) options)
-                                (second result)))
-             [:int 1]          []
-             [:str "test"] []
-             [:flag false]      []
-             [:set "small"]   [])))
+      (is (= (:options (sut [] {})) defaults)))
 
     (testing "CLI flag overrides the default values."
-      (let [config   {}
-            f        #(get-cli-options (concat ["test"] %) cli-options cli-actions "server" config)]
-        (are [result args] (let [{:keys [options]} (f args)]
-                             (= ((first result) options)
-                                (second result)))
-             [:int 3]          ["-i" "3"]
-             [:str "override"] ["-s" "override"]
-             [:flag true]      ["-f"]
-             [:set "medium"]   ["-t" "medium"]))
-
+      (are [args result] (= (:options (sut args {})) (merge defaults result))
+           ["-i" "3"]        {:int 3}
+           ["-s" "override"] {:str "override"}
+           ["-f"]            {:flag true}
+           ["-t" "medium"]   {:set "medium"}))
 
     (testing "Config overrides the default values."
-      (let [config   {:int 3 :str "override" :flag true :set "medium"}
-            f        #(get-cli-options (concat ["test"] %) cli-options cli-actions "server" config)]
-        (are [result args] (let [{:keys [options]} (f args)]
-                             (= ((first result) options)
-                                (second result)))
-             [:int 3]          []
-             [:str "override"] []
-             [:flag true]      []
-             [:set "medium"]   [])))
+      (let [config {:int 3 :str "override" :flag true :set "medium"}]
+        (is (= (:options (sut [] config)) config))))
 
     (testing "CLI overrides the config values."
-      (let [config   {:int 10 :str "not-valid" :flag false :set "large"}
-            f        #(get-cli-options (concat ["test"] %) cli-options cli-actions "server" config)]
-        (are [result args] (let [{:keys [options]} (f args)]
-                             (= ((first result) options)
-                                (second result)))
-             [:int 3]          ["-i" "3"]
-             [:str "override"] ["-s" "override"]
-             [:flag true]      ["-f"]
-             [:set "medium"]   ["-t" "medium"])))))
+      (let [config {:int 10 :str "not-valid" :flag false :set "large"}]
+        (are [args result] (= (:options (sut args config)) (merge config result))
+             ["-i" "3"]        {:int 3}
+             ["-s" "override"] {:str "override"}
+             ["-f"]            {:flag true}
+             ["-t" "medium"]   {:set "medium"})))))

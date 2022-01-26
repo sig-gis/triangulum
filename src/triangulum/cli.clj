@@ -59,21 +59,21 @@
       (error-str action requires cli-options))))
 
 (defn- get-option-default [option]
-  (reduce (fn [{:keys [option default]} cur]
-            (cond
-              (= :default cur)
-              {:option option
-               :default true}
+  (loop [cur     (first option)
+         tail    (next option)
+         option  []]
+    (cond
+      (nil? cur)
+      {:option option :default nil}
 
-              (= default true)
-              {:option option
-               :default cur}
+      (= :default cur)
+      {:option  (vec (concat option (next tail)))
+       :default (first tail)}
 
-              :else
-              {:option (conj option cur)
-               :default default}))
-          {:option [] :default nil}
-          option))
+      :else
+      (recur (first tail)
+             (next tail)
+             (conj option cur)))))
 
 (defn- separate-options-defaults [options]
   (reduce (fn [acc [k v]]
