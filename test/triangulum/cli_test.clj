@@ -8,7 +8,7 @@
   {:int  ["-i" "--int INT" "Integer option, defaults to 1"
           :parse-fn #(if (int? %) % (Integer/parseInt %))
           :default  1]
-   :str  ["-s" "--str STING" "String option, defaults to 'test'"
+   :str  ["-s" "--str STRING" "String option, defaults to 'test'"
           :default "test"]
    :flag ["-f" "--flag" "Boolean option, defaults to false."
           :default false]
