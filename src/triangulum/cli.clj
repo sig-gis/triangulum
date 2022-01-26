@@ -61,19 +61,19 @@
 (defn- get-option-default [option]
   (loop [cur     (first option)
          tail    (next option)
-         option  []]
+         result  []]
     (cond
       (nil? cur)
-      {:option option :default nil}
+      {:option result :default nil}
 
       (= :default cur)
-      {:option  (vec (concat option (next tail)))
+      {:option  (vec (concat result (next tail)))
        :default (first tail)}
 
       :else
       (recur (first tail)
              (next tail)
-             (conj option cur)))))
+             (conj result cur)))))
 
 (defn- separate-options-defaults [options]
   (reduce (fn [acc [k v]]

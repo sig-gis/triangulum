@@ -1,25 +1,25 @@
 (ns triangulum.cli-test
-  (:require [clojure.test    :refer [are is deftest testing]]
-            [triangulum.cli  :refer [get-cli-options]]))
+  (:require [clojure.test   :refer [are is deftest testing]]
+            [triangulum.cli :refer [get-cli-options]]))
 
 (def ^:private cli-actions {:run-test {:description "Starts the test."}})
 
 (def ^:private cli-options
   {:int  ["-i" "--int INT" "Integer option, defaults to 1"
           :parse-fn #(if (int? %) % (Integer/parseInt %))
-          :default 1]
+          :default  1]
    :str  ["-s" "--str STING" "String option, defaults to 'test'"
           :default "test"]
    :flag ["-f" "--flag" "Boolean option, defaults to false."
           :default false]
    :set  ["-t" "--set SET" "Set option, can be either \"big\", \"medium\", or \"small\". Defaults to \"small\"."
-          :default "small"
+          :default  "small"
           :validate [#{"big" "medium" "small"} "Must be \"big\", \"medium\", or \"small\""]]})
 
 (deftest test-cli-options
   (let [defaults {:int 1 :str "test" :flag false :set "small"}
-        sut (fn [args config]
-              (get-cli-options (concat ["run-test"] args) cli-options cli-actions "run-test" config))]
+        sut      (fn [args config]
+                   (get-cli-options (concat ["run-test"] args) cli-options cli-actions "run-test" config))]
 
     (testing "Config uses default values."
       (is (= (:options (sut [] {})) defaults)))
