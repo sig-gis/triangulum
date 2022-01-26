@@ -102,7 +102,7 @@
   (map? (read-config file)))
 
 (def ^:private cli-options
-  {:validate ["-f" "--file FILE" "Configuration file to validate."]})
+  {:file ["-f" "--file FILE" "Configuration file to validate."]})
 
 (def ^:private cli-actions
   {:validate {:description "Validates the configuration file (default: config.edn)."

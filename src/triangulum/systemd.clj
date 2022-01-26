@@ -82,7 +82,7 @@ WantedBy=multi-user.target
 
 (def ^:private cli-options
   {:all       ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
-   :directory ["-d" "--dir DIR" "Optional path to repo directory when enabling the service. Will default to the current directory."
+   :dir       ["-d" "--dir DIR" "Optional path to repo directory when enabling the service. Will default to the current directory."
                :default "./"]
    :http      ["-p" "--http HTTP" "Optional http port to run the server."]
    :https     ["-P" "--https HTTPS" "Optional https port to run the server."]
