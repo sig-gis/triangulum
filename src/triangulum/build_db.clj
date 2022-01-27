@@ -1,5 +1,6 @@
 (ns triangulum.build-db
-  (:import java.io.File)
+  (:import [java.io File]
+           [java.security MessageDigest])
   (:require [clojure.java.io    :as io]
             [clojure.edn        :as edn]
             [clojure.set        :refer [difference]]
@@ -126,47 +127,6 @@
 
 ;; Apply changes
 
-(def ^:private migrations-dir "./src/sql/changes")
-(def ^:private change-file    ".build-db-changes")
-(def ^:private rollback?      (atom false))
-
-(defn- get-migrations-dir []
-  (.mkdirs (File. migrations-dir))
-  migrations-dir)
-
-(defn- get-migration-files []
-  (->> (get-migrations-dir)
-       (io/file)
-       (file-seq)
-       (filter #(.isFile %))
-       (map #(.getName %))
-       (filter #(str/ends-with? % ".sql"))
-       (set)))
-
-(defn- get-completed-changes []
-  (let [file (io/file change-file)]
-    (if (.exists file)
-      (-> file (slurp) (edn/read-string))
-      #{})))
-
-(defn- set-completed-changes [new-changes]
-  (spit change-file (prn-str new-changes)))
-
-(defn- get-ds [database user user-pass]
-  (jdbc/get-datasource {:dbtype                "postgresql"
-                        :dbname                database
-                        :user                  user
-                        :password              user-pass
-                        :reWriteBatchedInserts true}))
-
-(defn- check-conn [database user user-pass]
-  (jdbc/get-connection (get-ds database user user-pass)))
-
-(defn- apply-change-sql-file [database user user-pass verbose? file]
-  (when verbose? (println (format "Migrating change %s " file)))
-  (let [ds (get-ds database user user-pass)]
-    (jdbc/with-transaction [tx ds]
-      (jdbc/execute! tx [(slurp (str migrations-dir "/" file))]))))
 
 (defn- apply-changes [database user user-pass verbose?]
   (when verbose? (println "Applying changes..."))
@@ -190,6 +150,46 @@
               (when-not (empty? changes)
                 (recur (first changes) (rest changes) (conj completed file))))))))
     (when verbose? (println "Completed migrations."))))
+
+(defn- create-migrations-table [ds]
+  (jdbc/execute! ds ["CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+                     "CREATE SCHEMA IF NOT EXISTS triangulum;"
+                     "CREATE TABLE IF NOT EXISTS triangulum.migrations (
+                      migration_id uuid      DEFAULT uuid_generate_v4 (),
+                      filename     VARCHAR   DEFAULT uuid_generate_v4 (),
+                      hash         VARCHAR   NOT NULL,
+                      created_date TIMESTAMP DEFAULT now(),
+                      completed    BOOLEAN   DEFAULT FALSE);"]))
+
+(comment
+
+
+  (MessageDigest)
+  (spit "config.default.edn" (slurp "config.example.edn"))
+  (slurp "config.default.edn")
+  (def db (get-config :database))
+  db
+  (def ds (get-ds (:dbname db) (:user db) (:password db)))
+
+  (create-migrations-table ds)
+
+
+  (jdbc/execute! ds ["DROP TABLE IF EXISTS triangulum.migrations;"])
+  (jdbc/execute! ds ["SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'triangulum';"])
+  (jdbc/execute! ds ["SELECT * FROM triangulum.migrations;"])
+
+  (jdbc/execute! ds ["SELECT routine_name FROM information_schema.routines WHERE routine_type = 'FUNCTION';"])
+  (slurp ".build-db-changes")
+
+  (def first-hash (hexdigest (slurp "config.edn")))
+  (def second-hash (hexdigest (slurp "config.edn")))
+
+  first-hash
+  second-hash
+  (= first-hash second-hash)
+  (create-migrations-table ds)
+
+  )
 
 (defn- reset-changes []
   (println "Resetting change file...")
