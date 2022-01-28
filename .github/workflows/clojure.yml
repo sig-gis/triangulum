@@ -21,6 +21,12 @@ jobs:
           - 5432:5432
 
     steps:
+      - name: psycopg2 prerequisites
+        run: sudo apt-get update
+
+      - name: psycopg2 prerequisites
+        run: sudo apt-get install -y libpq-dev
+
       - uses: actions/checkout@v2
       - name: Run tests
         uses: vouch-opensource/tools.deps-build@1.0.1
