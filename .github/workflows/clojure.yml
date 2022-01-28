@@ -21,17 +21,6 @@ jobs:
           - 5432:5432
 
     steps:
-      - name: Install PostgreSQL client
-        run: |
-          apt-get update
-          apt-get install --yes postgresql-client
-
-      # queries database with postgres client
-      - name: Query database
-        run: psql -h postgres -d postgres_db -U postgres_user -c 'SELECT 1;'
-        env:
-          PGPASSWORD: SPECIALPASSWORD
-
       - uses: actions/checkout@v2
       - name: Run tests
         uses: vouch-opensource/tools.deps-build@1.0.1
