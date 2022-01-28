@@ -1,15 +1,12 @@
 (ns triangulum.build-db
-  (:import [java.io File]
-           [java.security MessageDigest])
+  (:import [java.io File])
   (:require [clojure.java.io    :as io]
-            [clojure.edn        :as edn]
-            [clojure.set        :refer [difference]]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
-            [next.jdbc :as jdbc]
-            [triangulum.cli    :refer [get-cli-options]]
-            [triangulum.config :refer [get-config]]
-            [triangulum.utils  :refer [nil-on-error parse-as-sh-cmd format-str]]))
+            [triangulum.cli     :refer [get-cli-options]]
+            [triangulum.config  :refer [get-config]]
+            [triangulum.migrate :refer [migrate!]]
+            [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -125,13 +122,6 @@
             (load-folder :dev database user user-pass verbose)))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
-(defn- reset-changes []
-  (println "Resetting change file...")
-  (set-completed-changes #{}))
-
-(defn- last-change []
-  (println "Last change:" (-> (get-completed-changes) (sort) (last))))
-
 ;; Backup / restore functions
 
 (defn- read-file-tag [file]
@@ -179,11 +169,7 @@
    :restore       {:description "Restore a database from a .dump file created by pg_dump."
                    :requires    [:file]}
    :apply-changes {:description "Applies the migration files under `src/sql/changes` in chronological order."
-                   :requires    [:dbname :user :password]}
-   :reset-changes {:description "Resets the existing change file, which allows all migrations to be re-run."
-                   :requires    []}
-   :last-change   {:description "Returns the last entry (in chronological order) from the change file."
-                   :requires    []}})
+                   :requires    [:dbname :user :password]}})
 
 (defn -main
   "A set of tools for building and maintaining the project database with Postgres."
@@ -208,11 +194,9 @@
                               verbose)
       :backup    (run-backup dbname file admin-pass verbose)
       :restore   (run-restore file admin-pass verbose)
-      :apply-changes (apply-changes dbname
-                                    (or user dbname)
-                                    (or password dbname) ; user-pass
-                                    verbose)
-      :reset-changes (reset-changes)
-      :last-change   (last-change)
+      :migrate   (migrate! dbname
+                           (or user dbname)
+                           (or password dbname) ; user-pass
+                           verbose)
       nil))
   (shutdown-agents))
