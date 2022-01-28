@@ -1,18 +1,15 @@
-(ns triangulum.build-db
-  (:import [java.io File]
-           [java.security MessageDigest])
-  (:require [clojure.java.io    :as io]
-            [clojure.edn        :as edn]))
+(ns triangulum.security
+  (:require [clojure.java.io :as io])
+  (:import [java.security MessageDigest]))
 
 ;; https://gist.github.com/kisom/1698245
-(defn hexdigest
-  "Returns the hex digest of an object. Expects string as input.
-   Defaults to SHA-256 hash."
-  ([input] (hexdigest input "SHA-256"))
-  ([input hash-algo]
+(defn hash-str
+  "Returns the hex digest of string. Defaults to SHA-256 hash."
+  ([input] (hash-str input "SHA-256"))
+  ([^java.lang.String input hash-algo]
      (if (string? input)
        (let [md (MessageDigest/getInstance hash-algo)]
-         (. md update (.getBytes input))
+         (.update md (.getBytes input))
          (let [digest (.digest md)]
            (apply str (map #(format "%02x" (bit-and % 0xff)) digest))))
        (do
@@ -25,9 +22,9 @@
   (when (.isFile (io/file filename))
     (-> filename
         (slurp)
-        (hexdigest))))
+        (hash-str))))
 
 (defn compare-sha256
   "Compare an object to a hash; true if (= (hash obj) ref-hash)."
   [obj ref-hash]
-  (= ref-hash (hexdigest obj "SHA-256")))
+  (= ref-hash (hash-str obj "SHA-256")))
