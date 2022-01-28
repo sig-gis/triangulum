@@ -30,7 +30,7 @@
                         :reWriteBatchedInserts true}))
 
 (defn- get-admin-conn []
-  (get-conn "postgres"
+  (get-conn (or (System/getenv "PGDATABASE") "postgres")
             (or (System/getenv "PGUSER") "postgres")
             (or (System/getenv "PGPASSWORD") "")))
 
