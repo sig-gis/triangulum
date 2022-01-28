@@ -1,27 +1,17 @@
 (ns triangulum.migrate-test
-  (:require [clojure.test         :refer [is deftest testing use-fixtures run-tests]]
+  (:require [clojure.test         :refer [is deftest testing use-fixtures]]
             [clojure.java.io      :as io]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
             [triangulum.security  :refer [hash-str]]
-            [triangulum.migrate   :refer [migrate!] :as m]))
+            [triangulum.migrate   :refer [migrate!] :as m]
+            [triangulum.utils     :refer [delete-recursively]]))
 
 ;; Debugging
 (def ^:private verbose? false)
 (def ^:private tri-test "tri_test")
 
 ;; Helpers
-(defn delete-recursively
-  "Recursively deletes all files in `dir`.
-  (Reference)[https://gist.github.com/edw/5128978]"
-  [dir]
-  (let [func (fn [func f]
-               (when (.isDirectory f)
-                 (doseq [f2 (.listFiles f)]
-                   (func func f2)))
-               (clojure.java.io/delete-file f))]
-    (func func (clojure.java.io/file dir))))
-
 (defn- get-conn [database user user-pass]
   (jdbc/get-connection {:dbtype                "postgresql"
                         :dbname                database

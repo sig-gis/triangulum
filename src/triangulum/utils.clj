@@ -1,8 +1,9 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream)
   (:require [cognitect.transit :as transit]
-            [clojure.string    :as str]
+            [clojure.java.io   :as io]
             [clojure.set       :as set]
+            [clojure.string    :as str]
             [clojure.data.json :as json]))
 
 (defmacro nil-on-error
@@ -143,3 +144,16 @@
 
     :else
     #{}))
+
+;; File operations
+
+(defn delete-recursively
+  "Recursively deletes all files in `dir`.
+  (Reference)[https://gist.github.com/edw/5128978]"
+  [dir]
+  (let [func (fn [func f]
+               (when (.isDirectory f)
+                 (doseq [f2 (.listFiles f)]
+                   (func func f2)))
+               (io/delete-file f))]
+    (func func (io/file dir))))

@@ -1,10 +1,14 @@
 (ns triangulum.security-test
-  (:require [clojure.test        :refer [is deftest testing]]
-            [triangulum.security :refer [hash-str hash-file compare-sha256]])
-  (:import [java.nio.file Files FileSystem Path]))
+  (:require [clojure.test        :refer [is deftest testing use-fixtures]]
+            [clojure.java.io     :as io]
+            [triangulum.security :refer [hash-str hash-file]]
+            [triangulum.utils     :refer [delete-recursively]]))
 
-(defn- tmp-file! ^Path [dir filename suffix]
-  (Files/createTempFile (FileSystem/getPath dir) filename suffix))
+(defn- cleanup-tmp [f]
+  (f)
+  (when (.exists (io/file "tmp")) (delete-recursively "tmp")))
+
+(use-fixtures :each cleanup-tmp)
 
 (deftest hash-str-test
   (testing "Performs a SHA-256 hash of a string."
@@ -15,5 +19,10 @@
 
 (deftest hash-file-test
   (testing "Performs a SHA-256 hash of a file."
-    (let [tmp (tmp-file! "/tmp" "test-sha" ".txt")]
-      (println tmp))))
+    (let [tmp-file "tmp/test-sha.txt"]
+
+      (io/make-parents tmp-file)
+      (spit tmp-file "clojure is great")
+
+      (is (= (hash-file tmp-file)
+             "8cb3449c569eab427908cbdc57204c128ea7217f74124086e464498a26eb34a1")))))

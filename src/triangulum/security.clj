@@ -23,8 +23,3 @@
     (-> filename
         (slurp)
         (hash-str))))
-
-(defn compare-sha256
-  "Compare an object to a hash; true if (= (hash obj) ref-hash)."
-  [obj ref-hash]
-  (= ref-hash (hash-str obj "SHA-256")))
