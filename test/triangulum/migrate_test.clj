@@ -13,6 +13,7 @@
 
 ;; Helpers
 (defn- get-conn [database user user-pass]
+  (println "Attempting to connect to" database user user-pass)
   (jdbc/get-connection {:dbtype                "postgresql"
                         :dbname                database
                         :user                  user

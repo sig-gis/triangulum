@@ -7,7 +7,7 @@
             [triangulum.security  :refer [hash-file]]))
 
 ;; Constants
-(def ^{:dynamic true :doc ""}
+(def ^{:dynamic true :doc "Location of migrations dir"}
   *migrations-dir*
   "./src/sql/changes/")
 
