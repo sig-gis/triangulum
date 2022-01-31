@@ -171,6 +171,38 @@ type ~:database~ in ~create_db.sql~ where needed. You can check out
 [[https://github.com/openforis/collect-earth-online/blob/main/src/sql/create_db.sql][Collect Earth Online]]
 to view an example.
 
+A handy use of the ~build-db~ command is to backup and restore your database.
+Calling
+
+#+begin_src sh
+clojure -M:build-db backup -f somefile.dump
+#+end_src
+
+will create a ~.dump~ backup file using ~pg_dump~.
+
+To restore your database from a ~.dump~ file  you will need a ~.dump~ file
+containg a copy of a database downloaded locally. Assuming you have a copy of
+a database, you can then run:
+
+#+begin_src sh
+clojure -M:build-db restore -f somefile.dump
+#+end_src
+
+This will copy the database from the ~.dump~ file into your local Postgres
+database of the same name as the one in the ~.dump~ file. Note that you will be
+prompted with a password after running this command. You should enter the
+Postgres master password that you first created when running Postgres after
+installing. Depending on the size of your ~.dump~ file, this command may take a
+couple of minutes. Note that if you are working on a development branch and your
+~.dump~ file contains a copy of a production database you may also need to apply
+some of the SQL changes from the ~./sql/changes~ directory. Assuming your
+database doesn't have any of the change files on development applied to it,
+you can apply all of them at once using the following command:
+
+#+begin_src sh
+for filename in ./src/sql/changes/*.sql; do psql -U <db-name> -f $filename; done
+#+end_src
+
 triangulum.build-db can also be configured through config.edn.  It uses
 the same configuration as [[#triangulumdatabase][triangulum.database]] (see above).
 
