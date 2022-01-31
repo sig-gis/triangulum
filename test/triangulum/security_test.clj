@@ -2,7 +2,7 @@
   (:require [clojure.test        :refer [is deftest testing use-fixtures]]
             [clojure.java.io     :as io]
             [triangulum.security :refer [hash-str hash-file]]
-            [triangulum.utils     :refer [delete-recursively]]))
+            [triangulum.utils    :refer [delete-recursively]]))
 
 (defn- cleanup-tmp [f]
   (f)

@@ -168,7 +168,7 @@
                    :requires    [:dbname]}
    :restore       {:description "Restore a database from a .dump file created by pg_dump."
                    :requires    [:file]}
-   :apply-changes {:description "Applies the migration files under `src/sql/changes` in chronological order."
+   :migrate       {:description "Applies the migration files under `src/sql/changes` in chronological order."
                    :requires    [:dbname :user :password]}})
 
 (defn -main
