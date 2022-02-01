@@ -22,7 +22,7 @@
 
 (defn- get-admin-conn []
   (get-conn (or (System/getenv "PGDATABASE") "postgres")
-            (or (System/getenv "PGUSER") "postgres")
+            (or (System/getenv "PGUSERNAME") "postgres")
             (or (System/getenv "PGPASSWORD") "")))
 
 (defn- get-migrations [db-conn]
