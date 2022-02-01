@@ -7,7 +7,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      PGPASSWORD=postgres
+      PGPASSWORD: postgres
 
     services:
       postgres:
