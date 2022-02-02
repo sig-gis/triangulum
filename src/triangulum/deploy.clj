@@ -18,7 +18,7 @@
   [group-id artifact-id & _]
   (if-let [error-message (check-inputs group-id artifact-id)]
     (println "Error:" error-message)
-    (let [software-version (.format (SimpleDateFormat. "yyyyMMdd") (Date.))
+    (let [software-version (.format (SimpleDateFormat. "yyyy.MM.dd") (Date.))
           jar-path         (str "target/" artifact-id "-" software-version ".jar")
           result           (build-jar {:jar         jar-path
                                        :jar-type    :thin
