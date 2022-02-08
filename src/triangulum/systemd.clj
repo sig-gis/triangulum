@@ -8,6 +8,9 @@
 
 (def ^:private path-env (System/getenv "PATH"))
 
+(def ^:private user-systemctl    "systemctl --user ")
+(def ^:private user-systemd-path "~/.config/systemd/user/")
+
 (def ^:private unit-file-template (str/trim "
 [Unit]
 Description=A service to launch a server written in clojure
@@ -15,10 +18,10 @@ After=network.target
 
 [Service]
 Type=notify
-User=%s
 WorkingDirectory=%s
 ExecStart=/usr/local/bin/clojure -M:server start %s %s
-ExecStop=/usr/local/bin/clojure -M:server stop
+Restart=always
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
@@ -37,27 +40,20 @@ WantedBy=multi-user.target
           (log-str "out: "   out)
           (log-str "error: " err))))))
 
-
-(defn- as-sudo?
-  "Check if user is running as sudo."
-  []
-  (let [{:keys [out]} (sh/sh "id" "-u")]
-    (= (str/trim out) "0")))
-
 (defn- enable-systemd [{:keys [repo user http https dir]}]
-  (let [full-dir      (-> dir
-                          (io/file)
-                          (.getAbsolutePath)
-                          (remove-end "."))
-        repo-dir      (if (= (.getName (io/file full-dir)) repo)
-                        full-dir
-                        (-> full-dir
-                            (end-with "/")
-                            (str repo)))
-        service-name (str "cljweb-" repo)]
+  (let [service-name (str "cljweb-" repo)
+        full-dir     (-> dir
+                         (io/file)
+                         (.getAbsolutePath)
+                         (remove-end "."))
+        repo-dir     (if (= (.getName (io/file full-dir)) repo)
+                       full-dir
+                       (-> full-dir
+                           (end-with "/")
+                           (str repo)))]
     (if (.exists (io/file repo-dir "deps.edn"))
       (do
-        (spit (io/file "/etc/systemd/system/" (str service-name ".service"))
+        (spit (io/file user-systemd-path (str service-name ".service"))
               (format unit-file-template
                       user
                       repo-dir
@@ -65,20 +61,20 @@ WantedBy=multi-user.target
                       (if https (str "-P " https) "")))
         (sh-wrapper "/"
                     {}
-                    "systemctl daemon-reload"
-                    (str "systemctl enable " service-name)))
+                    (str user-systemctl "daemon-reload")
+                    (str user-systemctl "enable " service-name)))
       (println "The directory generated" repo-dir "does not contain a deps.edn file."))))
 
 (defn- disable-systemd [repo]
   (let [service-name (str "cljweb-" repo)]
     (sh-wrapper "/"
                 {}
-                (str "systemctl disable " service-name)
-                "systemctl daemon-reload")
-    (io/delete-file (io/file "/etc/systemd/system/" (str service-name ".service")) true)))
+                (str user-systemctl "disable " service-name)
+                (str user-systemctl "daemon-reload"))
+    (io/delete-file (io/file user-systemd-path (str service-name ".service")) true)))
 
 (defn- systemctl [repo command]
-  (sh-wrapper "/" {} (str "systemctl " (name command) " cljweb-" repo " --all")))
+  (sh-wrapper "/" {} (str user-systemctl (name command) " cljweb-" repo " --all")))
 
 (def ^:private cli-options
   {:all       ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
@@ -107,10 +103,8 @@ WantedBy=multi-user.target
   (let [{:keys [action options]} (get-cli-options args cli-options cli-actions "systemd")
         {:keys [all repo]} options]
     (and action
-         (if (as-sudo?)
-           (case action
-             :enable  (enable-systemd options)
-             :disable (disable-systemd repo)
-             (systemctl (if all "*" repo) action))
-           (println "You must run systemd as sudo."))))
-  (shutdown-agents))
+         (case action
+           :enable  (enable-systemd options)
+           :disable (disable-systemd repo)
+           (systemctl (if all "*" repo) action)))
+    (shutdown-agents)))
