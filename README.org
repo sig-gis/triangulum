@@ -267,7 +267,7 @@ sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/custom.sh
 *** triangulum.systemd
 
 To make sure your application starts up on system reboot, you can use
-Triangulum to create a systemd ~.service~ file by adding the following to
+Triangulum to create a systemd user ~.service~ file by adding the following to
 your ~:aliases~ section in the ~deps.edn~ file:
 
 #+begin_src clojure
@@ -290,17 +290,21 @@ application's services are started:
 
 And then run:
 #+begin_src sh
-sudo clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-d REPO DIRECTORY]
+clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-d REPO DIRECTORY]
 #+end_src
 
 This will install a file named ~cljweb-<repo>.service~ into the
-~/etc/systemd/system/~ directory, reload the systemctl daemon, and have
-enabled your service. Now your service will be enabled at startup.  By default
-the current directory will be used in the service as the working directory.
-To supply an alternative, you can use ~-d~.  This will look for a clojure
-project in that directory.
+~/.config/systemd/user/~ directory, reload the systemctl daemon, and have
+enabled your service. By default the current directory will be used in the
+service as the working directory. To supply an alternative, you can use ~-d~.
+This will look for a clojure project in that directory.
 
-You can also start, stop, and restart your service with the following commands:
+To enable your user services to start on system reboot, you will need to run:
+#+begin_src sh
+sudo loginctl enable-linger "$USER"
+#+end_src
+
+Now your service will be enabled at startup.  You can also start, stop, and restart your service with the following commands:
 #+begin_src sh
 sudo clojure -M:systemd start -r <REPO>
 sudo clojure -M:systemd stop -r <REPO>
