@@ -306,9 +306,9 @@ sudo loginctl enable-linger "$USER"
 
 Now your service will be enabled at startup.  You can also start, stop, and restart your service with the following commands:
 #+begin_src sh
-sudo clojure -M:systemd start -r <REPO>
-sudo clojure -M:systemd stop -r <REPO>
-sudo clojure -M:systemd restart -r <REPO>
+clojure -M:systemd start -r <REPO>
+clojure -M:systemd stop -r <REPO>
+clojure -M:systemd restart -r <REPO>
 #+end_src
 
 ** Useful Development Aliases
