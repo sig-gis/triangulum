@@ -19,6 +19,7 @@ After=network.target
 
 [Service]
 Type=notify
+User=%s
 WorkingDirectory=%s
 ExecStart=/usr/local/bin/clojure -M:server start %s %s
 Restart=always
