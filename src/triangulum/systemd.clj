@@ -9,7 +9,8 @@
 (def ^:private path-env (System/getenv "PATH"))
 
 (def ^:private user-systemctl    "systemctl --user ")
-(def ^:private user-systemd-path "~/.config/systemd/user/")
+(def ^:private user-home         (System/getProperty "user.home"))
+(def ^:private user-systemd-path (str user-home "/.config/systemd/user/"))
 
 (def ^:private unit-file-template (str/trim "
 [Unit]
@@ -50,10 +51,12 @@ WantedBy=multi-user.target
                        full-dir
                        (-> full-dir
                            (end-with "/")
-                           (str repo)))]
+                           (str repo)))
+        unit-file    (str user-systemd-path service-name ".service")]
     (if (.exists (io/file repo-dir "deps.edn"))
       (do
-        (spit (io/file user-systemd-path (str service-name ".service"))
+        (io/make-parents unit-file)
+        (spit unit-file
               (format unit-file-template
                       user
                       repo-dir
