@@ -25,7 +25,7 @@ Restart=always
 PrivateTmp=true
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 "))
 
 ;; Helper functions
