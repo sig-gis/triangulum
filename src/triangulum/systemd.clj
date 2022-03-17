@@ -6,10 +6,10 @@
             [triangulum.logging :refer [log-str]]
             [triangulum.utils   :refer [parse-as-sh-cmd end-with remove-end]]))
 
-(def ^:private path-env (System/getenv "PATH"))
+(def ^:private path-env  (System/getenv "PATH"))
+(def ^:private user-home (System/getProperty "user.home"))
 
 (def ^:private user-systemctl    "systemctl --user ")
-(def ^:private user-home         (System/getProperty "user.home"))
 (def ^:private user-systemd-path (str user-home "/.config/systemd/user/"))
 
 (def ^:private unit-file-template (str/trim "
