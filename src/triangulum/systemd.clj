@@ -19,7 +19,6 @@ After=network.target
 
 [Service]
 Type=notify
-User=%s
 WorkingDirectory=%s
 ExecStart=/usr/local/bin/clojure -M:server start %s %s
 Restart=always
@@ -59,7 +58,6 @@ WantedBy=multi-user.target
         (io/make-parents unit-file)
         (spit unit-file
               (format unit-file-template
-                      user
                       repo-dir
                       (if http (str "-p " http) "")
                       (if https (str "-P " https) "")))
