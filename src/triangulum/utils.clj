@@ -149,7 +149,7 @@
 
 (defn delete-recursively
   "Recursively deletes all files in `dir`.
-  (Reference)[https://gist.github.com/edw/5128978]"
+  [Reference](https://gist.github.com/edw/5128978)"
   [dir]
   (let [func (fn [func f]
                (when (.isDirectory f)

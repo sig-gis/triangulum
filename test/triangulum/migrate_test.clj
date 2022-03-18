@@ -12,18 +12,24 @@
 (def ^:private tri-test "tri_test")
 
 ;; Helpers
-(defn- get-conn [database user user-pass]
-  (println "Attempting to connect to" database user user-pass)
-  (jdbc/get-connection {:dbtype                "postgresql"
-                        :dbname                database
-                        :user                  user
-                        :password              user-pass
-                        :reWriteBatchedInserts true}))
+(defn- get-conn [config]
+  (try
+    (jdbc/get-connection (merge {:dbtype "postgresql" :reWriteBatchedInserts true} config))
+    (catch Exception _ (println "Unable to connect to db using:" config))))
 
 (defn- get-admin-conn []
-  (get-conn (or (System/getenv "PGDATABASE") "postgres")
-            (or (System/getenv "PGUSERNAME") "postgres")
-            (or (System/getenv "PGPASSWORD") "")))
+  (get-conn {:host     (or (System/getenv "PGHOST") "localhost")
+             :port     (or (System/getenv "PGPORT") 5432)
+             :dbname   (or (System/getenv "PGDATABASE") "postgres")
+             :user     (or (System/getenv "PGUSERNAME") "postgres")
+             :password (or (System/getenv "PGPASSWORD") "")}))
+
+(defn- get-tri-test-conn []
+  (get-conn {:host     (or (System/getenv "PGHOST") "localhost")
+             :port     (or (System/getenv "PGPORT") 5432)
+             :dbname   tri-test
+             :user     tri-test
+             :password tri-test}))
 
 (defn- get-migrations [db-conn]
   (jdbc/execute! db-conn
@@ -35,18 +41,18 @@
   (when (.exists (io/file "tmp")) (delete-recursively "tmp"))
   (with-bindings {#'m/*migrations-dir* "tmp/sql/changes/"}
     (f))
-  (delete-recursively "tmp"))
+  (when (.exists (io/file "tmp")) (delete-recursively "tmp")))
 
 (def ^:private create-db ["CREATE ROLE tri_test WITH LOGIN CREATEDB PASSWORD 'tri_test';"
                           "CREATE DATABASE tri_test WITH OWNER tri_test;"])
 (def ^:private drop-db   ["DROP DATABASE IF EXISTS tri_test;" "DROP ROLE IF EXISTS tri_test"])
 
 (defn- setup-test-db [f]
-  (with-open [con (get-admin-conn)]
+  (when-let [con (get-admin-conn)]
     (doseq [q (concat drop-db create-db)]
       (jdbc/execute-one! con [q])))
   (f)
-  (with-open [con (get-admin-conn)]
+  (when-let [con (get-admin-conn)]
     (doseq [q drop-db]
       (jdbc/execute-one! con [q]))))
 
@@ -60,7 +66,7 @@
     (migrate! tri-test tri-test tri-test verbose?)
 
     ; Assert
-    (with-open [con (get-conn tri-test tri-test tri-test)]
+    (with-open [con (get-tri-test-conn)]
       (is (some? (jdbc/execute-one! con ["SELECT * FROM pg_catalog.pg_tables
                                          WHERE schemaname = 'tri'
                                          AND tablename = 'migrations';"])))))
@@ -77,7 +83,7 @@
       (migrate! tri-test tri-test tri-test verbose?)
 
       ; Assert
-      (with-open [con (get-conn tri-test tri-test tri-test)]
+      (with-open [con (get-tri-test-conn)]
         (let [migrations (get-migrations con)]
           (is (pos? (count migrations)))
           (is (= (-> migrations first :filename) filename))
@@ -93,7 +99,7 @@
       (migrate! tri-test tri-test tri-test verbose?))
 
     ; Assert
-    (with-open [con (get-conn tri-test tri-test tri-test)]
+    (with-open [con (get-tri-test-conn)]
       (let [migrations (get-migrations con)]
         (is (= (count migrations) 2)))
       (let [columns (jdbc/execute! con ["SELECT column_name FROM information_schema.columns
@@ -113,7 +119,7 @@
     (is (thrown? Exception (migrate! tri-test tri-test tri-test verbose?)))
 
     ; Assert
-    (with-open [con (get-conn tri-test tri-test tri-test)]
+    (with-open [con (get-tri-test-conn)]
       (let [migrations (get-migrations con)
             columns    (jdbc/execute! con ["SELECT column_name FROM information_schema.columns
                                            WHERE table_schema = 'public'

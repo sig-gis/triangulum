@@ -6,6 +6,6 @@
             [triangulum.logging]
             [triangulum.utils]))
 
-(deftest workflow-test
+(deftest ^:unit workflow-test
   (testing "A simple test"
     (is (= 2 (+ 1 1)))))

@@ -16,7 +16,7 @@
           :default  "small"
           :validate [#{"big" "medium" "small"} "Must be \"big\", \"medium\", or \"small\""]]})
 
-(deftest test-cli-options
+(deftest ^:unit test-cli-options
   (let [defaults {:int 1 :str "test" :flag false :set "small"}
         sut      (fn [args config]
                    (get-cli-options (concat ["run-test"] args) cli-options cli-actions "run-test" config))]

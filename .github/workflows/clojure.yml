@@ -7,42 +7,9 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    env:
-      PGDATABASE: postgres
-      PGUSERNAME: postgres
-      PGPASSWORD: postgres
-
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_HOST: postgres
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
-      - name: PG prerequisites
-        run: sudo apt-get update
-
-      - name: PG prerequisites
-        run: sudo apt-get install -y libpq-dev
-
-      - name: Test connection
-        run: |
-          psql -h '127.0.0.1' -p 5432 -U postgres \
-          -d github_actions -c "SELECT version();"
-
       - uses: actions/checkout@v2
       - name: Run tests
         uses: vouch-opensource/tools.deps-build@1.0.1
