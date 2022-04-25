@@ -10,7 +10,7 @@
 (def ^:private user-home (System/getProperty "user.home"))
 
 (def ^:private user-systemctl    "systemctl --user ")
-(def ^:private user-systemd-path (str user-home "/.config/systemd/user/"))
+(def ^:private user-systemd-path (str user-home "/.config/systemd/user/multi-user.target.wants/"))
 
 (def ^:private unit-file-template (str/trim "
 [Unit]
@@ -26,7 +26,7 @@ Restart=always
 PrivateTmp=true
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
 "))
 
 ;; Helper functions
