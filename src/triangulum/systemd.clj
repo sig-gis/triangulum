@@ -10,7 +10,7 @@
 (def ^:private user-home (System/getProperty "user.home"))
 
 (def ^:private user-systemctl    "systemctl --user ")
-(def ^:private user-systemd-path (str user-home "/.config/systemd/user/"))
+(def ^:private user-systemd-path (str user-home "/.config/systemd/user/multi-user.target.wants/"))
 
 (def ^:private unit-file-template (str/trim "
 [Unit]
@@ -21,11 +21,12 @@ After=network.target
 Type=notify
 WorkingDirectory=%s
 ExecStart=/usr/local/bin/clojure -M:server start %s %s
+KillMode=process
 Restart=always
 PrivateTmp=true
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
 "))
 
 ;; Helper functions
@@ -41,7 +42,7 @@ WantedBy=default.target
           (log-str "out: "   out)
           (log-str "error: " err))))))
 
-(defn- enable-systemd [{:keys [repo user http https dir]}]
+(defn- enable-systemd [{:keys [repo http https dir]}]
   (let [service-name (str "cljweb-" repo)
         full-dir     (-> dir
                          (io/file)
