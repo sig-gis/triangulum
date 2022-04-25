@@ -42,7 +42,7 @@ WantedBy=multi-user.target
           (log-str "out: "   out)
           (log-str "error: " err))))))
 
-(defn- enable-systemd [{:keys [repo user http https dir]}]
+(defn- enable-systemd [{:keys [repo http https dir]}]
   (let [service-name (str "cljweb-" repo)
         full-dir     (-> dir
                          (io/file)
