@@ -21,6 +21,7 @@ After=network.target
 Type=notify
 WorkingDirectory=%s
 ExecStart=/usr/local/bin/clojure -M:server start %s %s
+KillMode=process
 Restart=always
 PrivateTmp=true
 
