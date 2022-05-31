@@ -13,7 +13,7 @@
 ;;; Helper Fns
 
 (defn- migration-path [filename]
-  (str *migrations-dir* "/" filename))
+  (io/file *migrations-dir* filename))
 
 (defn- get-conn [database user user-pass]
   (jdbc/get-connection {:dbtype                "postgresql"
@@ -64,14 +64,10 @@
 
 (defn- apply-migration! [db-conn filename verbose?]
   (when verbose? (println "Migrating change:" filename))
-  (let [transaction #(jdbc/with-transaction [tx db-conn]
-                       (jdbc/execute! tx [(slurp (str *migrations-dir* "/" filename))]))
-        result      (try
-                      (transaction)
-                      (catch Exception e (ex-message e)))]
-    (if (:error result)
-      result
-      (when verbose? (println "Completed migration:" filename)))))
+  (let [migration (slurp (io/file *migrations-dir* filename))]
+    (when verbose? (println migration))
+    (jdbc/with-transaction [tx db-conn]
+      (jdbc/execute! tx [migration]))))
 
 (defn- setup-migrations-table! [db-conn]
   (let [migration-exists? (jdbc/execute-one! db-conn ["SELECT * FROM pg_catalog.pg_tables
@@ -91,34 +87,34 @@
 
 (defn migrate!
   "Performs the database migrations stored in the `src/sql/changes/` directory.
-   Migrations must be stored in chronological order (e.g. `2021-02-28_add-users-table.sql`).
+  Migrations must be stored in chronological order (e.g. `2021-02-28_add-users-table.sql`).
 
-   Migrations run inside of a transaction block to ensure the entire migration is
-   completed prior to being committed to the database.
+  Migrations run inside of a transaction block to ensure the entire migration is
+  completed prior to being committed to the database.
 
-   Currently, this tool does not support rollbacks.
+  Currently, this tool does not support rollbacks.
 
-   If a migration fails, all migrations which follow it will be cancelled.
+  If a migration fails, all migrations which follow it will be cancelled.
 
-   Migrations which have been completed are stored in a table `tri.migrations`,
-   and include a SHA-256 hash of the migration file contents. If a migration has
-   been altered, the migrations will fail. This is to ensure consistency as migrations
-   are added."
+  Migrations which have been completed are stored in a table `tri.migrations`,
+  and include a SHA-256 hash of the migration file contents. If a migration has
+  been altered, the migrations will fail. This is to ensure consistency as migrations
+  are added."
   [database user user-pass verbose?]
   (when verbose? (println "Applying changes..."))
 
-  (with-open [conn (get-conn database user user-pass)]
-    (setup-migrations-table! conn)
+  (with-open [db-conn (get-conn database user user-pass)]
+    (setup-migrations-table! db-conn)
     (let [all-files   (get-migration-files)
-          completed   (get-completed-changes conn)
+          completed   (get-completed-changes db-conn)
           new-changes (sort (difference (set all-files) (set completed)))]
 
       (when verbose? (println (format "Found %s new change files." (count new-changes))))
 
       (doseq [file new-changes]
-        (let [{:keys [error]} (apply-migration! conn file verbose?)]
-          (if error
-            (throw (Exception. (migration-error error file new-changes)))
-            (set-completed! conn file)))))
+        (let [result (apply-migration! db-conn file verbose?)]
+          (if (:error result)
+            (throw (Exception. (migration-error (:error result) file new-changes)))
+            (set-completed! db-conn file)))))
 
     (when verbose? (println "Completed migrations."))))
