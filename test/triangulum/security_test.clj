@@ -1,7 +1,7 @@
 (ns triangulum.security-test
   (:require [clojure.test        :refer [is deftest testing use-fixtures]]
             [clojure.java.io     :as io]
-            [triangulum.security :refer [hash-str hash-file]]
+            [triangulum.security :refer [hash-digest hash-file]]
             [triangulum.utils    :refer [delete-recursively]]))
 
 (defn- cleanup-tmp [f]
@@ -10,11 +10,11 @@
 
 (use-fixtures :each cleanup-tmp)
 
-(deftest ^:unit hash-str-test
+(deftest ^:unit hash-digest-test
   (testing "Performs a SHA-256 hash of a string."
-    (is (= (hash-str "clojure is great")
+    (is (= (hash-digest "clojure is great")
            "8cb3449c569eab427908cbdc57204c128ea7217f74124086e464498a26eb34a1"))
-    (is (= (hash-str "8cb3449c569eab427908cbdc57204c128ea7217f74124086e464498a26eb34a1")
+    (is (= (hash-digest "8cb3449c569eab427908cbdc57204c128ea7217f74124086e464498a26eb34a1")
            "8878dab7316b9de49c695a01ed00be02e3f9899889beebb466bd493cd4bc004e"))))
 
 (deftest ^:unit hash-file-test

@@ -3,7 +3,7 @@
             [clojure.java.io      :as io]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
-            [triangulum.security  :refer [hash-str]]
+            [triangulum.security  :refer [hash-digest]]
             [triangulum.migrate   :refer [migrate!] :as m]
             [triangulum.utils     :refer [delete-recursively]]))
 
@@ -87,7 +87,7 @@
         (let [migrations (get-migrations con)]
           (is (pos? (count migrations)))
           (is (= (-> migrations first :filename) filename))
-          (is (= (-> migrations first :hash) (hash-str contents)))))))
+          (is (= (-> migrations first :hash) (hash-digest contents)))))))
 
   (testing "Migrations are not run more than once."
     ; Arrange

@@ -6,12 +6,11 @@
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
             [triangulum.security  :refer [hash-file]]))
 
-;; Constants
-(def ^{:dynamic true :doc "Location of migrations dir"}
-  *migrations-dir*
-  "./src/sql/changes/")
+;;; Constants
 
-;; Helper Fns
+(def ^{:dynamic true :doc "Location of migrations dir"} *migrations-dir* "./src/sql/changes/")
+
+;;; Helper Fns
 
 (defn- migration-path [filename]
   (str *migrations-dir* "/" filename))
@@ -45,7 +44,7 @@
                                               ORDER BY created_date"]
                                      {:builder-fn as-unqualified-lower-maps})
         files-changed (filter #(file-changed? (:filename %) (:hash %)) completed)]
-    (if (pos? (count files-changed))
+    (if (seq files-changed)
       (throw (Exception. (format "Error: Migrations have been modified: %s"
                                  (str/join ", " (map :filename files-changed)))))
       (map :filename completed))))
@@ -57,27 +56,27 @@
                           filename
                           (hash-file (migration-path filename))]))
 
-(defn- migration-error [e filename remaining-files]
-  (str (format "Error: Did not complete migration %s and all migrations after:\n" filename)
-       (str/join "\n- " remaining-files)
+(defn- migration-error [e file-name new-changes]
+  (str (format "Error: Did not complete migration %s and all migrations after:\n" file-name)
+       (str/join "\n- " (drop-while #((comp not pos?) (.compareTo % file-name)) new-changes))
        "\n\n"
        e))
 
 (defn- apply-migration! [db-conn filename verbose?]
-  (when verbose? (println (format "Migrating change %s " filename)))
+  (when verbose? (println "Migrating change:" filename))
   (let [transaction #(jdbc/with-transaction [tx db-conn]
                        (jdbc/execute! tx [(slurp (str *migrations-dir* "/" filename))]))
-        result (try
-                 (transaction)
-                 (catch Exception e {:error (ex-message e)}))]
+        result      (try
+                      (transaction)
+                      (catch Exception e (ex-message e)))]
     (if (:error result)
       result
-      (when verbose? (println (format "Completed migration %s" filename))))))
+      (when verbose? (println "Completed migration:" filename)))))
 
 (defn- setup-migrations-table! [db-conn]
   (let [migration-exists? (jdbc/execute-one! db-conn ["SELECT * FROM pg_catalog.pg_tables
-                                                 WHERE schemaname = 'tri'
-                                                 AND tablename = 'migrations';"])]
+                                                      WHERE schemaname = 'tri'
+                                                      AND tablename = 'migrations';"])]
     (when-not migration-exists?
       (jdbc/with-transaction [tx db-conn]
         (jdbc/execute! tx ["CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"])
@@ -88,7 +87,7 @@
                            hash         VARCHAR   NOT NULL,
                            created_date TIMESTAMP DEFAULT now());"])))))
 
-;; Public fns
+;;; Public fns
 
 (defn migrate!
   "Performs the database migrations stored in the `src/sql/changes/` directory.
@@ -109,21 +108,17 @@
   (when verbose? (println "Applying changes..."))
 
   (with-open [conn (get-conn database user user-pass)]
+    (setup-migrations-table! conn)
     (let [all-files   (get-migration-files)
-          _           (setup-migrations-table! conn)
           completed   (get-completed-changes conn)
           new-changes (sort (difference (set all-files) (set completed)))]
 
       (when verbose? (println (format "Found %s new change files." (count new-changes))))
 
-      (when (pos? (count new-changes))
-        (loop [file      (first new-changes)
-               changes   (next new-changes)]
-          (when (some? file)
-            (if-let [{error :error} (apply-migration! conn file verbose?)]
-              (throw (Exception. (migration-error error file changes)))
-              (do
-                (set-completed! conn file)
-                (recur (first changes) (next changes))))))))
+      (doseq [file new-changes]
+        (let [{:keys [error]} (apply-migration! conn file verbose?)]
+          (if error
+            (throw (Exception. (migration-error error file new-changes)))
+            (set-completed! conn file)))))
 
     (when verbose? (println "Completed migrations."))))
