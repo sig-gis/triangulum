@@ -4,7 +4,13 @@
             [next.jdbc.result-set :as rs]
             [triangulum.config    :refer [get-config]]
             [triangulum.logging   :refer [log-str]]
-            [triangulum.utils     :refer [format-str]]))
+            [triangulum.utils     :refer [format-str]])
+  (:import [java.sql Array]))
+
+(extend-protocol rs/ReadableColumn
+  Array
+  (read-column-by-label [^Array v _]    (vec (.getArray v)))
+  (read-column-by-index [^Array v _ _]  (vec (.getArray v))))
 
 ;;; Helper Functions
 
