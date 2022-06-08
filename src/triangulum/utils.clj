@@ -1,9 +1,10 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream)
-  (:require [cognitect.transit :as transit]
-            [clojure.string    :as str]
-            [clojure.set       :as set]
-            [clojure.data.json :as json]))
+  (:require [cognitect.transit  :as transit]
+            [clojure.java.shell :as sh]
+            [clojure.string     :as str]
+            [clojure.set        :as set]
+            [clojure.data.json  :as json]))
 
 ;; Text parsing
 
@@ -57,6 +58,19 @@
   (if (str/ends-with? s end)
     (subs s 0 (- (count s) (count end)))
     s))
+
+;; Shell commands
+
+(def path-env (System/getenv "PATH"))
+
+(defn- sh-wrapper [dir env verbose & commands]
+  (sh/with-sh-dir dir
+    (sh/with-sh-env (merge {:PATH path-env} env)
+      (reduce (fn [acc cmd]
+                (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
+                  (str acc (when verbose out) err)))
+              ""
+              commands))))
 
 ;; Response building
 
