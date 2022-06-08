@@ -61,9 +61,12 @@
 
 ;; Shell commands
 
-(def path-env (System/getenv "PATH"))
+(def ^:private path-env (System/getenv "PATH"))
 
-(defn- sh-wrapper [dir env verbose & commands]
+(defn sh-wrapper
+  "Provides a given path and environment to a set of bash commands,
+  and parses the output, creating an array as described in `parse-as-sh-cmd`."
+  [dir env verbose & commands]
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
       (reduce (fn [acc cmd]
