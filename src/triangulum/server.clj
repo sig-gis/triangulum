@@ -20,7 +20,7 @@
 
 (defn- start-workers! [worker-map]
   (reset! workers
-          (reduce-kv (fn [acc [worker-name {:keys [start]}]]
+          (reduce-kv (fn [acc worker-name {:keys [start]}]
                        (let [value (try
                                      (let [start-fn (resolve-foreign-symbol start)]
                                        (start-fn))
