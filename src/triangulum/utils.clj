@@ -199,3 +199,10 @@
   "Returns the namespace symbol of a namespace-qualified symbol."
   [sym]
   (symbol (namespace sym)))
+
+(defn resolve-foreign-symbol
+  "Given a namespace-qualified symbol, attempt to require its namespace
+  and resolve the symbol within that namespace to a value."
+  [sym]
+  (require (symbol (namespace sym)))
+  (resolve sym))
