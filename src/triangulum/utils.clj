@@ -154,3 +154,7 @@
 
     :else
     #{}))
+
+;; Namespace
+
+(defn get-ns [sym] (symbol (namespace sym)))

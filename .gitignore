@@ -3,6 +3,7 @@
 .rebel_readline_history
 .clj-kondo/*
 !.clj-kondo/config.edn
+.lsp
 
 pom.xml
 target/
