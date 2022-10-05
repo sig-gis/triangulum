@@ -13,6 +13,9 @@
         info.faljse/SDNotify      {:mvn/version "1.3"}}
 
  :aliases {:build-db   {:main-opts ["-m" "triangulum.build-db"]}
+           :server     {:main-opts ["-m" "triangulum.server"]
+                        :jvm-opts  ["--add-modules=jdk.incubator.foreign"
+                                    "--enable-native-access=ALL-UNNAMED"]}
            :https      {:main-opts ["-m" "triangulum.https"]}
            :systemd    {:main-opts ["-m" "triangulum.systemd"]}
            :config     {:main-opts ["-m" "triangulum.config"]}

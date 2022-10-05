@@ -192,3 +192,10 @@
   "Returns the current year as an integer."
   []
   (.getYear (LocalDateTime/now)))
+
+;; Namespace
+
+(defn get-ns
+  "Returns the namespace symbol of a namespace-qualified symbol."
+  [sym]
+  (symbol (namespace sym)))
