@@ -64,21 +64,21 @@
 
 (defn start-server!
   "FIXME: Write docstring"
-  [{:keys [http-port https-port mode log-dir nrepl cider-nrepl handler workers]}]
+  [{:keys [http-port https-port mode log-dir nrepl cider-nrepl handler workers response-type]}]
   (let [has-key?      (.exists (io/file "./.key/keystore.pkcs12"))
         ssl?          (and has-key? https-port)
         handler-stack (-> (resolve-foreign-symbol handler)
                           (create-handler-stack ssl? (= mode "dev")))
         config        (merge
-                       {:port  http-port
-                        :join? false}
-                       (when ssl?
-                         {:ssl?             true
-                          :ssl-port         https-port
-                          :keystore         "./.key/keystore.pkcs12"
-                          :keystore-type    "pkcs12"
-                          :ks-scan-interval ks-scan-interval
-                          :key-password     "foobar"}))]
+                        {:port  http-port
+                         :join? false}
+                        (when ssl?
+                          {:ssl?             true
+                           :ssl-port         https-port
+                           :keystore         "./.key/keystore.pkcs12"
+                           :keystore-type    "pkcs12"
+                           :ks-scan-interval ks-scan-interval
+                           :key-password     "foobar"}))]
     (cond
       (and (not has-key?) https-port)
       (do (println "ERROR:\n"
@@ -93,18 +93,19 @@
         (System/exit 1))
 
       :else
-      (do (when nrepl
-            (println "Starting nREPL server on port 5555")
-            (reset! nrepl-server (nrepl-server/start-server :port 5555)))
-          (when cider-nrepl
-            (println "Starting CIDER nREPL server on port 5555")
-            (reset! nrepl-server (nrepl-server/start-server :port 5555 :handler cider-nrepl-handler)))
-          (when (seq workers)
-            (println "Starting worker jobs")
-            (start-workers! workers))
-          (reset! server (run-jetty handler-stack config))
-          (set-log-path! log-dir)
-          (when (available?) (ready!))))))
+      (do
+        (when nrepl
+          (println "Starting nREPL server on port 5555")
+          (reset! nrepl-server (nrepl-server/start-server :port 5555)))
+        (when cider-nrepl
+          (println "Starting CIDER nREPL server on port 5555")
+          (reset! nrepl-server (nrepl-server/start-server :port 5555 :handler cider-nrepl-handler)))
+        (when (seq workers)
+          (println "Starting worker jobs")
+          (start-workers! workers))
+        (reset! server (run-jetty handler-stack config))
+        (set-log-path! log-dir)
+        (when (available?) (ready!))))))
 
 (defn stop-server! []
   (set-log-path! "")

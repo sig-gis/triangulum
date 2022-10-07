@@ -1,11 +1,11 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream
            java.time.LocalDateTime)
-  (:require [cognitect.transit  :as transit]
+  (:require [clojure.data.json  :as json]
             [clojure.java.shell :as sh]
-            [clojure.string     :as str]
             [clojure.set        :as set]
-            [clojure.data.json  :as json]))
+            [clojure.string     :as str]
+            [cognitect.transit  :as transit]))
 
 ;;; Text parsing
 
@@ -141,27 +141,27 @@
                       :json    (json/write-str body)
                       body)})))
 
-;;; Equivalent FP functions for maps
+;; Equivalent FP functions for maps
 
 (defn mapm
   "Takes a map, applies f to each MapEntry, returns a map."
   [f coll]
   (persistent!
-   (reduce (fn [acc cur]
-             (conj! acc (f cur)))
-           (transient {})
-           coll)))
+    (reduce (fn [acc cur]
+              (conj! acc (f cur)))
+            (transient {})
+            coll)))
 
 (defn filterm
   "Takes a map, filters on pred for each MapEntry, returns a map."
   [pred coll]
   (persistent!
-   (reduce (fn [acc cur]
-             (if (pred cur)
-               (conj! acc cur)
-               acc))
-           (transient {})
-           coll)))
+    (reduce (fn [acc cur]
+              (if (pred cur)
+                (conj! acc cur)
+                acc))
+            (transient {})
+            coll)))
 
 ;;; Equality Checking
 
@@ -206,3 +206,6 @@
   [sym]
   (require (symbol (namespace sym)))
   (resolve sym))
+
+;; Errors
+;; TODO: maybe move to seperate ns
