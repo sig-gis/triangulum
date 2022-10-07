@@ -4,6 +4,7 @@
    [clojure.edn       :as edn]
    [clojure.set       :as set]
    [clojure.string    :as str]
+   [cognitect.transit  :as transit]
    [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
    [ring.middleware.content-type       :refer [wrap-content-type]]
    [ring.middleware.default-charset    :refer [wrap-default-charset]]
@@ -24,21 +25,68 @@
                                                wrap-xss-protection]]
    [triangulum.config                  :refer [get-config]]
    [triangulum.logging                 :refer [log-str]]
-   [triangulum.utils :refer [data-response]]))
+   [triangulum.errors                  :refer [nil-on-error]])
+  (:import
+   java.io.ByteArrayOutputStream))
 
+;; Response building
 
-(defmacro nil-on-error
-  [& body]
-  `(try ~@body (catch Exception e# nil)))
+(defn- clj->transit
+  "Converts a clj body to transit."
+  [body]
+  (let [out    (ByteArrayOutputStream. 4096)
+        writer (transit/writer out :json)]
+    (transit/write writer body)
+    (.toString out)))
+#_{:clj-kondo/ignore [:shadowed-var]}
+(def response-type (atom nil))
 
+(defn data-response
+  "Create a response object.
+   Body is required. Status, type, and session are optional.
+   When a type keyword is passed, the body is converted to that type,
+   otherwise the body and type are passed through."
+  ([body]
+   (data-response body {}))
+  ([body {:keys [status type session]
+          :or   {status 200
+                 type   (or @response-type
+                            (reset! response-type (-> (triangulum.config/get-config :server) :response-type)))}
+          :as   params}]
+   (merge (when (contains? params :session) {:session session})
+          {:status  status
+           :headers {"Content-Type" (condp = type
+                                      :edn     "application/edn"
+                                      :transit "application/transit+json"
+                                      :json    "application/json"
+                                      type)}
+           :body    (condp = type
+                      :edn     (pr-str         body)
+                      :transit (clj->transit  body)
+                      :json    (json/write-str body)
+                      body)})))
+
+(defn json-response
+  ([body] (data-response {:type :json}))
+  ([body params] (data-response (merge {:type :json} params))))
+
+(defn edn-response
+  ([body] (data-response {:type :edn}))
+  ([body params] (data-response (merge {:type :edn} params))))
+
+(defn transit-response
+  ([body] (data-response {:type :transit}))
+  ([body params] (data-response (merge {:type :transit} params))))
+
+(defn no-cross-traffic? [{:strs [referer host]}]
+  (and referer host (str/includes? referer host)))
+
+(defn forbidden-response [_]
+  (data-response "Forbidden" {:status 403}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- forbidden-response [_]
-  (data-response "Forbidden" {:status 403}))
-
 
 (defn wrap-bad-uri [handler]
   (fn [request]
