@@ -56,11 +56,11 @@
     asset-css-files))
 
 (defn head [bundle-js-files bundle-css-files lang]
-  (let [{:keys [title description keywords]} (get-config :app)]
-    (print "css files" (concat (->  (get-config :app) :views :css-files)
-                               bundle-css-files))
-    (log-str "css files" (concat (->  (get-config :app) :views :css-files)
-                                 bundle-css-files))
+  (let [app-config                           (get-config :app)
+        {:keys [title description keywords]} app-config
+        css-files                            (get-in app-config [:views :css-files])
+        js-files                             (get-in app-config [:views :js-files])]
+
     [:head
      [:title (title lang)]
      [:meta {:charset "utf-8"}]
@@ -74,7 +74,7 @@
      [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
      [:link {:rel "mask-icon" :color "#5bbad5" :href "/favicon/safari-pinned-tab.svg"}]
      [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]
-     [:meta "msapplication-TileColor"]
+     [:meta {:name "msapplication-TileColor" :content "#ffc40d"}]
      [:meta {:name "msapplication-config" :content "/favicon/browserconfig.xml"}]
      [:meta {:name "theme-color" :content "#ffffff"}]
                                         ; end Favicon
@@ -82,12 +82,10 @@
      (when-let [ga-id (get-config :ga-id)]
        (list [:script {:async true :src (str "https://www.googletagmanager.com/gtag/js?id=" ga-id)}]
              [:script (str "window.dataLayer = window.dataLayer || []; function gtag() {dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '" ga-id "', {'page_location': location.host + location.pathname});")]))
-
-
      (apply include-css
-            (concat (->  (get-config :app) :views :css-files)
+            (concat css-files
                     bundle-css-files))
-     (apply include-js (->  (get-config :app) :views :js-files))
+     (apply include-js js-files)
      (if (= "dev" (get-config :server :mode))
        (list
          [:script {:type "module"}
