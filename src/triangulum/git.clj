@@ -1,12 +1,13 @@
 (ns triangulum.git
   (:require [triangulum.logging :refer [log-str]]
+            [triangulum.config  :refer [get-config]]
             [clojure.string     :as str]
             [clojure.data.json  :as json]
             [clj-http.client    :as client]))
 
 ;; Constants
 
-(def ^:private tags-url "https://api.github.com/repos/sig-gis/comimo/tags")
+(def tags-url (-> (get-config :tags-url) :tags-url))
 
 ;; Cache
 

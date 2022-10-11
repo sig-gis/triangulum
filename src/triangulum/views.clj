@@ -1,13 +1,15 @@
 (ns triangulum.views
-  (:require [clojure.data.json   :as json]
-            [clojure.java.io     :as io]
-            [clojure.string      :as str]
-            [clj-http.client     :as client]
-            [cognitect.transit   :as transit]
-            [triangulum.git      :refer [current-version]]
-            [hiccup.page         :refer [html5 include-css include-js]]
-            [triangulum.config   :refer [get-config]]
-            [triangulum.database :refer [call-sql]])
+  (:require
+   [clj-http.client     :as client]
+   [clojure.data.json   :as json]
+   [clojure.java.io     :as io]
+   [clojure.string      :as str]
+   [cognitect.transit   :as transit]
+   [hiccup.page         :refer [html5 include-css include-js]]
+   [triangulum.config   :refer [get-config]]
+   [triangulum.database :refer [call-sql]]
+   [triangulum.git      :refer [current-version]]
+   [triangulum.logging :refer [log-str]])
   (:import
    java.io.ByteArrayOutputStream))
 
@@ -54,12 +56,11 @@
     asset-css-files))
 
 (defn head [bundle-js-files bundle-css-files lang]
-  (let [title       {:en "Colombian Mining Monitoring"
-                     :es "Monitoreo Minero Colombiano"}
-        description {:en "Colombian Mining Monitoring (CoMiMo) is an online mining monitoring application that uses machine learning and satellite imagery to alert government authorities, NGOs and concerned citizens about possible mining activities anywhere in Colombia, and enables them to assess the location, lawfulness and potential impacts to the environment of those mines."
-                     :es "Monitoreo Minero Colombiano (CoMiMo) es una aplicación de monitoreo minero en línea que utiliza aprendizaje automático e imágenes satelitales para alertar a las autoridades gubernamentales, ONGs y ciudadanos preocupados sobre posibles actividades mineras en cualquier lugar de Colombia, y les permite evaluar la ubicación, la legalidad y los posibles impactos al entorno de esas minas."}
-        keywords    {:en "colombian mining monitoring, comimo, satellite imagery, illegal mining, machine learning, image analysis, detection, crowdsourcing"
-                     :es "monitoreo minero colombiano, comimo, imágenes satelitales, minería ilegal, aprendizaje automático, análisis de imágenes, detección, crowdsourcing"}]
+  (let [{:keys [title description keywords]} (get-config :app)]
+    (print "css files" (concat (->  (get-config :app) :views :css-files)
+                               bundle-css-files))
+    (log-str "css files" (concat (->  (get-config :app) :views :css-files)
+                                 bundle-css-files))
     [:head
      [:title (title lang)]
      [:meta {:charset "utf-8"}]
@@ -73,7 +74,7 @@
      [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
      [:link {:rel "mask-icon" :color "#5bbad5" :href "/favicon/safari-pinned-tab.svg"}]
      [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]
-     [:meta {:name "msapplication-TileColor" :content "#ffc40d"}]
+     [:meta "msapplication-TileColor"]
      [:meta {:name "msapplication-config" :content "/favicon/browserconfig.xml"}]
      [:meta {:name "theme-color" :content "#ffffff"}]
                                         ; end Favicon
@@ -81,11 +82,12 @@
      (when-let [ga-id (get-config :ga-id)]
        (list [:script {:async true :src (str "https://www.googletagmanager.com/gtag/js?id=" ga-id)}]
              [:script (str "window.dataLayer = window.dataLayer || []; function gtag() {dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '" ga-id "', {'page_location': location.host + location.pathname});")]))
+
+
      (apply include-css
-            "/css/comimo_global.css"
-            bundle-css-files)
-     (include-js "https://www.gstatic.com/charts/loader.js"
-                 "/js/jquery-3.4.1.min.js")
+            (concat (->  (get-config :app) :views :css-files)
+                    bundle-css-files))
+     (apply include-js (->  (get-config :app) :views :js-files))
      (if (= "dev" (get-config :server :mode))
        (list
          [:script {:type "module"}

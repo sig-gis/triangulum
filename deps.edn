@@ -6,6 +6,7 @@
         org.clojure/data.json     {:mvn/version "2.4.0"}
         org.clojure/tools.cli     {:mvn/version "1.0.206"}
         org.clojure/test.check    {:mvn/version "0.9.0"}
+        com.draines/postal        {:mvn/version "2.0.3"}
         org.postgresql/postgresql {:mvn/version "42.2.10"}
         org.xerial/sqlite-jdbc    {:mvn/version "3.30.1"}
         seancorfield/next.jdbc    {:mvn/version "1.2.659"}

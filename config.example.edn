@@ -2,18 +2,37 @@
 ;; make your own config.edn file in your project root with any fields
 ;; from this file that you intend to use.
 
-{:database {:host       "localhost"
-            :port       5432
-            :dbname     "dbname"
-            :user       "user"
-            :password   "secret-db-password"}
- :https    {:domain     "example.com"
-            :email      "test@example.com"}
- :server   {:http-port  8080
-            :https-port 8443
-            :mode       "dev" ; or "prod"
-            :log-dir    "logs"}
- :mail     {:host       "smtp.gmail.com"
-            :user       "test@example.com"
-            :pass       "secret-mail-password"
-            :port       587}}
+{:database    {:host     "localhost"
+               :port     5432
+               :dbname   "dbname"
+               :user     "user"
+               :password "secret-db-password"}
+ :mail        {:host           "smtp.gmail.com"
+               :user           "test@example.com"
+               :pass           "secret-mail-password"
+               :tls            true
+               :port           587
+               :base-url       "https://my.domain/"
+               :auto-validate? false}
+ :server      {:http-port     8080
+               :https-port    8443
+               :mode          "dev" ; or "prod"
+               :log-dir       ""    ; or "logs"
+               :handler       product.ns/handler
+               :workers       {:scheduler {:start product.ns/start-scheduled-jobs!
+                                           :stop  product.ns/stop-scheduled-jobs!}}
+               :response-type :json} ; :edn or :transit
+ :https       {:domain "example.com"
+               :email  "test@example.com"}
+ :app         {:tags-url    "https://api.github.com/repos/sig-gis/comimo/tags"
+               :views       {:css-files ["/css/comimo_global.cs"]
+                             :js-files  ["https://www.gstatic.com/charts/loader.js"
+                                         "/js/jquery-3.4.1.min.js"]}
+               :title       {:en "Colombian Mining Monitoring"
+                             :es "Monitoreo Minero Colombiano"}
+               :description {:en "Colombian Mining Monitoring (CoMiMo) is an online mining monitoring application."
+                             :es "Monitoreo Minero Colombiano (CoMiMo) es una aplicación de monitoreo minero en línea."}
+               :keywords    {:en "colombian mining monitoring, comimo, satellite imagery, illegal mining."
+                             :es "monitoreo minero colombiano, comimo, imágenes satelitales, minería illegal."}}
+ :ga-id       nil
+ :session-key "changeme12345678"}
