@@ -1,7 +1,6 @@
 ;; This is an example config file for testing and reference. Please
 ;; make your own config.edn file in your project root with any fields
 ;; from this file that you intend to use.
-
 {:database    {:host     "localhost"
                :port     5432
                :dbname   "dbname"
@@ -25,9 +24,10 @@
  :https       {:domain "example.com"
                :email  "test@example.com"}
  :app         {:tags-url    "https://api.github.com/repos/sig-gis/comimo/tags"
-               :views       {:css-files ["/css/comimo_global.cs"]
-                             :js-files  ["https://www.gstatic.com/charts/loader.js"
-                                         "/js/jquery-3.4.1.min.js"]}
+               :views       {:client-init carbon-tool.client.init
+                             :css-files   ["/css/comimo_global.cs"]  ;; in resources/public folder
+                             :js-files    ["https://www.gstatic.com/charts/loader.js"
+                                           "/js/jquery-3.4.1.min.js"]}
                :title       {:en "Colombian Mining Monitoring"
                              :es "Monitoreo Minero Colombiano"}
                :description {:en "Colombian Mining Monitoring (CoMiMo) is an online mining monitoring application."

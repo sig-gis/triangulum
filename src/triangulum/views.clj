@@ -2,6 +2,7 @@
   (:require
    [clj-http.client     :as client]
    [clojure.data.json   :as json]
+   [clojure.edn         :as edn]
    [clojure.java.io     :as io]
    [clojure.string      :as str]
    [cognitect.transit   :as transit]
@@ -55,12 +56,20 @@
                              (map (fn [[_k v]] (str "/" (get v "file")))))]
     asset-css-files))
 
+;; TODO: better naming
+(defn find-app-js []
+  (as-> (slurp "target/public/cljs/manifest.edn") app
+    (edn/read-string app)
+    (get app "target/public/cljs/app.js")
+    (str/split app #"/")
+    (last app)
+    (str "/cljs/" app)))
+
 (defn head [bundle-js-files bundle-css-files lang]
   (let [app-config                           (get-config :app)
         {:keys [title description keywords]} app-config
         css-files                            (get-in app-config [:views :css-files])
         js-files                             (get-in app-config [:views :js-files])]
-
     [:head
      [:title (title lang)]
      [:meta {:charset "utf-8"}]
@@ -85,7 +94,7 @@
      (apply include-css
             (concat css-files
                     bundle-css-files))
-     (apply include-js js-files)
+     (apply include-js (concat js-files [(find-app-js)]))
      (if (= "dev" (get-config :server :mode))
        (list
          [:script {:type "module"}
@@ -106,15 +115,19 @@
        (first)
        (kebab->camel)))
 
-(defn js-init [entry-file params]
-  (let [js-params  (-> params
-                       (assoc
-                         :mapboxToken     (get-config :mapbox-token)
-                         :mapquestKey     (get-config :mapquest-key)
-                         :versionDeployed (current-version))
-                       (json/write-str))
-        script-str (str "import {pageInit} from \"" entry-file "\";"
-                        "window.onload = function () { pageInit(" js-params "); };")]
+
+
+(defn client-init [entry-file params]
+  (let [client-init (-> (get-config :app ) :client-init)
+        js-params   (-> params
+                        (assoc
+                          :mapboxToken     (get-config :mapbox-token)
+                          :mapquestKey     (get-config :mapquest-key)
+                          :versionDeployed (current-version))
+                        (json/write-str))
+        script-str  (str (when entry-file "import {pageInit} from \"") entry-file "\";"
+                         "window.onload = function () {" client-init"(" js-params "); };")
+        ]
     [:script {:type "module"}
      script-str]))
 
@@ -163,6 +176,8 @@
          [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
                      11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
 
+
+;; TODO: infer form the config and have one function name (render-page)
 (defn render-page [uri]
   (fn [request]
     (let [page             (uri->page uri)
@@ -186,7 +201,8 @@
                         (announcement-banner))
                       [:div#main-container]]
                      [:label "No JS bundle files found. Check if your bundler is running, or wait for it to finish compiling."])
-                   (js-init (last bundle-js-files) (:params request))])})))
+                   (client-init (last bundle-js-files) (:params request) )])})))
+
 
 (defn not-found-page [request]
   (-> request

@@ -5,6 +5,7 @@
    [clojure.set       :as set]
    [clojure.string    :as str]
    [cognitect.transit  :as transit]
+   [ring.util.codec                    :refer [url-decode]]
    [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
    [ring.middleware.content-type       :refer [wrap-content-type]]
    [ring.middleware.default-charset    :refer [wrap-default-charset]]
@@ -147,6 +148,28 @@
           (log-str "Error: " cause)
           (data-response cause {:status (or status 500)}))))))
 
+(defn parse-query-string [query-string]
+  (let [keyvals (-> (url-decode query-string)
+                    (str/split #"&"))]
+    (reduce (fn [params keyval]
+              (->> (str/split keyval #"=")
+                   (map edn/read-string)
+                   (apply assoc params)))
+            {}
+            keyvals)))
+
+(defn wrap-edn-params [handler]
+  (fn [{:keys [content-type request-method query-string body params] :as request}]
+    (if (= content-type "application/edn")
+      (let [get-params  (when (and (= request-method :get)
+                                   (not (str/blank? query-string)))
+                          (parse-query-string query-string))
+            post-params (when (and (= request-method :post)
+                                   (not (nil? body)))
+                          (edn/read-string (slurp body)))]
+        (handler (assoc request :params (merge params get-params post-params))))
+      (handler request))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handler Stack
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -166,6 +189,7 @@
       wrap-persistent-session
       wrap-keyword-params
       wrap-json-params
+      wrap-edn-params
       wrap-nested-params
       wrap-multipart-params
       wrap-params
