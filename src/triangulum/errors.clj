@@ -11,7 +11,6 @@
          (let [causes (conj (:causes (ex-data e) []) message)]
            (throw (ex-info message {:causes causes}))))))
 
-
 (defmacro nil-on-error
   [& body]
   `(try ~@body (catch Exception e# nil)))

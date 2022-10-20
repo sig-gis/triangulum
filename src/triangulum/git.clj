@@ -7,11 +7,11 @@
 
 ;; Constants
 
-(def tags-url (-> (get-config :tags-url) :tags-url))
+(def tags-url (get-config :app :tags-url))
 
 ;; Cache
 
-(def ^:private version  (atom nil))
+(def ^:private version (atom :undefined))
 
 ;; Private Fns
 
@@ -23,15 +23,17 @@
     (catch Exception e (log-str e))))
 
 (defn- latest-prod-tag []
-  (->> (get-all-tags)
-       (map :name)
-       (filter #(str/starts-with? %1 "prod"))
-       (sort)
-       (last)))
+  (some->> (get-all-tags)
+           (map :name)
+           (filter #(str/starts-with? %1 "prod"))
+           (sort)
+           (last)))
 
 ;; Public Fns
 
 (defn current-version []
-  (if-not (nil? @version)
-    @version
-    (reset! version (latest-prod-tag))))
+  (cond
+    (nil? tags-url)         nil
+    (nil? @version)         nil
+    (= @version :undefined) (reset! version (latest-prod-tag))
+    :else                   @version))

@@ -70,15 +70,15 @@
         handler-stack (-> (resolve-foreign-symbol handler)
                           (create-handler-stack ssl? (= mode "dev")))
         config        (merge
-                        {:port  http-port
-                         :join? false}
-                        (when ssl?
-                          {:ssl?             true
-                           :ssl-port         https-port
-                           :keystore         "./.key/keystore.pkcs12"
-                           :keystore-type    "pkcs12"
-                           :ks-scan-interval ks-scan-interval
-                           :key-password     "foobar"}))]
+                       {:port  http-port
+                        :join? false}
+                       (when ssl?
+                         {:ssl?             true
+                          :ssl-port         https-port
+                          :keystore         "./.key/keystore.pkcs12"
+                          :keystore-type    "pkcs12"
+                          :ks-scan-interval ks-scan-interval
+                          :key-password     "foobar"}))]
     (cond
       (and (not has-key?) https-port)
       (do (println "ERROR:\n"
