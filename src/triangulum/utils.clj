@@ -1,8 +1,10 @@
 (ns triangulum.utils
-  (:require [clojure.data.json  :as json]
-            [clojure.java.shell :as sh]
-            [clojure.set        :as set]
-            [clojure.string     :as str]))
+  (:require [clojure.data.json   :as json]
+            [clojure.java.shell  :as sh]
+            [clojure.set         :as set]
+            [clojure.string      :as str]
+            [cognitect.transit   :as transit])
+  (:import java.io.ByteArrayOutputStream))
 
 ;; Text parsing
 
@@ -10,6 +12,12 @@
   "kebab-str -> snake_str"
   [kebab-str]
   (str/replace kebab-str "-" "_"))
+
+(defn kebab-case->camelCase [k]
+  (let [words (str/split (name k) #"-")]
+    (->> (map str/capitalize (rest words))
+         (apply str (first words))
+         keyword)))
 
 (defn format-str
   "Use any char after % for format. All % are converted to %s (string)"
@@ -73,16 +81,52 @@
               ""
               commands))))
 
+;; Response building
+
+(defn- clj->transit
+  "Converts a clj body to transit."
+  [body]
+  (let [out    (ByteArrayOutputStream. 4096)
+        writer (transit/writer out :json)]
+    (transit/write writer body)
+    (.toString out)))
+
+#_{:clj-kondo/ignore [:shadowed-var]}
+(defn data-response
+  "DEPRECATED: Use 'triangulum.response/data-response' instead.
+   Create a response object.
+   Body is required. Status, type, and session are optional.
+   When a type keyword is passed, the body is converted to that type,
+   otherwise the body is converted to edn."
+  ([body]
+   (data-response body {}))
+  ([body {:keys [status type session]
+          :or   {status 200
+                 type   :edn}
+          :as   params}]
+   (merge (when (contains? params :session) {:session session})
+          {:status  status
+           :headers {"Content-Type" (condp = type
+                                      :edn     "application/edn"
+                                      :transit "application/transit+json"
+                                      :json    "application/json"
+                                      type)}
+           :body    (condp = type
+                      :edn     (pr-str         body)
+                      :transit (clj->transit  body)
+                      :json    (json/write-str body)
+                      body)})))
+
 ;; Equivalent FP functions for maps
 
 (defn mapm
   "Takes a map, applies f to each MapEntry, returns a map."
   [f coll]
   (persistent!
-    (reduce (fn [acc cur]
-              (conj! acc (f cur)))
-            (transient {})
-            coll)))
+   (reduce (fn [acc cur]
+             (conj! acc (f cur)))
+           (transient {})
+           coll)))
 
 (defn filterm
   "Takes a map, filters on pred for each MapEntry, returns a map."
@@ -118,7 +162,7 @@
     :else
     #{}))
 
-;; Namespace
+;; Namespace operations
 
 (defn resolve-foreign-symbol
   "Given a namespace-qualified symbol, attempt to require its namespace
@@ -126,6 +170,3 @@
   [sym]
   (require (symbol (namespace sym)))
   (resolve sym))
-
-;; Errors
-;; TODO: maybe move to seperate ns

@@ -12,7 +12,7 @@
    [triangulum.git      :refer [current-version]]
    [triangulum.logging  :refer [log-str]]
    [triangulum.errors   :refer [nil-on-error]]
-   [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake]])
+   [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab-case->camelCase]])
   (:import
    java.io.ByteArrayOutputStream))
 
@@ -106,7 +106,7 @@
         [:script {:type "module"}
          "// import RefreshRuntime from 'http://localhost:5173/@react-refresh'
          // RefreshRuntime.injectIntoGlobalHook(window)
-         window.$Refresh Reg$ = () => {}
+         window.$RefreshReg$ = () => {}
          window.$RefreshSig$ = () => (type) => type
          window.__vite_plugin_react_preamble_installed__ = true"]
         [:script {:type "module" :src "http://localhost:5173/@vite/client"}]
