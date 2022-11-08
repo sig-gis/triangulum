@@ -14,6 +14,7 @@
   [kebab-str]
   (str/replace kebab-str "-" "_"))
 
+;; TODO: This function and the next do different things. Which one is used in the latest main branch?
 (defn kebab->camel
   "Converts kebab-string to camelString."
   [kebab-string]
@@ -24,6 +25,13 @@
     (->> (map str/capitalize (rest words))
          (cons (first words))
          (str/join ""))))
+
+;; TODO: This function and the next do different things. Which one is used in the latest main branch?
+(defn kebab-case->camelCase [k]
+  (let [words (str/split (name k) #"-")]
+    (->> (map str/capitalize (rest words))
+         (apply str (first words))
+         keyword)))
 
 (defn camel->kebab
   "Converts camelString to kebab-string."
@@ -118,15 +126,16 @@
 
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn data-response
-  "Create a response object.
+  "DEPRECATED: Use 'triangulum.response/data-response' instead.
+   Create a response object.
    Body is required. Status, type, and session are optional.
    When a type keyword is passed, the body is converted to that type,
-   otherwise the body and type are passed through."
+   otherwise the body is converted to edn."
   ([body]
    (data-response body {}))
   ([body {:keys [status type session]
           :or   {status 200
-                 type :edn}
+                 type   :edn}
           :as   params}]
    (merge (when (contains? params :session) {:session session})
           {:status  status
@@ -147,10 +156,10 @@
   "Takes a map, applies f to each MapEntry, returns a map."
   [f coll]
   (persistent!
-    (reduce (fn [acc cur]
-              (conj! acc (f cur)))
-            (transient {})
-            coll)))
+   (reduce (fn [acc cur]
+             (conj! acc (f cur)))
+           (transient {})
+           coll)))
 
 (defn filterm
   "Takes a map, filters on pred for each MapEntry, returns a map."
@@ -193,7 +202,7 @@
   []
   (.getYear (LocalDateTime/now)))
 
-;; Namespace
+;; Namespace operations
 
 (defn get-ns
   "Returns the namespace symbol of a namespace-qualified symbol."
@@ -206,6 +215,3 @@
   [sym]
   (require (symbol (namespace sym)))
   (resolve sym))
-
-;; Errors
-;; TODO: maybe move to seperate ns
