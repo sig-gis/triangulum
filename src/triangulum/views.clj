@@ -130,7 +130,11 @@
        (format "window.onload = function () { %s(%s); };" (-> cljs-init name kebab->snake) js-params)]
       ;; JS app
       [:script {:type "module"}
-       (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };" entry-file js-params)])))
+       (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };"
+               (if (= "prod" (get-config :server :mode))
+                 entry-file
+                 (str "http://localhost:5173" entry-file))
+               js-params)])))
 
 (defn- announcement-banner []
   (let [announcement (-> (slurp "announcement.txt")
