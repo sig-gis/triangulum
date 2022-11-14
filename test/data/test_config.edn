@@ -1,9 +1,10 @@
 ;; This is an example config file for testing.
-{:database {:host     "localhost"
+{:mode     "testing"
+ :database {:host     "localhost"
             :port     5432
             :dbname   "dbname"
             :user     "user"
-            :password "testing"}
+            :password "testing-password"}
  :mail     {:host           "smtp.gmail.com"
             :user           ""
             :pass           ""
@@ -12,7 +13,7 @@
             :base-url       "https://my.domain/"
             :auto-validate? false}
  :server   {:http-port     8080
-            :mode          "dev" ; or "prod"
+            :mode          "prod" ; or "prod"
             :log-dir       ""    ; or "logs"
             :handler       product-ns.routing/handler
             :workers       {:scheduler-example {:start product-ns.jobs/start-scheduled-jobs!
