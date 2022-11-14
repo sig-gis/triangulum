@@ -42,10 +42,8 @@
                                [:meta {:name "theme-color" :content "#ffffff"}]]
             :gtag-id          nil
             :static-css-files ["/css/comimo_global.css"]  ;; in resources/public folder
-            :static-js-files  ["https://www.gstatic.com/charts/loader.js"
-                               "/js/jquery-3.4.1.min.js"]
-            :get-user-lang    carbon-tool.remote-api/get-user-lang
-            :tags-url         "https://api.github.com/repos/sig-gis/comimo/tags"
-            :client-init      carbon-tool.client.init
-            :client-keys      {:mapbox-token "pk.eyJ1IjoiY29taW1vIiwiYSI6ImNrbnJtNmticzA4ZTgycHMyMG5jOGl0cHEifQ.2C24Ngq6Og8p8Xe3N5YPiA"
-                               :mapquest-key "GFOFP0YwWjZ1o5AvaXhfAKdixhfSWTFv"}}}
+            :static-js-files  ["/js/jquery-3.4.1.min.js"]
+            :get-user-lang    product-ns.api/get-user-lang
+            :tags-url         "https://api.github.com/repos/sig-gis/product-name/tags"
+            :client-init      product-ns.client.init ;; for ClojureScript projects
+            :client-keys      {:mapbox-token "token123"}}}
