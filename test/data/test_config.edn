@@ -1,6 +1,37 @@
+;; This is an example config file for testing.
 {:database {:host     "localhost"
             :port     5432
             :dbname   "dbname"
             :user     "user"
-            :password "testing-password"}
- :mode     "testing"}
+            :password "testing"}
+ :mail     {:host           "smtp.gmail.com"
+            :user           ""
+            :pass           ""
+            :tls            true
+            :port           587
+            :base-url       "https://my.domain/"
+            :auto-validate? false}
+ :server   {:http-port     8080
+            :mode          "dev" ; or "prod"
+            :log-dir       ""    ; or "logs"
+            :handler       product-ns.routing/handler
+            :workers       {:scheduler-example {:start product-ns.jobs/start-scheduled-jobs!
+                                                :stop  product-ns.jobs/stop-scheduled-jobs!}}
+            :response-type :json ; :edn or :transit
+            :session-key   "changeme12345678"}
+ :app      {:title            {:en "Product name in English"
+                               :es "Product name in Spanish"}
+            :description      {:en "Description of the product in English"
+                               :es "Description of the product in Spanish"}
+            :keywords         {:en "english keywords, some keywords, product,satellite imagery, collection, monitoring, fire"
+                               :es "spanish keywords, product, satellite imagery, collection, monitoring, fire"}
+            :extra-head-tags  [[:meta {:name "viewport" :content "width=device-width, user-scalable=no"}]
+                               [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
+                               [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]]
+            :gtag-id          nil
+            :static-css-files ["/css/my_global.css"]  ;; in resources/public folder
+            :static-js-files  ["/js/jquery-3.4.1.min.js"]
+            :get-user-lang    product-ns.api/get-user-lang
+            :tags-url         "https://api.github.com/repos/sig-gis/product-name/tags"
+            :client-init      product-ns.client.init ;; for ClojureScript projects
+            :client-keys      {:mapbox-token "token123"}}}
