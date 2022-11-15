@@ -46,5 +46,5 @@
             :static-js-files  ["/js/jquery-3.4.1.min.js"]
             :get-user-lang    product-ns.api/get-user-lang
             :tags-url         "https://api.github.com/repos/sig-gis/product-name/tags"
-            :client-init      product-ns.client.init ;; for ClojureScript projects
+            :cljs-init        product-ns.client.init ;; for ClojureScript projects
             :client-keys      {:mapbox-token "token123"}}}
