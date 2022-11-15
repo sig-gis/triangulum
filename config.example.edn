@@ -21,6 +21,7 @@
             :workers       {:scheduler {:start product.ns/start-scheduled-jobs!
                                         :stop  product.ns/stop-scheduled-jobs!}}
             :response-type :json ; :edn or :transit
+            :bad-tokens    #{"php"}
             :session-key   "changeme12345678"}
  :https    {:domain "example.com"
             :email  "test@example.com"}

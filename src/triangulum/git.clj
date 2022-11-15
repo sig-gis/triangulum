@@ -1,13 +1,15 @@
 (ns triangulum.git
-  (:require [triangulum.logging :refer [log-str]]
-            [triangulum.config  :refer [get-config]]
-            [clojure.string     :as str]
+  (:require [clojure.string     :as str]
             [clojure.data.json  :as json]
-            [clj-http.client    :as client]))
+            [clj-http.client    :as client]
+            [triangulum.config  :refer [get-config]]
+            [triangulum.logging :refer [log-str]]))
 
 ;; Constants
 
-(def tags-url (get-config :app :tags-url))
+(def tags-url
+  "Gets repo tags url from config.edn"
+  (get-config :app :tags-url))
 
 ;; Cache
 
@@ -31,7 +33,9 @@
 
 ;; Public Fns
 
-(defn current-version []
+(defn current-version
+  "Return current latest tag version from the configured tags url of repo"
+  []
   (cond
     (nil? tags-url)         nil
     (nil? @version)         nil

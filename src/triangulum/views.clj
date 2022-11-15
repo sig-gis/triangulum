@@ -1,26 +1,20 @@
 (ns triangulum.views
-  (:require
-   [clj-http.client     :as client]
-   [clojure.data.json   :as json]
-   [clojure.edn         :as edn]
-   [clojure.java.io     :as io]
-   [clojure.string      :as str]
-   [cognitect.transit   :as transit]
-   [hiccup.page         :refer [html5 include-css include-js]]
-   [triangulum.config   :refer [get-config]]
-   [triangulum.database :refer [call-sql]]
-   [triangulum.git      :refer [current-version]]
-   [triangulum.logging  :refer [log-str]]
-   [triangulum.errors   :refer [nil-on-error]]
-   [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab-case->camelCase]])
-  (:import
-   java.io.ByteArrayOutputStream))
+  (:impor java.io.ByteArrayOutputStream)
+  (:require [clojure.data.json   :as json]
+            [clojure.edn         :as edn]
+            [clojure.java.io     :as io]
+            [clojure.string      :as str]
+            [clj-http.client     :as client]
+            [cognitect.transit   :as transit]
+            [hiccup.page         :refer [html5 include-css include-js]]
+            [triangulum.config   :refer [get-config]]
+            [triangulum.git      :refer [current-version]]
+            [triangulum.errors   :refer [nil-on-error]]
+            [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab->camel]]))
 
-(defn kebab->camel [kebab]
-  (let [pieces (str/split kebab #"-")]
-    (apply str (first pieces) (map str/capitalize (rest pieces)))))
-
-(defn find-cljs-app-js []
+(defn find-cljs-app-js
+  "Pull "
+  []
   (as-> (slurp "target/public/cljs/manifest.edn") app
     (edn/read-string app)
     (get app "target/public/cljs/app.js")
@@ -28,7 +22,9 @@
     (last app)
     (str "/cljs/" app)))
 
-(defn find-manifest [src-file]
+(defn find-manifest
+  "Returns the manifest.json"
+  []
   (if (= "dev" (get-config :server :mode))
     (loop [resp    (nil-on-error
                     (client/get "http://localhost:5173/manifest.json"
@@ -49,17 +45,18 @@
     (-> (slurp "dist/public/manifest.json")
         (json/read-str))))
 
-;; TODO: maybe rename :client-init to a better name
-(defn cljs-project? []
-  (get-config :app :client-init))
+(defn cljs-project?
+  "Check if current project is a ClojureScript project"
+  []
+  (get-config :app :cljs-init))
 
 (defn find-bundle-asset-files
-  "Return a map of JS and CSS asset paths for React/Vite JS projects. Return nil
+  "Returns a map of JS and CSS asset paths for React/Vite JS projects. Return nil
   for CLJS projects."
   [page]
   (when-not (cljs-project?)
     (let [src-file           (format "src/js/%s.jsx" page)
-          manifest           (find-manifest src-file)
+          manifest           (find-manifest)
           js-entrypoint-file (str "/" (get-in manifest [src-file "file"]))
           js-asset-files     (mapv #(str/replace % #"^_" "/assets/")
                                    (get-in manifest [src-file "imports"]))
@@ -72,7 +69,9 @@
       {:js-files  (conj js-asset-files js-entrypoint-file)
        :css-files css-asset-files})))
 
-(defn head [{:keys [bundle-js-files bundle-css-files lang]}]
+(defn head
+  "Produces the head tag of the index page"
+  [{:keys [bundle-js-files bundle-css-files lang]}]
   (let [{:keys [title description keywords extra-head-tags gtag-id static-css-files static-js-files]} (get-config :app)]
     [:head
      [:title (get title lang "")]
@@ -113,18 +112,22 @@
         (map (fn [f] [:script {:type "module" :src (str "http://localhost:5173" f)}])
              (butlast bundle-js-files))))]))
 
-(defn uri->page [uri]
+(defn uri->page
+  "Returns the JavaScript file home page"
+  [uri]
   (->> (str/split uri #"/")
        (remove str/blank?)
        (first)
        ((fnil kebab->camel "home"))))
 
-(defn client-init [entry-file params]
+(defn client-init
+  "Returns the script tag necessary to for the browser to load the app"
+  [entry-file params]
   (let [js-params (-> params
                       (assoc :versionDeployed (current-version))
                       (merge (get-config :app :client-keys))
                       (json/write-str))]
-    (if-let [cljs-init (get-config :app :client-init)]
+    (if-let [cljs-init (get-config :app :cljs-init)]
       ;; CLJS app
       [:script {:type "text/javascript"}
        (format "window.onload = function () { %s(%s); };" (-> cljs-init name kebab->snake) js-params)]
@@ -181,8 +184,9 @@
          [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
                      11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
 
-;; TODO: Update find-bundle-asset-files to return values for CLJS projects.
-(defn get-response-params [uri request]
+(defn get-response-params
+  "Prepares the necessary dynamic assets and values needed to render the page"
+  [uri request]
   (let [page          (uri->page uri)
         asset-files   (find-bundle-asset-files page)
         get-user-lang (some-> (get-config :app :get-user-lang) resolve-foreign-symbol)
@@ -193,7 +197,9 @@
      :bundle-css-files (:css-files asset-files)
      :lang             lang}))
 
-(defn render-page [uri]
+(defn render-page
+  "Returns the page's html"
+  [uri]
   (fn [request]
     (let [response-params (get-response-params uri request)]
       {:status  200
@@ -212,12 +218,16 @@
                   (client-init (-> response-params :bundle-js-files last)
                                (:params request))])})))
 
-(defn not-found-page [request]
+(defn not-found-page
+  "Produces a not found response"
+  [request]
   (-> request
       ((render-page "/page-not-found"))
       (assoc :status 404)))
 
-(defn body->transit [body]
+(defn body->transit
+  "Produces a transit response body"
+  [body]
   (let [out    (ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]
     (transit/write writer body)

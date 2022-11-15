@@ -1,11 +1,11 @@
 (ns triangulum.database
+  (:import [java.sql Array])
   (:require [clojure.string       :as str]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
             [triangulum.config    :refer [get-config]]
             [triangulum.logging   :refer [log-str]]
-            [triangulum.utils     :refer [format-str]])
-  (:import [java.sql Array]))
+            [triangulum.utils     :refer [format-str]]))
 
 (extend-protocol rs/ReadableColumn
   Array
@@ -26,7 +26,7 @@
   (partition-all (quot 32767 (count fields)) rows))
 
 (def sql-primitive
-  "Returns single value for queries that return a value instead of a table."
+  "Return single value for queries that return a value instead of a table."
   (comp val first first))
 
 ;;; Static Data

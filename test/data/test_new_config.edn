@@ -14,6 +14,7 @@
             :workers       {:scheduler-example {:start product-ns.jobs/start-scheduled-jobs!
                                                 :stop  product-ns.jobs/stop-scheduled-jobs!}}
             :response-type :json ; :edn or :transit
+            :bad-tokens    #{"php"}
             :session-key   "changeme12345678"}
  :mail     {:host           "smtp.gmail.com"
             :user           "test@example.com"
@@ -36,5 +37,5 @@
             :static-js-files  ["/js/jquery-3.4.1.min.js"]
             :get-user-lang    product-ns.api/get-user-lang
             :tags-url         "https://api.github.com/repos/sig-gis/product-name/tags"
-            :client-init      product-ns.client.init ;; for ClojureScript projects
+            :cljs-init        product-ns.client.init ;; for ClojureScript projects
             :client-keys      {:mapbox-token "token123"}}}

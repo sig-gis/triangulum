@@ -14,7 +14,6 @@
   [kebab-str]
   (str/replace kebab-str "-" "_"))
 
-;; TODO: This function and the next do different things. Which one is used in the latest main branch?
 (defn kebab->camel
   "Converts kebab-string to camelString."
   [kebab-string]
@@ -25,13 +24,6 @@
     (->> (map str/capitalize (rest words))
          (cons (first words))
          (str/join ""))))
-
-;; TODO: This function and the next do different things. Which one is used in the latest main branch?
-(defn kebab-case->camelCase [k]
-  (let [words (str/split (name k) #"-")]
-    (->> (map str/capitalize (rest words))
-         (apply str (first words))
-         keyword)))
 
 (defn camel->kebab
   "Converts camelString to kebab-string."
@@ -63,12 +55,15 @@
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+                    (str/blank?)
                     (conj acc)))
         (recur (->> char-seq (drop-while #(not= \` %)))
                (->> char-seq
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+
+
                     (#(str/split % #" "))
                     (remove str/blank?)
                     (into acc)))))))
@@ -175,7 +170,7 @@
 ;;; Equality Checking
 
 (defn find-missing-keys
-  "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
+  "Returnss true if m1's keys are a subset of m2's keys, and that any nested maps
    also maintain the same property.
 
    Example:
