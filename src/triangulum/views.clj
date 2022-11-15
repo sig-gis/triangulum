@@ -1,5 +1,5 @@
 (ns triangulum.views
-  (:impor java.io.ByteArrayOutputStream)
+  (:import java.io.ByteArrayOutputStream)
   (:require [clojure.data.json   :as json]
             [clojure.edn         :as edn]
             [clojure.java.io     :as io]
