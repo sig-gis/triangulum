@@ -1,4 +1,5 @@
 (ns triangulum.server
+  (:import org.eclipse.jetty.server.Server)
   (:require [cider.nrepl         :refer [cider-nrepl-handler]]
             [clojure.java.io     :as io]
             [nrepl.core          :as nrepl]
@@ -9,8 +10,7 @@
             [triangulum.handler  :refer [create-handler-stack]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.notify   :refer [available? ready!]]
-            [triangulum.utils    :refer [resolve-foreign-symbol]])
-  (:import org.eclipse.jetty.server.Server))
+            [triangulum.utils    :refer [resolve-foreign-symbol]]))
 
 (defonce ^:private server       (atom nil))
 (defonce ^:private nrepl-server (atom nil))
@@ -62,9 +62,10 @@
    :stop   {:description "Stops the server."}
    :reload {:description "Reloads a running server."}})
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defn start-server!
   "FIXME: Write docstring"
-  [{:keys [http-port https-port mode log-dir nrepl cider-nrepl handler workers response-type]}]
+  [{:keys [http-port https-port mode log-dir nrepl cider-nrepl handler workers]}]
   (let [has-key?      (.exists (io/file "./.key/keystore.pkcs12"))
         ssl?          (and has-key? https-port)
         handler-stack (-> (resolve-foreign-symbol handler)
@@ -107,7 +108,9 @@
         (set-log-path! log-dir)
         (when (available?) (ready!))))))
 
-(defn stop-server! []
+(defn stop-server!
+  "Stops server with workers jobs"
+  []
   (set-log-path! "")
   (when @server
     (.stop ^Server @server)
@@ -115,7 +118,9 @@
   (stop-workers!)
   (System/exit 0))
 
-(defn send-to-nrepl-server! [msg & {:keys [host port] :or {host "127.0.0.1" port 5555}}]
+(defn send-to-nrepl-server!
+  "Sends form to the nrepl server"
+  [msg & {:keys [host port] :or {host "127.0.0.1" port 5555}}]
   (try
     (with-open [conn ^nrepl.server.Server (nrepl/connect :host host :port port)]
       (-> (nrepl/client conn 1000)  ; message receive timeout required
@@ -126,13 +131,19 @@
       (System/exit 1)))
   (System/exit 0))
 
-(defn stop-running-server! []
+(defn stop-running-server!
+  "Sends stop-server! call to the nrepl server"
+  []
   (send-to-nrepl-server! "(do (require '[triangulum.server :as server]) (server/stop-server!))"))
 
-(defn reload-running-server! []
+(defn reload-running-server!
+  "Reloads the server namespace"
+  []
   (send-to-nrepl-server! "(require 'triangulum.server :reload-all)"))
 
-(defn -main [& args]
+(defn -main
+  "Server entry main function"
+  [& args]
   (if-let [{:keys [action options]} (get-cli-options args
                                                      cli-options
                                                      cli-actions

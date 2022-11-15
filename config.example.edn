@@ -18,6 +18,7 @@
             :workers       {:scheduler-example {:start product-ns.jobs/start-scheduled-jobs!
                                                 :stop  product-ns.jobs/stop-scheduled-jobs!}}
             :response-type :json ; :edn or :transit
+            :bad-tokens    #{"php"}
             :session-key   "changeme12345678"}
  :app      {:title            {:en "Product name in English"
                                :es "Product name in Spanish"}

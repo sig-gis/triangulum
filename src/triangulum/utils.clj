@@ -1,10 +1,10 @@
 (ns triangulum.utils
+  (:import java.io.ByteArrayOutputStream)
   (:require [clojure.data.json   :as json]
             [clojure.java.shell  :as sh]
             [clojure.set         :as set]
             [clojure.string      :as str]
-            [cognitect.transit   :as transit])
-  (:import java.io.ByteArrayOutputStream))
+            [cognitect.transit   :as transit]))
 
 ;; Text parsing
 
@@ -13,11 +13,12 @@
   [kebab-str]
   (str/replace kebab-str "-" "_"))
 
-(defn kebab-case->camelCase [k]
+(defn kebab->camel
+  "kebab-str -> camelCaseStr"
+  [k]
   (let [words (str/split (name k) #"-")]
     (->> (map str/capitalize (rest words))
-         (apply str (first words))
-         keyword)))
+         (apply str (first words)))))
 
 (defn format-str
   "Use any char after % for format. All % are converted to %s (string)"
@@ -41,12 +42,15 @@
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+                    (str/blank?)
                     (conj acc)))
         (recur (->> char-seq (drop-while #(not= \` %)))
                (->> char-seq
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+
+
                     (#(str/split % #" "))
                     (remove str/blank?)
                     (into acc)))))))
@@ -142,7 +146,7 @@
 ;; Equality checking
 
 (defn find-missing-keys
-  "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
+  "Returnss true if m1's keys are a subset of m2's keys, and that any nested maps
    also maintain the same property.
 
    Example:

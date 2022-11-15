@@ -1,10 +1,10 @@
 (ns triangulum.config
-  (:require [clojure.java.io    :as io]
-            [clojure.edn        :as edn]
+  (:require [clojure.edn        :as edn]
             [clojure.spec.alpha :as s]
+            [clojure.string     :as str]
+            [clojure.java.io    :as io]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [find-missing-keys]]
-            [clojure.string :as str]))
+            [triangulum.utils   :refer [find-missing-keys]]))
 
 ;;; Specs
 ;; Base spec
