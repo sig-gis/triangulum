@@ -13,24 +13,50 @@ sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
                      :sha "copy-current-sha-here"}
 #+end_src
 
+In the root there is a ~deps.example.edn~ file that serves as example/template for projects to use. Typically needed in standard SIG project.
+
+*** triangulum.server
+To start server use, you pass ~--nrepl~ or ~--cider-nrepl~ if your editor (like Emacs, VS Code, etc.) supports the cider middleware features. The default server port is ~5555~.
+#+begin_src sh
+clojure -M:server start --nrepl
+clojure -M:server start --cider-nrepl
+#+end_src
+Before starting the server, you need to set ~:handler~ to a router function that takes a request and routes it to a ring response handler. You can set ~:response-type~ to configure the default ~data-response~ call's return type (json, edn, transit).
+
+**** workers
+Triangulum provides some functionality for sending email from an SMTP server. Given the configuration inside ~:mail~. ~:base-url~ is used to configure the host url, used when sending links in emails. ~:auto-validate~ can be used in development mode, for example, to skip sending emails, which has to be configured.
+
+*** triangulum.git
+You can provide ~:tags-url, which is a url to the git tags repo. Triangulum will make it available to the client in the page response under ~:versionDeployed~ passed as an argument to the client's init function.
+*** triangulum.mail
+Triangulum provides some functionality for sending email from an SMTP server. Given the configuration inside ~:mail~. ~:base-url~ is used to configure the host url, used when sending links in emails. ~:auto-validate~ can be used in development mode, for example, to skip sending emails, which has to be configured.
 *** triangulum.config
 
 To make organizing an application's configurations simpler, create a
-~config.edn~ file in the project's root directory. The file is just a hashmap.
+~config.edn~ file in the project's root directory. The file is just a hashmap that is similar to:
 
 #+begin_src clojure
-;; config.edn
-{:database {:host     "localhost"
-            :port     5432
-            :dbname   "dbname"
-            :user     "user"
-            :password "super-secret-password"}
- :mode     "dev"
- :mail     {:host "smtp.gmail.com"
-            :user "test@example.com"
-            :pass "3492734923742"
-            :port 587}}
+  ;; config.edn
+  {:database {:host     "localhost"
+              :port     5432
+              :dbname   "dbname"
+              :user     "user"
+              :password "super-secret-password"}
+   :mail     {:host "smtp.gmail.com"
+              :user "test@example.com"
+              :pass "3492734923742"
+              :port 587}
+   :server   {:host           "smtp.gmail.com"
+              :user           ""
+              :pass           ""
+              :tls            true
+              :port           587
+              :base-url       "https://my.domain/"
+              :auto-validate? false}
+   ...}
 #+end_src
+
+You can find an up-to-date example in ~config.example.edn~ file. It can be used as a configuration template for your project.
 
 Add config.edn to your ~.gitignore~ file to keep sensitive information out of
 the git history.
