@@ -33,7 +33,7 @@ WantedBy=multi-user.target
 ;; Helper functions
 
 ;; TODO consolidate sh-wrapper functions
-(defn- sh-wrapper [dir env & commands]
+#_(defn- sh-wrapper [dir env & commands]
   (io/make-parents (str dir "/dummy"))
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
@@ -43,7 +43,7 @@ WantedBy=multi-user.target
           (log-str "out: "   out)
           (log-str "error: " err))))))
 
-(defn- sh-wrapper2 [dir env & commands]
+(defn- sh-wrapper [dir env & commands]
   (io/make-parents (str dir "/dummy"))
   (doseq [cmd commands]
     (log-str cmd)
