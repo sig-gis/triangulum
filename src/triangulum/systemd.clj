@@ -1,5 +1,6 @@
 (ns triangulum.systemd
-  (:require [clojure.java.io    :as io]
+  (:require [babashka.process   :refer [process check sh pipeline pb]]
+            [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
@@ -41,6 +42,19 @@ WantedBy=multi-user.target
         (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
           (log-str "out: "   out)
           (log-str "error: " err))))))
+
+(defn- sh-wrapper2 [dir env & commands]
+  (io/make-parents (str dir "/dummy"))
+  (doseq [cmd commands]
+    (log-str cmd)
+    (->
+     (process (parse-as-sh-cmd cmd)
+              {:dir dir
+               :env (merge {:PATH path-env} env)})
+
+     :out
+     slurp
+     log-str)))
 
 (defn- enable-systemd [{:keys [repo http https dir]}]
   (let [service-name (str "cljweb-" repo)
