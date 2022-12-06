@@ -72,8 +72,8 @@ absolute path on your filesystem. The logger will keep the 10 most recent logs
 set path to "".
 
 #+begin_src clojure
-(set-log-path "logs")
-(set-log-path "")
+(set-log-path! "logs")
+(set-log-path! "")
 #+end_src
 
 *** triangulum.database
