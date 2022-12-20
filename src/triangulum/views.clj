@@ -101,16 +101,8 @@
 
        ;; JS app/dev
        :else
-       (list
-        [:script {:type "module"}
-         "// import RefreshRuntime from 'http://localhost:5173/@react-refresh'
-         // RefreshRuntime.injectIntoGlobalHook(window)
-         window.$RefreshReg$ = () => {}
-         window.$RefreshSig$ = () => (type) => type
-         window.__vite_plugin_react_preamble_installed__ = true"]
-        [:script {:type "module" :src "http://localhost:5173/@vite/client"}]
-        (map (fn [f] [:script {:type "module" :src (str "http://localhost:5173" f)}])
-             (butlast bundle-js-files))))]))
+       [:script {:type "module"
+                       :src "http://localhost:5173/index.html?html-proxy&index=0.js"}])]))
 
 (defn uri->page
   "Returns the JavaScript file home page"
@@ -132,11 +124,12 @@
       [:script {:type "text/javascript"}
        (format "window.onload = function () { %s(%s); };" (-> cljs-init name kebab->snake) js-params)]
       ;; JS app
-      [:script {:type "module"}
-       (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };"
+      [:script {:type "module" :src "http://localhost:5173/src/js/index.jsx"} ]
+      #_[:script {:type "module"}
+       (format "// import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };"
                (if (= "prod" (get-config :server :mode))
                  entry-file
-                 (str "http://localhost:5173" entry-file))
+                 (str "http://localhost:5173" "/src/js/index.jsx"))
                js-params)])))
 
 (defn- announcement-banner []
@@ -201,7 +194,8 @@
   "Returns the page's html"
   [uri]
   (fn [request]
-    (let [response-params (get-response-params uri request)]
+    (let [response-params (when (= "prod" (get-config :server :mode))
+                            (get-response-params uri request))]
       {:status  200
        :headers {"Content-Type" "text/html"}
        :body    (html5
@@ -217,6 +211,28 @@
                    [:div#app]]
                   (client-init (-> response-params :bundle-js-files last)
                                (:params request))])})))
+
+#_(defn render-page
+  [uri]
+  (fn [request]
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body (html5
+            [:head
+             #_[:script {:type "module"}
+                    "import { injectIntoGlobalHook } from \"/@react-refresh\";
+                     injectIntoGlobalHook(window);
+                     window.$RefreshReg$ = () => {};
+                     window.$RefreshSig$ = () => (type) => type;"]
+             [:script {:type "module"
+                       :src "http://localhost:5173/index.html?html-proxy&index=0.js"}]
+             #_[:script {:type "module" :src "http://localhost:5173/@vite/client"}]
+             #_[:meta {:charset "UTF-8"}] [:link {:rel "icon" :type "image/svg+xml" :href "/vite.svg"}]
+             #_[:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+             #_[:title "Vite + React + TS + Emotion"]]
+            [:body
+             [:div#app]
+             (client-init nil (:params request))])}))
 
 (defn not-found-page
   "Produces a not found response"
