@@ -63,15 +63,26 @@
 
 (def ^:private path-env (System/getenv "PATH"))
 
+(defn sh-exec-with
+  "Provides a path (`dir`) and environment (`env`) to one bash `command`
+   and executes it. Returns a map in the following format:
+   `{:exit 0 :out 'Output message\n' :err ''}`"
+  [dir env command]
+  (sh/with-sh-dir dir
+    (sh/with-sh-env (merge {:PATH path-env} env)
+      (apply sh/sh (parse-as-sh-cmd command)))))
+
 (defn sh-wrapper
-  "Provides a given path and environment to a set of bash commands,
-  and parses the output, creating an array as described in `parse-as-sh-cmd`."
-  [dir env verbose & commands]
+  "Provides a path and environment to a set of bash commands and parses
+   the output, creating an array as described in `parse-as-sh-cmd`.
+   Returns a string that combines all of the standard error (and optionally
+   the standard out when `verbose?` is true) from running the set of commands."
+  [dir env verbose? & commands]
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
       (reduce (fn [acc cmd]
                 (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
-                  (str acc (when verbose out) err)))
+                  (str acc (when verbose? out) err)))
               ""
               commands))))
 
