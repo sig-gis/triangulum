@@ -66,7 +66,7 @@
 (defn sh-exec-with
   "Provides a path (`dir`) and environment (`env`) to one bash `command`
    and executes it. Returns a map in the following format:
-   {:exit 0 :out `Output message\n` :err ''}"
+   `{:exit 0 :out 'Output message\n' :err ''}`"
   [dir env command]
   (sh/with-sh-dir dir
     (sh/with-sh-env (merge {:PATH path-env} env)
