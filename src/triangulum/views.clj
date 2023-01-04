@@ -124,13 +124,12 @@
       [:script {:type "text/javascript"}
        (format "window.onload = function () { %s(%s); };" (-> cljs-init name kebab->snake) js-params)]
       ;; JS app
-      [:script {:type "module" :src "http://localhost:5173/src/js/index.jsx"} ]
-      #_[:script {:type "module"}
-       (format "// import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };"
-               (if (= "prod" (get-config :server :mode))
+      (if (= "dev" (get-config :server :mode))
+        [:script {:type "module" :src "http://localhost:5173/src/js/index-dev.jsx"} ]
+        [:script {:type "module"}
+         (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };"
                  entry-file
-                 (str "http://localhost:5173" "/src/js/index.jsx"))
-               js-params)])))
+                 js-params)]))))
 
 (defn- announcement-banner []
   (let [announcement (-> (slurp "announcement.txt")
