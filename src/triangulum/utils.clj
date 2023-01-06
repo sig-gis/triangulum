@@ -6,12 +6,33 @@
             [clojure.set        :as set]
             [clojure.data.json  :as json]))
 
+;;==============================================================================
 ;; Text parsing
+;;==============================================================================
 
 (defn kebab->snake
-  "kebab-str -> snake_str"
+  "Converts kebab-str to snake_str."
   [kebab-str]
   (str/replace kebab-str "-" "_"))
+
+(defn kebab->camel
+  "Converts kebab-string to camelString."
+  [kebab-string]
+  (let [words (-> kebab-string
+                  (str/lower-case)
+                  (str/replace #"^[^a-z_$]|[^\w-]" "")
+                  (str/split #"-"))]
+    (->> (map str/capitalize (rest words))
+         (cons (first words))
+         (str/join ""))))
+
+(defn camel->kebab
+  "Converts camelString to kebab-string."
+  [camel-string]
+  (as-> camel-string text
+    (str/split text #"(?<=[a-z])(?=[A-Z])")
+    (map str/lower-case text)
+    (str/join "-" text)))
 
 (defn format-str
   "Use any char after % for format. All % are converted to %s (string)"
@@ -59,7 +80,9 @@
     (subs s 0 (- (count s) (count end)))
     s))
 
+;;==============================================================================
 ;; Shell commands
+;;==============================================================================
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -86,7 +109,9 @@
               ""
               commands))))
 
+;;==============================================================================
 ;; Response building
+;;==============================================================================
 
 (defn- clj->transit
   "Converts a clj body to transit."
@@ -121,7 +146,9 @@
                       :json    (json/write-str body)
                       body)})))
 
+;;==============================================================================
 ;; Equivalent FP functions for maps
+;;==============================================================================
 
 (defn mapm
   "Takes a map, applies f to each MapEntry, returns a map."
@@ -143,7 +170,9 @@
            (transient {})
            coll)))
 
-;; Equality checking
+;;==============================================================================
+;; Equality Checking
+;;==============================================================================
 
 (defn find-missing-keys
   "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
@@ -165,3 +194,12 @@
 
     :else
     #{}))
+
+;;==============================================================================
+;; Date Helper Functions
+;;==============================================================================
+
+(defn current-year
+  "Returns the current year as an integer."
+  []
+  (+ 1900 (.getYear (Date.))))
