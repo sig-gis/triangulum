@@ -1,5 +1,6 @@
 (ns triangulum.utils
-  (:import java.io.ByteArrayOutputStream)
+  (:import java.io.ByteArrayOutputStream
+           java.util.Date)
   (:require [cognitect.transit  :as transit]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
