@@ -4,6 +4,7 @@
             [clojure.string     :as str]
             [clojure.java.io    :as io]
             [triangulum.cli     :refer [get-cli-options]]
+            [triangulum.errors  :refer [nil-on-error]]
             [triangulum.utils   :refer [find-missing-keys]]))
 
 ;;; Specs
@@ -44,32 +45,87 @@
 
 ;;; Helper Fns
 
+;; FIXME: Fill in the rest of the triangulum map keys and their
+;; corresponding lookup expressions. Then make sure to merge in all of
+;; the remaining app keys in the nested-config.
+(defn- transform-nested-config-to-namespaced-config [nested-config]
+  (->>
+   {:triangulum.git/tags-url     (get-in nested-config [:app :tags-url])
+    :triangulum.fill/the-rest-in (get-in nested-config [:other :paths])}
+   ;; Remember to dissoc all of the transformed keys above from the
+   ;; nested map and then merge the remainder (app-specific keys) into
+   ;; this new config map before returning it.
+   (remove (fn [[_k v]] (nil? v)))
+   (into {})))
+
 (defn- wrap-throw [& strs]
   (-> (apply str strs)
       (ex-info {})
       (throw)))
 
+(defn- first-failed-spec [edn specs]
+  (->> specs
+       (filter (fn [spec] (not (s/valid? spec edn))))
+       (first)))
+
+(defn- validate-edn [edn specs]
+  (if-let [failed-spec (first-failed-spec edn specs)]
+    {:valid? false
+     :result (s/explain-str failed-spec edn)}
+    {:valid? true
+     :result edn}))
+
+(defn- get-nested-specs [edn]
+  (let [triangulum-spec ::nested-config ; FIXME: define this spec
+        app-spec        (get-in edn [:app :config-spec])] ; FIXME: define this spec and load this namespace on demand
+    (remove nil? [triangulum-spec app-spec])))
+
+(defn- get-namespaced-specs [edn]
+  (let [triangulum-spec ::namespaced-config ; FIXME: define this spec
+        app-spec        (get edn ::app-spec)] ; FIXME: define this spec and load this namespace on demand
+    (remove nil? [triangulum-spec app-spec])))
+
+(defn- read-edn-from-file [filename]
+  (let [file (io/file filename)]
+    (if-not (.exists file)
+      (wrap-throw "Error: Cannot find " file ".")
+      (if-not (.canRead file)
+        (wrap-throw "Error: Config file " file " is not readable.")
+        (if-let [edn (-> (slurp file)
+                         (edn/read-string)
+                         (nil-on-error))]
+          edn
+          (wrap-throw "Error: Config file " file " does not contain well-formed EDN."))))))
+
+(defn- read-typed-config [file]
+  (let [edn                   (read-edn-from-file file)
+        nested-specs          (get-nested-specs edn)
+        namespaced-specs      (get-namespaced-specs edn)
+        nested-validation     (validate-edn edn nested-specs)
+        namespaced-validation (validate-edn edn namespaced-specs)]
+    (cond
+      (:valid? nested-validation)
+      {:spec-type :nested
+       :edn       (:result nested-validation)}
+
+      (:valid? namespaced-validation)
+      {:spec-type :namespaced
+       :edn       (:result namespaced-validation)}
+
+      :else
+      (wrap-throw "Error: Config file " file " does not conform to either the nested or namespaced spec.\n\n"
+                  "Spec failure for nested spec:\n" (:result nested-validation) "\n\n"
+                  "Spec failure for namespaced spec:\n" (:result namespaced-validation)))))
+
 (defn- read-config [file]
-  (if (.exists (io/file file))
-    (let [example-config (-> (slurp *default-file*) (edn/read-string))
-          config         (-> (slurp file) (edn/read-string))
-          missing-keys   (find-missing-keys example-config config)]
-      (cond
-        (seq missing-keys)
-        (wrap-throw "Error: The following keys from config.default.edn are missing from:"
-                    file
-                    "\n"
-                    (str/join "', '" missing-keys))
-
-        (not (s/valid? ::config config))
-        (do (println "Error: Invalid config file:" file)
-            (s/explain ::config config)
-            (flush)
-            (wrap-throw ""))
-
-        :else
-        config))
-    (wrap-throw "Error: Cannot find file" file)))
+  (let [example-config (read-typed-config *default-file*)
+        user-config    (read-typed-config file)]
+    (if (not= (:spec-type example-config)
+              (:spec-type user-config))
+      (wrap-throw "The config files " *default-file* " and " file " do not conform to the same spec.")
+      (if (= :namespaced (:spec-type user-config))
+        (:edn user-config)
+        (transform-nested-config-to-namespaced-config (:edn user-config))))))
 
 (defn- cache-config []
   (or @config-cache
