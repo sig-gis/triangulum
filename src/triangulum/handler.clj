@@ -2,7 +2,6 @@
   (:require
    [clojure.edn                        :as edn]
    [clojure.data.json                  :as json]
-   [clojure.set                        :as set]
    [clojure.string                     :as str]
    [ring.util.codec                    :refer [url-decode]]
    [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
@@ -73,27 +72,6 @@
                  (str content-type " response")))
       response)))
 
-
-(def updatable-session-keys
-  "A vector containing session keys that can be updated"
-  [])
-
-(defn wrap-persistent-session
-  "Wrapper to manage session"
-  [handler]
-  (fn [request]
-    (let [{:keys [params session]} request
-          to-update                (select-keys params updatable-session-keys)
-          session                  (apply dissoc session (keys to-update))
-          intersection             (set/intersection (set (keys params)) (set (keys session)))
-          response                 (handler (update request :params merge session))]
-      (when-not (empty? intersection)
-        (log-str "WARNING! The following params are being overwritten by session values: " intersection))
-      (if (and (contains? response :session)
-               (nil? (:session response)))
-        response
-        (update response :session #(merge session to-update %))))))
-
 (defn wrap-exceptions
   "Wrapper to manage exception handling, logging it and responding with 500 in case of an exception"
   [handler]
@@ -152,7 +130,6 @@
       (optional-middleware wrap-ssl-redirect ssl?)
       (wrap-bad-uri (get-config :server :bad-tokens))
       wrap-request-logging
-      wrap-persistent-session
       wrap-keyword-params
       wrap-json-params
       wrap-edn-params
