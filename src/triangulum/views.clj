@@ -114,22 +114,25 @@
 
 (defn client-init
   "Returns the script tag necessary to for the browser to load the app"
-  [entry-file params]
-  (let [js-params (-> params
-                      (assoc :versionDeployed (current-version))
-                      (merge (get-config :app :client-keys))
-                      (json/write-str))]
+  [entry-file params session]
+  (let [js-params  (-> params
+                       (json/write-str))
+        js-session (-> session
+                       (assoc :versionDeployed (current-version))
+                       (merge (get-config :app :client-keys))
+                       (json/write-str))]
     (if-let [cljs-init (get-config :app :cljs-init)]
       ;; CLJS app
       [:script {:type "text/javascript"}
-       (format "window.onload = function () { %s(%s); };" (-> cljs-init name kebab->snake) js-params)]
+       (format "window.onload = function () { %s(%s, %s); };" (-> cljs-init name kebab->snake) js-params js-session)]
       ;; JS app
       (if (= "dev" (get-config :server :mode))
         [:script {:type "module" :src "http://localhost:5173/src/js/index-dev.jsx"} ]
         [:script {:type "module"}
-         (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };"
+         (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
                  entry-file
-                 js-params)]))))
+                 js-params
+                 js-session)]))))
 
 (defn- announcement-banner []
   (let [announcement (-> (slurp "announcement.txt")
@@ -209,7 +212,8 @@
                      (announcement-banner))
                    [:div#app]]
                   (client-init (-> response-params :bundle-js-files last)
-                               (:params request))])})))
+                               (:params request)
+                               (:session request))])})))
 
 #_(defn render-page
   [uri]
@@ -231,7 +235,7 @@
              #_[:title "Vite + React + TS + Emotion"]]
             [:body
              [:div#app]
-             (client-init nil (:params request))])}))
+             (client-init nil (:params request) (:session request))])}))
 
 (defn not-found-page
   "Produces a not found response"
