@@ -1,0 +1,58 @@
+{:triangulum.build-db/admin-pass "postgres-password"
+ :triangulum.build-db/dev-data   false
+ :triangulum.build-db/file       "/some/file/path"     ;; FIXME: ambiguous name - should be backup-file
+ :triangulum.build-db/verbose    true
+
+ :triangulum.database/host       "localhost"
+ :triangulum.database/port       5432
+ :triangulum.database/dbname     "comimo"
+ :triangulum.database/user       "comimo"
+ :triangulum.database/password   "comimo"
+
+ :triangulum.email/host          "smtp.gmail.com"
+ :triangulum.email/user          ""
+ :triangulum.email/pass          ""
+ :triangulum.email/tls           true
+ :triangulum.email/port          587
+ :triangulum.email/base-url      "https://my.domain/"
+
+ :triangulum.git/tags-url         "https://github.com/sig-gis/..."
+
+ :triangulum.handler/session-key  "changeme12345678"
+ :triangulum.handler/bad-tokens   #{}
+
+ :triangulum.https/email          "support@sig-gis.com"
+ :triangulum.https/domain         "app.sig-gis.com"
+ :triangulum.https/path           "/etc/letsencrypt"
+ :triangulum.https/cert-only      false
+ :triangulum.https/webroot        "./resources/public"
+
+ :triangulum.response/response-type :json
+
+ :triangulum.server/http-port       8080
+ :triangulum.server/https-port      8443
+ :triangulum.server/nrepl           false
+ :triangulum.server/cider-nrepl     false
+ :triangulum.server/mode            "dev"
+ :triangulum.server/log-dir         "logs"
+ :triangulum.server/handler         comimo.routing/handler
+ :triangulum.server/workers         [{:triangulum.worker/name     "scheduler"
+                                      :triangulum.worker/start-fn comimo.jobs/start-scheduled-jobs!
+                                      :triangulum.worker/stop-fn  comimo.jobs/stop-scheduled-jobs!}]
+
+ :triangulum.views/title            "My Site"
+ :triangulum.views/description      "The site that is mine."
+ :triangulum.views/keywords         "my site mine"
+ :triangulum.views/extra-head-tags  [[:meta {:name "neat-metadata-attribute" :content "neat-metadata-value"}]]
+ :triangulum.views/gtag-id          "G-..."
+ :triangulum.views/static-css-files ["some/file.css" "other/file.css"]
+ :triangulum.views/static-js-files  ["some/file.js" "other/file.js"]
+ :triangulum.views/cljs-init        nil
+ :triangulum.views/client-keys      {:frontend-value1 "a" :frontend-value2 "b"}
+ :triangulum.views/get-user-lang    comimo.internationalization/lookup-lang
+
+ :comimo.py-interop/ee-account      "comimo@earth-engine-comimo.iam.gserviceaccount.com"
+ :comimo.py-interop/ee-key-path     "gee-auth-key.json"
+ :comimo.views/mapbox-token         "pk..."
+ :comimo.views/mapquest-key         "GF..."
+ :comimo.proxy/nicfi-key            "e5..."}
