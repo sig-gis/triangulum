@@ -7,9 +7,7 @@
             [clojure.set        :as set]
             [clojure.data.json  :as json]))
 
-;;==============================================================================
-;; Text parsing
-;;==============================================================================
+;;; Text parsing
 
 (defn kebab->snake
   "Converts kebab-str to snake_str."
@@ -81,9 +79,7 @@
     (subs s 0 (- (count s) (count end)))
     s))
 
-;;==============================================================================
-;; Shell commands
-;;==============================================================================
+;;; Shell commands
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -110,9 +106,7 @@
               ""
               commands))))
 
-;;==============================================================================
-;; Response building
-;;==============================================================================
+;;; Response building
 
 (defn- clj->transit
   "Converts a clj body to transit."
@@ -147,9 +141,7 @@
                       :json    (json/write-str body)
                       body)})))
 
-;;==============================================================================
-;; Equivalent FP functions for maps
-;;==============================================================================
+;;; Equivalent FP functions for maps
 
 (defn mapm
   "Takes a map, applies f to each MapEntry, returns a map."
@@ -171,9 +163,7 @@
            (transient {})
            coll)))
 
-;;==============================================================================
-;; Equality Checking
-;;==============================================================================
+;;; Equality Checking
 
 (defn find-missing-keys
   "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
@@ -196,9 +186,7 @@
     :else
     #{}))
 
-;;==============================================================================
-;; Date Helper Functions
-;;==============================================================================
+;;; Date Helper Functions
 
 (defn current-year
   "Returns the current year as an integer."
