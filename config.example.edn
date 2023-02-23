@@ -1,7 +1,19 @@
-;; This is an example config file for testing.
-{:database {:host     "localhost"
-            :port     5432
-            :dbname   "dbname"
-            :user     "user"
-            :password "testing-password"}
- :mode     "testing"}
+;; This is an example config file for testing and reference. Please
+;; make your own config.edn file in your project root with any fields
+;; from this file that you intend to use.
+
+{:database {:host       "localhost"
+            :port       5432
+            :dbname     "dbname"
+            :user       "user"
+            :password   "secret-db-password"}
+ :https    {:domain     "example.com"
+            :email      "test@example.com"}
+ :server   {:http-port  8080
+            :https-port 8443
+            :mode       "dev" ; or "prod"
+            :log-dir    "logs"}
+ :mail     {:host       "smtp.gmail.com"
+            :user       "test@example.com"
+            :pass       "secret-mail-password"
+            :port       587}}

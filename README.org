@@ -40,17 +40,21 @@ as they don't conflict with Triangulum's reserved keys. Here is an
 example:
 
 #+begin_src clojure
-{:database {:host      "localhost"
-            :port      5432
-            :dbname    "dbname"
-            :user      "user"
-            :password  "super-secret-password"}
- :mail     {:host      "smtp.gmail.com"
-            :user      "test@example.com"
-            :pass      "3492734923742"
-            :port      587}
- :server   {:http-port 8080
-            :mode      "dev"}}
+{:database {:host       "localhost"
+            :port       5432
+            :dbname     "dbname"
+            :user       "user"
+            :password   "secret-db-password"}
+ :https    {:domain     "example.com"
+            :email      "test@example.com"}
+ :server   {:http-port  8080
+            :https-port 8443
+            :mode       "dev" ; or "prod"
+            :log-dir    "logs"}
+ :mail     {:host       "smtp.gmail.com"
+            :user       "test@example.com"
+            :pass       "secret-mail-password"
+            :port       587}}
 #+end_src
 
 NOTE: You can always refer to the ~config.example.edn~ in Triangulum's
