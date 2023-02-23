@@ -37,7 +37,7 @@
 
 ;;; Private vars
 
-(def ^:private ^:dynamic *default-file* "config.default.edn")
+(def ^:private ^:dynamic *example-file* "config.example.edn")
 
 (def ^:private config-file  (atom "config.edn"))
 (def ^:private config-cache (atom nil))
@@ -51,25 +51,23 @@
 
 (defn- read-config [file]
   (if (.exists (io/file file))
-    (let [example-config (-> (slurp *default-file*) (edn/read-string))
+    (let [example-config (-> (slurp *example-file*) (edn/read-string))
           config         (-> (slurp file) (edn/read-string))
           missing-keys   (find-missing-keys example-config config)]
       (cond
         (seq missing-keys)
-        (wrap-throw "Error: The following keys from config.default.edn are missing from:"
+        (wrap-throw "Error: The following keys from config.example.edn are missing from: "
                     file
                     "\n"
                     (str/join "', '" missing-keys))
 
         (not (s/valid? ::config config))
-        (do (println "Error: Invalid config file:" file)
-            (s/explain ::config config)
-            (flush)
-            (wrap-throw ""))
+        (wrap-throw "Error: Invalid config file: " file "\n"
+                    (s/explain-str ::config config))
 
         :else
         config))
-    (wrap-throw "Error: Cannot find file" file)))
+    (wrap-throw "Error: Cannot find file " file)))
 
 (defn- cache-config []
   (or @config-cache
