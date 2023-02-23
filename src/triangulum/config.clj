@@ -96,8 +96,8 @@
 
 (defn valid-config?
   "Validates `file` as a configuration file."
-  [{:keys [file] :or {file @config-file}}]
-  (map? (read-config file)))
+  [{:keys [file]}]
+  (map? (read-config (or file @config-file))))
 
 (def ^:private cli-options
   {:file ["-f" "--file FILE" "Configuration file to validate."]})
