@@ -20,15 +20,13 @@
 (use-fixtures :each load-test-config)
 
 (deftest get-config-test
-  (testing "Get config for single value."
-    (is (= "testing" (get-config :mode))))
-
-  (testing "Get config for nested value."
+  (testing "Get config for nested values."
+    (is (= "dev" (get-config :server :mode)))
     (is (= "testing-password" (get-config :database :password))))
 
   (testing "Load a different configuration."
     (load-config "test/data/test_new_config.edn")
-    (is (= "production" (get-config :mode)))
+    (is (= "prod" (get-config :server :mode)))
     (is (= "super-secret-password" (get-config :database :password))))
 
   (testing "Invalid configurations"
