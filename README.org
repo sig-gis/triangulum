@@ -4,72 +4,120 @@ A Clojure library establishing a web app framework around Jetty and Ring.
 
 ** Library Usage
 
-*** Using Triangulum package
+*** Adding the Library to Your Project
 
-Add the package to dep.edn
+Include the following entry in your deps.edn ~:deps~ map:
 
 #+begin_src clojure
 sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
-                     :sha "copy-current-sha-here"}
+                     :sha "COPY-CURRENT-SHA-HERE"}
 #+end_src
 
-*** triangulum.config
-
-To make organizing an application's configurations simpler, create a
-~config.edn~ file in the project's root directory. The file is just a hashmap.
+If you want to pull Triangulum into a [[https://babashka.org][Babashka]] script, you can do so
+with ~babashka.deps~ as follows:
 
 #+begin_src clojure
-;; config.edn
-{:database {:host     "localhost"
-            :port     5432
-            :dbname   "dbname"
-            :user     "user"
-            :password "super-secret-password"}
- :mode     "dev"
- :mail     {:host "smtp.gmail.com"
-            :user "test@example.com"
-            :pass "3492734923742"
-            :port 587}}
+#!/usr/bin/env bb
+
+(require '[babashka.deps :refer [add-deps]])
+
+(add-deps '{:deps {sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
+                                       :git/sha "COPY-CURRENT-SHA-HERE"}}})
+
+(require '[triangulum.utils :refer [sh-wrapper]])
+
+(sh-wrapper "/opt/sig-app" {:HOME "/opt/sig-app"} true "ls")
 #+end_src
 
-Add config.edn to your ~.gitignore~ file to keep sensitive information out of
-the git history.
+*** Configuring the Web Framework via config.edn
 
-To validate the config.edn file, run:
+To activate Triangulum's wealth of features for bootstrapping a web
+application, you will need to create a ~config.edn~ file in the
+project's root directory. This file stores your configuration settings
+in a Clojure hashmap. Note that you may also include additional keys
+that are specific to your application in the ~config.edn~ file as long
+as they don't conflict with Triangulum's reserved keys. Here is an
+example:
+
+#+begin_src clojure
+{:database {:host       "localhost"
+            :port       5432
+            :dbname     "dbname"
+            :user       "user"
+            :password   "secret-db-password"}
+ :https    {:domain     "example.com"
+            :email      "test@example.com"}
+ :server   {:http-port  8080
+            :https-port 8443
+            :mode       "dev" ; or "prod"
+            :log-dir    "logs"}
+ :mail     {:host       "smtp.gmail.com"
+            :user       "test@example.com"
+            :pass       "secret-mail-password"
+            :port       587}}
+#+end_src
+
+NOTE: You can always refer to the ~config.example.edn~ in Triangulum's
+project root directory for examples of the library's currently accepted
+keys.
+
+NOTE: Add config.edn to your ~.gitignore~ file to keep sensitive
+information out of the git history.
+
+To validate your ~config.edn~ file, run:
+
 #+begin_src sh
 clojure -M:config validate [-f FILE]
 #+end_src
 
-To retrieve a configuration, use ~get-config~. You can supply nested
-configuration keys as follows:
+To load this data into your application, call
+~triangulum.config/load-config~. This will read in your ~config.edn~
+file, validate it, and cache it in memory for quick lookups later:
+
+#+begin_src sh
+;; with config.edn in the project root
+(triangulum.config/load-config)
+
+;; with a differently named EDN file
+(triangulum.config/load-config "relative/path/non-standard-config-name.edn")
+#+end_src
+
+To retrieve values from a loaded configuration map, use
+~triangulum.config/get-config~. You can supply nested configuration
+keys as follows:
 
 #+begin_src clojure
-(triangulum.config/get-config :database) ;; -> {:user "triangulum" :pass "..."}
+(triangulum.config/get-config :database) ;; -> {:user "triangulum" :password "..."}
 (triangulum.config/get-config :database :user) ;; -> "triangulum"
 
 (triangulum.config/get-config :server) ;; -> {:http-port 8080 :mode "dev"}
 (triangulum.config/get-config :server :http-port) ;; -> 8080
 #+end_src
 
+** Useful Namespaces
+
 See each section below for an example configuration if one is required for use.
 
 *** triangulum.logging
 
-To send a message to the logger use ~log~ or ~log-str~. ~log~ can take an
-optional argument to specify not default behavior. The default values are
-shown below. ~log-str~ always uses the default values.
+To send a message to the logger, use ~log~ or ~log-str~. ~log~ can
+take an optional argument to override its non-default behavior. The
+default values are shown below. ~log-str~ always uses the default
+values.
 
 #+begin_src clojure
-(log "Hello world" {:newline? true :pprint? false :force-stdout? false})
-(log-str "Hello" "world")
+(log "Hello world" {:newline? true :pprint? false :force-stdout? false :truncate? true})
+(log-str "Hello " "world")
 #+end_src
 
 By default the above will log to standard out. If you would like to
-have the system log to YYYY-DD-MM.log, set a log path. You can either specify
-a path relative to the toplevel directory of the main project repository or an
-absolute path on your filesystem. The logger will keep the 10 most recent logs
-(where a new log is created every day at midnight). To stop the logging server
-set path to "".
+have the system log to timestamped files of the form ~YYYY-DD-MM.log~,
+you will need to set a logging directory with ~set-log-path!~. You can
+either specify a path relative to the toplevel directory of the main
+project repository or an absolute path on your filesystem. The logger
+will keep the 10 most recent logs (where a new log is created every
+day at midnight). To stop the logging server and resume logging to
+standard out, set the log path to ~""~.
 
 #+begin_src clojure
 (set-log-path! "logs")
@@ -79,28 +127,33 @@ set path to "".
 *** triangulum.database
 
 To use ~triangulum.database~, first add your database connection
-configurations to a ~config.edn~ file in your project's root directory.
+parameters to your ~config.edn~ file.
 
 For example:
+
 #+begin_src clojure
-;; config.edn
-{:database {:host     "localhost"
+{:database {:dbtype   "postgresql"
+            :host     "localhost"
             :port     5432
-            :dbname   "pyregence"
-            :user     "pyregence"
-            :password "pyregence"}}
+            :dbname   "dbname"
+            :user     "user"
+            :password "super-secret-password"}}
 #+end_src
 
-To run a postgres sql command use ~call-sql~. Currently ~call-sql~
-only works with postgres. With the second parameter can be an
-optional settings map (default values shown below).
+NOTE: If ~:dbtype~ is not specified, it will default to "postgresql".
+
+To run a SQL command on the database server, use ~call-sql~. If you
+would like to override its default parameters (see below), you may
+pass an options map as the first argument after the function name:
 
 #+begin_src clojure
+(call-sql "function" "param1" "param2" "param3")
+
 (call-sql "function" {:log? true :use-vec? false} "param1" "param2" ... "paramN")
 #+end_src
 
-To run a sqllite3 sql command use ~call-sqlite~. An existing sqllite3 database
-must be provided.
+To run a sqllite3 SQL command, use ~call-sqlite~. An existing sqllite3
+database must be provided.
 
 #+begin_src clojure
 (call-sqlite "select * from table" "path/db-file")
@@ -112,8 +165,11 @@ be the field names.
 
 #+begin_src clojure
 (insert-rows! table-name rows-vector fields-map)
+
 (update-rows! table-name rows-vector column-to-update fields-map)
 #+end_src
+
+** Useful DevOps Aliases
 
 *** triangulum.build-db
 
@@ -240,7 +296,7 @@ certificate is renewed, any script in ~/etc/letsencrypt/renewal-hooks/deploy~
 will be run automatically to repackage the updated certificate into the correct
 format.
 
-**** Default renewal hook
+**** Default Renewal Hook
 
 If certbot runs successfully and --cert-only is not specified, then a shell script
 [mydomain].sh will be created in the certbot deploy hooks folder.
@@ -255,7 +311,7 @@ shell:
 sudo clojure -M:https package-cert -d mydomain.com [-p certbot-dir]
 #+end_src
 
-**** Custom renewal hook
+**** Custom Renewal Hook
 
 Create a shell script in ~/etc/letsencrypt/renewal-hooks/deploy~ and update permissions.
 
@@ -345,7 +401,7 @@ clojure -M:test
 
 ** License
 
-Copyright © 2021-2022 Spatial Informatics Group, LLC.
+Copyright © 2021-2023 Spatial Informatics Group, LLC.
 
 Triangulum is distributed by Spatial Informatics Group, LLC. under the
 terms of the Eclipse Public License version 2.0 (EPLv2). See

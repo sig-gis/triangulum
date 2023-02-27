@@ -5,7 +5,7 @@
             [triangulum.config :refer [get-config load-config]]))
 
 (defn- load-test-config [f]
-  (binding [triangulum.config/*default-file* "config.example.edn"]
+  (binding [triangulum.config/*example-file* "config.example.edn"]
     (load-config "test/data/test_config.edn")
     (f)))
 
