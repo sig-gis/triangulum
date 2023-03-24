@@ -101,8 +101,15 @@
 
        ;; JS app/dev
        :else
-       [:script {:type "module"
-                 :src "http://localhost:5173/index.html?html-proxy&index=0.js"}])]))
+       (list
+        [:script {:type "module"}
+         (str/join "\n"
+                   ["import { injectIntoGlobalHook } from 'http://localhost:5173/@react-refresh';"
+                    "injectIntoGlobalHook(window);"
+                    "window.$RefreshReg$ = () => {};"
+                    "window.$RefreshSig$ = () => (type) => type;"
+                    "window.__vite_plugin_react_preamble_installed__ = true;"])]
+        [:script {:type "module" :src "http://localhost:5173/@vite/client"}]))]))
 
 (defn uri->page
   "Returns the JavaScript file home page"
@@ -126,13 +133,16 @@
       [:script {:type "text/javascript"}
        (format "window.onload = function () { %s(%s, %s); };" (-> cljs-init name kebab->snake) js-params js-session)]
       ;; JS app
-      (if (= "dev" (get-config :server :mode))
-        [:script {:type "module" :src "http://localhost:5173/src/js/main-dev.jsx"}]
-        [:script {:type "module"}
+      [:script {:type "module"}
+       (if (= "prod" (get-config :server :mode))
          (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
-                 entry-file
-                 js-params
-                 js-session)]))))
+                     entry-file
+                     js-params
+                     js-session)
+         (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
+                     (str "http://localhost:5173" (get-config :app :js-init))
+                     js-params
+                     js-session))])))
 
 (defn- announcement-banner []
   (let [announcement (-> (slurp "announcement.txt")
