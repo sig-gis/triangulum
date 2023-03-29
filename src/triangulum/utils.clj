@@ -1,6 +1,6 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream
-           java.time LocalDateTime)
+           java.time.LocalDateTime)
   (:require [cognitect.transit  :as transit]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
