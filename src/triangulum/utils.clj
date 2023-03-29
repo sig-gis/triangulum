@@ -1,6 +1,6 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream
-           java.util.Date)
+           java.time LocalDateTime)
   (:require [cognitect.transit  :as transit]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
@@ -191,4 +191,4 @@
 (defn current-year
   "Returns the current year as an integer."
   []
-  (+ 1900 (.getYear (Date.))))
+  (.getYear (LocalDateTime/now)))
