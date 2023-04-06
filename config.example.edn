@@ -24,7 +24,8 @@
  :server   {:http-port         8080
             :https-port        8443
             :nrepl-port        5555
-            :cider-nrepl-port  5555
+            :nrepl             false
+            :cider-nrepl       true
             :mode              "dev"
             :log-dir           "logs"
             :handler           product-ns.routing/handler

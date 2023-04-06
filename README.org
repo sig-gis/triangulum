@@ -45,8 +45,9 @@ file logging system, and worker functions for non-HTTP-related tasks.
 #+begin_src clojure
  :server   {:http-port         8080
             :https-port        8443   ; Only if you also include the keystore fields below
-            :nrepl-port        5555   ; For a vanilla nrepl. Can't be used with :cider-nrepl-port below.
-            :cider-nrepl-port  5555   ; If your editor supports CIDER middleware
+            :nrepl-port        5555   ; Must be paired with either :nrepl or :cider-repl below
+            :nrepl             false  ; For a vanilla nrepl
+            :cider-nrepl       true   ; If your editor supports CIDER middleware
             :mode              "dev"  ; or prod
             :log-dir           "logs" ; or "" for stdout
             :handler           product-ns.routing/handler
@@ -68,13 +69,13 @@ Start the server:
 clojure -M:server start
 #+end_src
 
-Stop the server (requires ~:nrepl-port~ or ~:cider-nrepl-port~):
+Stop the server (requires ~:nrepl~ or ~:cider-nrepl~):
 
 #+begin_src sh
 clojure -M:server stop
 #+end_src
 
-Reload your namespaces into the running JVM (requires ~:nrepl-port~ or ~:cider-nrepl-port~):
+Reload your namespaces into the running JVM (requires ~:nrepl~ or ~:cider-nrepl~):
 
 #+begin_src sh
 clojure -M:server reload
@@ -82,7 +83,7 @@ clojure -M:server reload
 
 NOTES:
 - To use ~:https-port~, you must also specify ~:keystore-file~, ~:keystore-type~, and ~:keystore-password~.
-- You may not use both ~:nrepl-port~ and ~:cider-nrepl-port~ at the same time.
+- You may not use both ~:nrepl~ and ~:cider-nrepl~ at the same time.
 - The ~:start~ functions for all ~:workers~ will be run before the web server is started.
 - The ~:stop~ functions for all ~:workers~ will be run after the web server is stopped.
 - Before starting the server, you must set ~:handler~ to a namespace-qualified symbol bound to a Ring handler function.

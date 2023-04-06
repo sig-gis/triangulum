@@ -32,7 +32,8 @@
  :triangulum.server/http-port         8080
  :triangulum.server/https-port        8443
  :triangulum.server/nrepl-port        5555
- :triangulum.server/cider-nrepl-port  5555
+ :triangulum.server/nrepl             false
+ :triangulum.server/cider-nrepl       true
  :triangulum.server/mode              "dev"
  :triangulum.server/log-dir           "logs"
  :triangulum.server/handler           product-ns.routing/handler
