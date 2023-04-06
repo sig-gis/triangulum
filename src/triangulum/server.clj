@@ -52,8 +52,12 @@
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn start-server!
   "FIXME: Write docstring"
-  [{:keys [http-port https-port nrepl-port cider-nrepl-port mode log-dir handler
-           workers keystore-file keystore-type keystore-password]}]
+  [{:keys [http-port https-port nrepl cider-nrepl nrepl-port mode log-dir
+           handler workers keystore-file keystore-type keystore-password]
+    :or {nrepl-port        5555
+         keystore-file     "./.key/keystore.pkcs12"
+         keystore-type     "pkcs12"
+         keystore-password "foobar"}}]
   (let [has-key?      (and keystore-file (.exists (io/file keystore-file)))
         ssl?          (and has-key? https-port)
         reload?       (= mode "dev")
@@ -76,20 +80,20 @@
                    "  Create an SSL key for HTTPS or run without the --https-port (-P) option.")
           (System/exit 1))
 
-      (and nrepl-port cider-nrepl-port)
+      (and nrepl cider-nrepl)
       (do
         (println "ERROR:\n"
-                 "  You cannot use both --nrepl-port and --cider-nrepl-port together.")
+                 "  You cannot use both --nrepl and --cider-nrepl together.")
         (System/exit 1))
 
       :else
       (do
-        (when nrepl-port
+        (when nrepl
           (println "Starting nREPL server on port" nrepl-port)
           (reset! nrepl-server (nrepl-server/start-server :port nrepl-port)))
-        (when cider-nrepl-port
-          (println "Starting CIDER nREPL server on port" cider-nrepl-port)
-          (reset! nrepl-server (nrepl-server/start-server :port cider-nrepl-port :handler cider-nrepl-handler)))
+        (when cider-nrepl
+          (println "Starting CIDER nREPL server on port" nrepl-port)
+          (reset! nrepl-server (nrepl-server/start-server :port nrepl-port :handler cider-nrepl-handler)))
         (when (seq workers)
           (println "Starting worker jobs")
           (start-workers! workers))
@@ -116,19 +120,23 @@
           (nrepl/message {:op "eval" :code msg})
           nrepl/response-values))
     (catch Exception _
-      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with the '-r/--nrepl-port' flag." host port))
+      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with either the '-r/--nrepl' or '-c/--cider-nrepl' flag." host port))
       (System/exit 1)))
   (System/exit 0))
 
 (defn stop-running-server!
   "Sends stop-server! call to the nrepl server"
-  []
-  (send-to-nrepl-server! "(do (require '[triangulum.server :as server]) (server/stop-server!))"))
+  [{:keys [nrepl-port]}]
+  (send-to-nrepl-server! "(do (require '[triangulum.server :as server]) (server/stop-server!))"
+                         (cond-> {}
+                           nrepl-port (assoc :port nrepl-port))))
 
 (defn reload-running-server!
   "Reloads the server namespace"
-  []
-  (send-to-nrepl-server! "(require 'triangulum.server :reload-all)"))
+  [{:keys [nrepl-port]}]
+  (send-to-nrepl-server! "(require 'triangulum.server :reload-all)"
+                         (cond-> {}
+                           nrepl-port (assoc :port nrepl-port))))
 
 ;;===============================================
 ;; Argument parsing
@@ -142,10 +150,10 @@
                       :parse-fn ensure-int]
    :https-port       ["-P" "--https-port PORT" "Port for https (e.g., 8443)"
                       :parse-fn ensure-int]
-   :nrepl-port       ["-r" "--nrepl-port PORT" "Port for an nREPL server (e.g., 5555)"
+   :nrepl-port       ["-n" "--nrepl-port PORT" "Port for an nREPL server (e.g., 5555)"
                       :parse-fn ensure-int]
-   :cider-nrepl-port ["-c" "--cider-nrepl-port PORT" "Port for a CIDER nREPL server (e.g., 5555)"
-                      :parse-fn ensure-int]
+   :nrepl            ["-r" "--nrepl" "Launch an nREPL server (on nrepl-port or 5555)"]
+   :cider-nrepl      ["-c" "--cider-nrepl" "Launch a CIDER nREPL server (on nrepl-port or 5555)"]
    :mode             ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
                       :default "prod"
                       :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
@@ -153,10 +161,10 @@
                       :default ""]})
 
 (def ^:private cli-actions
-  {:start  {:description "Starts the server."
+  {:start  {:description "Starts the web server, nREPL server, logger, and workers."
             :requires    [:http-port]}
-   :stop   {:description "Stops the server."}
-   :reload {:description "Reloads a running server."}})
+   :stop   {:description "Stops the web server, nREPL server, logger, and workers."}
+   :reload {:description "Reloads namespaces into a running server."}})
 
 (defn -main
   "Server entry main function"
@@ -168,7 +176,7 @@
                                                      (get-config :server))]
     (case action
       :start  (start-server! options)
-      :stop   (stop-running-server!)
-      :reload (reload-running-server!)
+      :stop   (stop-running-server! options)
+      :reload (reload-running-server! options)
       nil)
     (System/exit 1)))
