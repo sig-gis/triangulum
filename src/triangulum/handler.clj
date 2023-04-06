@@ -33,13 +33,20 @@
 ;; Custom Middlewares
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn case-insensitive-substring?
+  "True if s includes substr regardless of case."
+  [s substr]
+  (str/includes? (str/lower-case s)
+                 (str/lower-case substr)))
+
 (defn wrap-bad-uri
-  "Wrapper that checks if the request url contains a bad token from give as input set and returns a forbidden-response if there is or runs the next handler on it"
+  "Wrapper that checks if the request url contains a bad token from the
+  provided set and returns a forbidden-response if so; otherwise,
+  passes the request to the provided handler."
   [handler bad-tokens]
-  (fn [request]
-    (if (some #(str/includes? (str/lower-case (:uri request)) %)
-              bad-tokens)
-      (forbidden-response nil)
+  (fn [{:keys [uri] :as request}]
+    (if (some #(case-insensitive-substring? uri %) bad-tokens)
+      (forbidden-response request)
       (handler request))))
 
 (defn wrap-request-logging
