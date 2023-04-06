@@ -18,7 +18,7 @@
 
  :triangulum.git/tags-url             "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"
 
- :triangulum.handler/session-key      "changeme12345678"
+ :triangulum.handler/session-key      "changeme12345678" ; must be 16 characters
  :triangulum.handler/bad-tokens       #{".php"}
 
  :triangulum.https/email              "support@sig-gis.com"

@@ -32,7 +32,7 @@
             :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
                                             :stop  product-ns.jobs/stop-scheduled-jobs!}}
             :response-type     :json ; :edn or :transit
-            :session-key       "changeme12345678"
+            :session-key       "changeme12345678" ; must be 16 characters
             :bad-tokens        #{".php"}
             :keystore-file     "keystore.pkcs12"
             :keystore-type     "pkcs12"
