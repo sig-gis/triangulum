@@ -1,10 +1,9 @@
 (ns triangulum.config
   (:require [clojure.edn        :as edn]
             [clojure.spec.alpha :as s]
-            [clojure.string     :as str]
             [clojure.java.io    :as io]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [find-missing-keys]]))
+            [triangulum.errors  :refer [nil-on-error init-throw]]))
 
 ;;; Specs
 ;; Base spec
@@ -35,9 +34,7 @@
 ;; Config file
 (s/def ::config (s/keys :opt-un [::database ::https ::server ::mail]))
 
-;;; Private vars
-
-(def ^:private ^:dynamic *default-file* "config.default.edn")
+;; Private vars
 
 (def ^:private config-file  (atom "config.edn"))
 (def ^:private config-cache (atom nil))
@@ -46,30 +43,16 @@
 
 (defn- wrap-throw [& strs]
   (-> (apply str strs)
-      (ex-info {})
-      (throw)))
+      (init-throw)))
 
 (defn- read-config [file]
   (if (.exists (io/file file))
-    (let [example-config (-> (slurp *default-file*) (edn/read-string))
-          config         (-> (slurp file) (edn/read-string))
-          missing-keys   (find-missing-keys example-config config)]
-      (cond
-        (seq missing-keys)
-        (wrap-throw "Error: The following keys from config.default.edn are missing from:"
-                    file
-                    "\n"
-                    (str/join "', '" missing-keys))
-
-        (not (s/valid? ::config config))
-        (do (println "Error: Invalid config file:" file)
-            (s/explain ::config config)
-            (flush)
-            (wrap-throw ""))
-
-        :else
-        config))
-    (wrap-throw "Error: Cannot find file" file)))
+    (if-let [config (nil-on-error (edn/read-string (slurp file)))]
+      (if (s/valid? ::config config)
+        config
+        (wrap-throw "Error: Config file " file " failed spec check:\n" (s/explain-str ::config config)))
+      (wrap-throw "Error: Config file " file " does not contain valid EDN."))
+    (wrap-throw "Error: Cannot find config file " file ".")))
 
 (defn- cache-config []
   (or @config-cache
