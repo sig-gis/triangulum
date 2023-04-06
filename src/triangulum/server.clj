@@ -18,6 +18,10 @@
 
 (def ^:private ks-scan-interval 60) ; seconds
 
+;;===============================================
+;; Workers
+;;===============================================
+
 (defn- start-workers! [worker-map]
   (reset! workers
           (reduce-kv (fn [acc worker-name {:keys [start]}]
@@ -41,66 +45,51 @@
         (catch Exception e
           (log-str "Error stopping worker " worker-name ": " (ex-message e)))))))
 
-(def ^:private cli-options
-  {:http-port   ["-p" "--http-port PORT"  "Port for http, default 8080"
-                 :parse-fn #(if (int? %) % (Integer/parseInt %))]
-   :https-port  ["-P" "--https-port PORT" "Port for https (e.g. 8443)"
-                 :parse-fn #(if (int? %) % (Integer/parseInt %))]
-   :nrepl       ["-r" "--nrepl" "Starts an nREPL server on port 5555"
-                 :default false]
-   :cider-nrepl ["-c" "--cider-nrepl" "Starts a CIDER nREPL server on port 5555"
-                 :default false]
-   :mode        ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
-                 :default "prod"
-                 :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
-   :log-dir     ["-l" "--log-dir DIR" "Directory for log files. When a directory is not provided, output will be to stdout."
-                 :default ""]})
-
-(def ^:private cli-actions
-  {:start  {:description "Starts the server."
-            :requires    [:http-port]}
-   :stop   {:description "Stops the server."}
-   :reload {:description "Reloads a running server."}})
+;;===============================================
+;; Actions
+;;===============================================
 
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn start-server!
   "FIXME: Write docstring"
-  [{:keys [http-port https-port mode log-dir nrepl cider-nrepl handler workers]}]
-  (let [has-key?      (.exists (io/file "./.key/keystore.pkcs12"))
+  [{:keys [http-port https-port nrepl-port cider-nrepl-port mode log-dir handler
+           workers keystore-file keystore-type keystore-password]}]
+  (let [has-key?      (and keystore-file (.exists (io/file keystore-file)))
         ssl?          (and has-key? https-port)
+        reload?       (= mode "dev")
         handler-stack (-> (resolve-foreign-symbol handler)
-                          (create-handler-stack ssl? (= mode "dev")))
+                          (create-handler-stack ssl? reload?))
         config        (merge
                        {:port  http-port
                         :join? false}
                        (when ssl?
                          {:ssl?             true
                           :ssl-port         https-port
-                          :keystore         "./.key/keystore.pkcs12"
-                          :keystore-type    "pkcs12"
-                          :ks-scan-interval ks-scan-interval
-                          :key-password     "foobar"}))]
+                          :keystore         keystore-file
+                          :keystore-type    keystore-type
+                          :key-password     keystore-password
+                          :ks-scan-interval ks-scan-interval}))]
     (cond
-      (and (not has-key?) https-port)
+      (and https-port (not has-key?))
       (do (println "ERROR:\n"
                    "  An SSL key is required if an HTTPS port is specified.\n"
                    "  Create an SSL key for HTTPS or run without the --https-port (-P) option.")
           (System/exit 1))
 
-      (and nrepl cider-nrepl)
+      (and nrepl-port cider-nrepl-port)
       (do
         (println "ERROR:\n"
-                 "  You can not use both --nrepl and --cider-nrepl together.")
+                 "  You cannot use both --nrepl-port and --cider-nrepl-port together.")
         (System/exit 1))
 
       :else
       (do
-        (when nrepl
-          (println "Starting nREPL server on port 5555")
-          (reset! nrepl-server (nrepl-server/start-server :port 5555)))
-        (when cider-nrepl
-          (println "Starting CIDER nREPL server on port 5555")
-          (reset! nrepl-server (nrepl-server/start-server :port 5555 :handler cider-nrepl-handler)))
+        (when nrepl-port
+          (println "Starting nREPL server on port" nrepl-port)
+          (reset! nrepl-server (nrepl-server/start-server :port nrepl-port)))
+        (when cider-nrepl-port
+          (println "Starting CIDER nREPL server on port" cider-nrepl-port)
+          (reset! nrepl-server (nrepl-server/start-server :port cider-nrepl-port :handler cider-nrepl-handler)))
         (when (seq workers)
           (println "Starting worker jobs")
           (start-workers! workers))
@@ -127,7 +116,7 @@
           (nrepl/message {:op "eval" :code msg})
           nrepl/response-values))
     (catch Exception _
-      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with the '-r/--nrepl' flag." host port))
+      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with the '-r/--nrepl-port' flag." host port))
       (System/exit 1)))
   (System/exit 0))
 
@@ -140,6 +129,34 @@
   "Reloads the server namespace"
   []
   (send-to-nrepl-server! "(require 'triangulum.server :reload-all)"))
+
+;;===============================================
+;; Argument parsing
+;;===============================================
+
+(defn- ensure-int [x]
+  (if (int? x) x (Integer/parseInt x)))
+
+(def ^:private cli-options
+  {:http-port        ["-p" "--http-port PORT"  "Port for http (e.g., 8080)"
+                      :parse-fn ensure-int]
+   :https-port       ["-P" "--https-port PORT" "Port for https (e.g., 8443)"
+                      :parse-fn ensure-int]
+   :nrepl-port       ["-r" "--nrepl-port PORT" "Port for an nREPL server (e.g., 5555)"
+                      :parse-fn ensure-int]
+   :cider-nrepl-port ["-c" "--cider-nrepl-port PORT" "Port for a CIDER nREPL server (e.g., 5555)"
+                      :parse-fn ensure-int]
+   :mode             ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
+                      :default "prod"
+                      :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
+   :log-dir          ["-l" "--log-dir DIR" "Directory for log files. When a directory is not provided, output will be to stdout."
+                      :default ""]})
+
+(def ^:private cli-actions
+  {:start  {:description "Starts the server."
+            :requires    [:http-port]}
+   :stop   {:description "Stops the server."}
+   :reload {:description "Reloads a running server."}})
 
 (defn -main
   "Server entry main function"
