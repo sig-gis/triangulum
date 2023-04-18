@@ -1,35 +1,4 @@
-{:triangulum.build-db/admin-pass      "postgres-password"
- :triangulum.build-db/dev-data        false
- :triangulum.build-db/file            "db-backup.custom"
- :triangulum.build-db/verbose         true
-
- :triangulum.database/host            "localhost"
- :triangulum.database/port            5432
- :triangulum.database/dbname          "app-name"
- :triangulum.database/user            "app-name"
- :triangulum.database/password        "app-name"
-
- :triangulum.email/host               "smtp.gmail.com"
- :triangulum.email/user               ""
- :triangulum.email/pass               ""
- :triangulum.email/tls                true
- :triangulum.email/port               587
- :triangulum.email/base-url           "https://my.domain/"
-
- :triangulum.git/tags-url             "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"
-
- :triangulum.handler/session-key      "changeme12345678" ; must be 16 characters
- :triangulum.handler/bad-tokens       #{".php"}
-
- :triangulum.https/email              "support@sig-gis.com"
- :triangulum.https/domain             "app.sig-gis.com"
- :triangulum.https/path               "/etc/letsencrypt"
- :triangulum.https/cert-only          false
- :triangulum.https/webroot            "./resources/public"
-
- :triangulum.response/response-type   :json
-
- :triangulum.server/http-port         8080
+{:triangulum.server/http-port         8080
  :triangulum.server/https-port        8443
  :triangulum.server/nrepl-port        5555
  :triangulum.server/nrepl             false
@@ -43,6 +12,9 @@
  :triangulum.server/keystore-file     "keystore.pkcs12"
  :triangulum.server/keystore-type     "pkcs12"
  :triangulum.server/keystore-password "foobar"
+
+ :triangulum.handler/session-key      "changeme12345678" ; must be 16 characters
+ :triangulum.handler/bad-tokens       #{".php"}
 
  :triangulum.views/title              {:en "Product name in English"
                                        :es "Product name in Spanish"}
@@ -60,6 +32,59 @@
  :triangulum.views/js-init            "/src/js/main.jsx"     ; for Javascript projects
  :triangulum.views/cljs-init          product-ns.client.init ; for ClojureScript projects
  :triangulum.views/client-keys        {:mapbox-token "token123"}
+
+ :triangulum.git/tags-url             "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"
+
+
+
+
+
+
+
+ :triangulum.build-db/admin-pass      "postgres-password"
+ :triangulum.build-db/dev-data        false
+ :triangulum.build-db/file            "db-backup.custom"
+ :triangulum.build-db/verbose         true
+
+ ;;  :triangulum.config
+
+ ;;  :triangulum.deploy
+
+ :triangulum.https/email              "support@sig-gis.com"
+ :triangulum.https/domain             "app.sig-gis.com"
+ :triangulum.https/path               "/etc/letsencrypt"
+ :triangulum.https/cert-only          false
+ :triangulum.https/webroot            "./resources/public"
+
+ ;; :triangulum.systemd
+
+
+
+
+
+
+;;  :tirangulum.cli
+;;  :tirangulum.errors
+ :triangulum.response/response-type   :json
+;;  :tirangulum.utils
+;;  :triangulum.type-conversion
+;;  :tirangulum.notify
+ :triangulum.email/host               "smtp.gmail.com"
+ :triangulum.email/user               ""
+ :triangulum.email/pass               ""
+ :triangulum.email/tls                true
+ :triangulum.email/port               587
+ :triangulum.email/base-url           "https://my.domain/"
+;;  :tirangulum.logging
+ :triangulum.database/host            "localhost"
+ :triangulum.database/port            5432
+ :triangulum.database/dbname          "app-name"
+ :triangulum.database/user            "app-name"
+ :triangulum.database/password        "app-name"
+
+
+
+
 
  :product-ns.py-interop/ee-account    "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
  :product-ns.py-interop/ee-key-path   "gee-auth-key.json"
