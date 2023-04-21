@@ -3,9 +3,17 @@
   (:require [clojure.string       :as str]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
-            [triangulum.config    :refer [get-config]]
+            [clojure.spec.alpha   :as s]
+            [triangulum.config    :as config :refer [get-config]]
             [triangulum.logging   :refer [log-str]]
             [triangulum.utils     :refer [format-str]]))
+
+;; spec
+(s/def ::dbname ::config/string)
+(s/def ::user ::config/string)
+(s/def ::password ::config/string)
+(s/def ::host ::config/string)
+(s/def ::port ::config/port)
 
 (extend-protocol rs/ReadableColumn
   Array

@@ -5,34 +5,70 @@
             [triangulum.cli     :refer [get-cli-options]]
             [triangulum.errors  :refer [nil-on-error init-throw]]))
 
-;;; Specs
+
+;;; spec
 ;; Base spec
 (s/def ::port   (s/and nat-int? #(< % 0x10000)))
 (s/def ::string (s/and string? #(not (re-matches #"<.*>" %))))
+(s/def ::email (s/and string? #(re-matches #"(?i)^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$" %)))
 
-;; Values
-(s/def ::dbname     ::string)
-(s/def ::domain     ::string)
-(s/def ::email      ::string) ; TODO, make an email base spec
-(s/def ::host       ::string)
-(s/def ::http-port  ::port)
-(s/def ::https-port ::port)
-(s/def ::mode       (s/and ::string #{"prod" "dev"}))
-(s/def ::log-dir    ::string)
-(s/def ::password   ::string)
-(s/def ::pass       ::string)
-(s/def ::user       ::string)
+;; Mapping
+(def key-mapping
+  {[:database :dbname] :triangulum.database/dbname
+   [:databse :user] :triangulum.database/user
+   [:databse :password] :triangulum.database/password})
 
 ;; Sections
-(s/def ::database (s/keys :req-un [::dbname ::user ::password]
-                          :opt-un [::host ::port]))
-(s/def ::https    (s/keys :req-un [::domain ::email]))
-(s/def ::mail     (s/keys :req-un [::host ::user ::pass]
-                          :opt-un [::port]))
-(s/def ::server   (s/keys :opt-un [::mode ::http-port ::https-port ::log-dir]))
+(s/def ::database (s/keys :req [:triangulum.database/dbname
+                                :triangulum.database/user
+                                :triangulum.database/password]
+                          :opt [:triangulum.database/host
+                                :triangulum.database/port]))
+
+(s/def ::https    (s/keys :req [:triangulum.https/domain
+                                :triangulum.https/email]))
+
+(s/def ::mail     (s/keys :req [:triangulum.email/host
+                                :triangulum.email/user
+                                :triangulum.email/pass]
+                          :opt [:triangulum.email/port]))
+
+(s/def ::server   (s/keys :opt [:triangulum.server/mode
+                                :triangulum.server/http-port
+                                :triangulum.server/https-port
+                                :triangulum.server/log-dir]))
+
+(def sections [::database ::https ::server ::mail])
 
 ;; Config file
-(s/def ::config (s/keys :opt-un [::database ::https ::server ::mail]))
+#_(s/def ::config-un (s/keys :opt-un [::database ::https ::server ::mail]))
+(s/def ::config-ns (s/merge ::database ::https ::server ::mail))
+
+
+
+;; Old Format 
+
+(s/def ::database (s/keys :req-un [:triangulum.database/dbname
+                                   :triangulum.database/user
+                                   :triangulum.database/password]
+                          :opt-un [:triangulum.database/host
+                                   :triangulum.database/port]))
+
+(s/def ::https    (s/keys :req-un [:triangulum.https/domain
+                                   :triangulum.https/email]))
+
+(s/def ::mail     (s/keys :req-un [:triangulum.email/host
+                                   :triangulum.email/user
+                                   :triangulum.email/pass]
+                          :opt-un [:triangulum.email/port]))
+
+(s/def ::server   (s/keys :opt-un [:triangulum.server/mode
+                                   :triangulum.server/http-port
+                                   :triangulum.server/https-port
+                                   :triangulum.server/log-dir]))
+
+;; Config file
+(s/def ::config-un (s/keys :opt-un [::database ::https ::server ::mail]))
 
 ;; Private vars
 
@@ -48,7 +84,8 @@
 (defn- read-config [file]
   (if (.exists (io/file file))
     (if-let [config (nil-on-error (edn/read-string (slurp file)))]
-      (if (s/valid? ::config config)
+      (if (or (s/valid? ::config-ns config)
+              (s/valid? ::config-un config))
         config
         (wrap-throw "Error: Config file " file " failed spec check:\n" (s/explain-str ::config config)))
       (wrap-throw "Error: Config file " file " does not contain valid EDN."))

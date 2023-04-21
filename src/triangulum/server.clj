@@ -1,22 +1,29 @@
 (ns triangulum.server
   (:import org.eclipse.jetty.server.Server)
-  (:require [cider.nrepl         :refer [cider-nrepl-handler]]
-            [clojure.java.io     :as io]
+  (:require [clojure.java.io     :as io]
+            [clojure.spec.alpha  :as s]
             [nrepl.core          :as nrepl]
             [nrepl.server        :as nrepl-server]
             [ring.adapter.jetty  :refer [run-jetty]]
             [triangulum.cli      :refer [get-cli-options]]
-            [triangulum.config   :refer [get-config]]
+            [triangulum.config   :as config :refer [get-config]]
             [triangulum.handler  :refer [create-handler-stack]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.notify   :refer [available? ready!]]
-            [triangulum.utils    :refer [resolve-foreign-symbol]]))
+            [triangulum.utils    :refer [resolve-foreign-symbol]]
+            [cider.nrepl         :refer [cider-nrepl-handler]]))
 
 (defonce ^:private server       (atom nil))
 (defonce ^:private nrepl-server (atom nil))
 (defonce ^:private workers      (atom {}))
 
 (def ^:private ks-scan-interval 60) ; seconds
+
+;; spec
+(s/def ::mode (s/and ::string #{"prod" "dev"}))
+(s/def ::http-port ::config/port)
+(s/def ::https-port ::config/port)
+(s/def ::log-dir ::config/string)
 
 ;;===============================================
 ;; Workers

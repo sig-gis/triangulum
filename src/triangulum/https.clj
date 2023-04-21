@@ -1,12 +1,17 @@
 (ns triangulum.https
-  (:require [clojure.java.io    :as io]
-            [clojure.java.shell :as sh]
+  (:require [clojure.java.shell :as sh]
+            [clojure.spec.alpha :as s]
             [clojure.string     :as str]
-            [triangulum.config  :refer [get-config]]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [parse-as-sh-cmd]]))
+            [triangulum.config  :as config :refer [get-config]]
+            [triangulum.utils   :refer [parse-as-sh-cmd]]
+            [clojure.java.io    :as io]))
 
 (def ^:private path-env (System/getenv "PATH"))
+
+;; spec
+(s/def ::domain ::config/string)
+(s/def ::email ::config/email)
 
 ;; Helper functions
 
