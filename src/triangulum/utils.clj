@@ -136,12 +136,17 @@
   "Takes a map, filters on pred for each MapEntry, returns a map."
   [pred coll]
   (persistent!
-    (reduce (fn [acc cur]
-              (if (pred cur)
-                (conj! acc cur)
-                acc))
-            (transient {})
-            coll)))
+   (reduce (fn [acc cur]
+             (if (pred cur)
+               (conj! acc cur)
+               acc))
+           (transient {})
+           coll)))
+
+(defn reverse-map
+  "Reverses the key-value pairs in a given map."
+  [m]
+  (zipmap (vals m) (keys m)))
 
 ;; Equality checking
 

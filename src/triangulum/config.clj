@@ -1,23 +1,20 @@
 (ns triangulum.config
   (:require [clojure.edn        :as edn]
-            [clojure.spec.alpha :as s]
             [clojure.java.io    :as io]
+            [clojure.spec.alpha :as s]
+            [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.errors  :refer [nil-on-error init-throw]]))
-
+            [triangulum.errors  :refer [nil-on-error init-throw]]
+            [triangulum.utils   :refer [reverse-map]]))
 
 ;;; spec
+
 ;; Base spec
 (s/def ::port   (s/and nat-int? #(< % 0x10000)))
 (s/def ::string (s/and string? #(not (re-matches #"<.*>" %))))
 (s/def ::email (s/and string? #(re-matches #"(?i)^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$" %)))
 
-;; Mapping
-(def key-mapping
-  {[:database :dbname] :triangulum.database/dbname
-   [:databse :user] :triangulum.database/user
-   [:databse :password] :triangulum.database/password})
-
+;; New Format (namespaced)
 ;; Sections
 (s/def ::database (s/keys :req [:triangulum.database/dbname
                                 :triangulum.database/user
@@ -37,43 +34,44 @@
                                 :triangulum.server/http-port
                                 :triangulum.server/https-port
                                 :triangulum.server/log-dir]))
-
-(def sections [::database ::https ::server ::mail])
-
 ;; Config file
-#_(s/def ::config-un (s/keys :opt-un [::database ::https ::server ::mail]))
 (s/def ::config-ns (s/merge ::database ::https ::server ::mail))
 
+;; Old Format (un-namespaced)
+;; Sections
+(s/def ::database-un (s/keys :req-un [:triangulum.database/dbname
+                                      :triangulum.database/user
+                                      :triangulum.database/password]
+                             :opt-un [:triangulum.database/host
+                                      :triangulum.database/port]))
 
+(s/def ::https-un    (s/keys :req-un [:triangulum.https/domain
+                                      :triangulum.https/email]))
 
-;; Old Format 
+(s/def ::mail-un     (s/keys :req-un [:triangulum.email/host
+                                      :triangulum.email/user
+                                      :triangulum.email/pass]
+                             :opt-un [:triangulum.email/port]))
 
-(s/def ::database (s/keys :req-un [:triangulum.database/dbname
-                                   :triangulum.database/user
-                                   :triangulum.database/password]
-                          :opt-un [:triangulum.database/host
-                                   :triangulum.database/port]))
-
-(s/def ::https    (s/keys :req-un [:triangulum.https/domain
-                                   :triangulum.https/email]))
-
-(s/def ::mail     (s/keys :req-un [:triangulum.email/host
-                                   :triangulum.email/user
-                                   :triangulum.email/pass]
-                          :opt-un [:triangulum.email/port]))
-
-(s/def ::server   (s/keys :opt-un [:triangulum.server/mode
-                                   :triangulum.server/http-port
-                                   :triangulum.server/https-port
-                                   :triangulum.server/log-dir]))
-
+(s/def ::server-un   (s/keys :opt-un [:triangulum.server/mode
+                                      :triangulum.server/http-port
+                                      :triangulum.server/https-port
+                                      :triangulum.server/log-dir]))
 ;; Config file
-(s/def ::config-un (s/keys :opt-un [::database ::https ::server ::mail]))
+(s/def ::config-un (s/keys :opt-un [::database-un ::https-un ::server-un ::mail-un]))
 
-;; Private vars
+
+;;; Private vars
 
 (def ^:private config-file  (atom "config.edn"))
 (def ^:private config-cache (atom nil))
+(def ^:private ns->un-mapping
+  "Maps namespaced keys namesapces to their unnamespaced counterparts."
+  {:views :app, :email :mail})
+(def ^:private un->ns-mapping
+  "Maps unnamespaced keys namespaces to their namespaced counterparts."
+  (reverse-map ns->un-mapping))
+
 
 ;;; Helper Fns
 
@@ -95,6 +93,17 @@
   (or @config-cache
       (reset! config-cache (read-config @config-file))))
 
+(defn- get-mapped-key-ns
+  "Given a namespaced key, returns the corresponding unnamespaced key."
+  [ns-key]
+  (let [new-ns (-> ns-key
+                   namespace
+                   (clojure.string/split #"\.")
+                   second
+                   keyword)]
+    (or (get ns->un-mapping new-ns) new-ns)))
+
+
 ;;; Public Fns
 
 (defn load-config
@@ -105,6 +114,30 @@
    (reset! config-file new-config-file)
    (reset! config-cache (read-config @config-file))))
 
+(defn namespaced?
+  "Returns true if the given key has a namespace, otherwise false."
+  [k]
+  (namespace k))
+
+(defn namespaced-config?
+  "Returns true if the given configuration map is namespaced, otherwise false."
+  [config]
+  (s/valid? ::config-ns config))
+
+(defn split-ns-key
+  "Given a namespaced key, returns a vector of unnamespaced keys."
+  [ns-key]
+  [(get-mapped-key-ns ns-key) (-> ns-key (name) (keyword))])
+
+(defn join-un-key
+  "Given a sequence of unnamespaced keys, returns a single namespaced key."
+  ([key-path] (join-un-key key-path {:prefix "triangulum"}))
+  ([key-path {:keys [prefix]}]
+   (let [[n k] key-path
+         n (or (get un->ns-mapping n) n)]
+     (keyword (str prefix "." (name n)) (name k)))))
+
+;; Retrieves a configuration value for the given key(s).
 (defn get-config
   "Retrieves the key `k` from the config file.
    Can also be called with the keys leading to a config.
@@ -112,9 +145,30 @@
    ```clojure
    (get-config :mail) -> {:host \"google.com\" :port 543}
    (get-config :mail :host) -> \"google.com\"
+   (get-config :triangulum.email/host) -> \"google.com\" 
    ```"
   [& all-keys]
-  (get-in (cache-config) all-keys))
+  (let [config (cache-config)
+        k (first all-keys)]
+    (cond
+      (= (count all-keys) 1)
+      (cond
+        (and (not (namespaced-config? config)) (namespaced? k))
+        (get-in config (split-ns-key k))
+
+        (and (namespaced-config? config) (not (namespaced? k)))
+        (->> config
+             (filter #(= (get-mapped-key-ns (key %)) k))
+             (into {}))
+
+        :else
+        (get config k))
+
+      (and (= (count all-keys) 2) (namespaced-config? config))
+      (get config (join-un-key all-keys))
+
+      :else
+      (get-in config all-keys))))
 
 (defn valid-config?
   "Validates `file` as a configuration file."
