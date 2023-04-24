@@ -90,7 +90,42 @@ NOTES:
 - If you set ~:mode~ to ~"dev"~, then the ~wrap-reload~ middleware will be added to your handler function. This will automatically reload all of your namespaces into the running JVM on each HTTP request.
 
 *** triangulum.handler
+This namespace provides the core request handling and middleware composition for Triangulum. 
+It sets up a Ring handler stack that includes various middlewares like request/response logging, exception handling, and parsing of request parameters. 
+It also applies optional middlewares like wrap-ssl-redirect and wrap-reload based on the configuration.
+
+Usage:
+
+Require the namespace in your project.
+Use 'create-handler-stack' to create a Ring handler stack with your custom routing handler and the desired middlewares.
+Use 'development-app' for a development handler stack with an active wrap-reload middleware.
+Example:
+#+BEGIN_SRC clojure
+(ns my-app.core
+(:require [triangulum.handler :refer [create-handler-stack]]))
+
+(def my-routing-handler ...)
+(def my-app (create-handler-stack my-routing-handler true false))
+#+END_SRC
+This will create a handler stack with SSL redirect enabled and without the wrap-reload middleware.
 *** triangulum.views
+This namespace provides functions for rendering pages and handling resources in Triangulum. It defines functions for reading asset files, generating HTML, and handling various types of responses.
+
+Usage:
+
+Require the namespace in your project.
+Use 'render-page' to generate the HTML for a specific page.
+Use 'not-found-page' to generate a 404 Not Found response.
+Example:
+#+BEGIN_SRC clojure
+(ns my-app.views
+(:require [triangulum.views :refer [render-page not-found-page]]))
+
+(def my-page (render-page "/my-page"))
+(def not-found (not-found-page))
+#+END_SRC
+
+This will define a function 'my-page' for rendering the "/my-page" page and a 'not-found' function for generating a 404 Not Found response.
 *** triangulum.git
 
 You can provide ~:tags-url~, which is a url to the git tags page of
@@ -360,15 +395,29 @@ clojure -M:systemd restart -r <REPO>
 
 ** Utility Namespaces
 *** triangulum.cli
+This namespace provides a command-line interface (CLI) for triangulum. 
+It includes functions for parsing command-line options, displaying usage information, and checking for errors in the provided arguments.
 *** triangulum.errors
+Error handling utilities for the triangulum application.
 *** triangulum.response
 
 You can set ~:response-type~ to configure the ~data-response~ function's default return type (~:json~, ~:edn~, ~:transit~).
 
 *** triangulum.utils
+A collection of utility functions for various purposes.
 *** triangulum.type-conversion
+A collection of functions for converting between different data types and formats.
+This namespace provides a set of functions for type conversions, including
+conversions between numbers, booleans, JSON, and PostgreSQL data types.
 *** triangulum.sockets
+It provides functionality for creating and managing client and server sockets. 
+It includes functions for opening and checking socket connections, sending messages to the server, and starting/stopping socket servers with custom request handlers.
+ This namespace enables communication between distributed systems and allows you to implement networked application.
 *** triangulum.notify
+The namespace provides functions to interact with systemd for process management and notifications. 
+It utilizes the SDNotify Java library to send notifications and check the availability of the current process. 
+The functions in this namespace allow you to check if the process is managed by systemd, send "ready," "reloading," and "stopping" messages, and send custom status messages. 
+These functions can be helpful when integrating your application with systemd for better process supervision and management.
 *** triangulum.email
 
 Triangulum provides some functionality for sending email from an SMTP server. Given the configuration inside ~:mail~. ~:base-url~ is used to configure the host url, used when sending links in emails. ~:auto-validate~ can be used in development mode, for example, to skip sending emails, which has to be configured.
