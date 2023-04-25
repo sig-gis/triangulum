@@ -3,14 +3,40 @@
   (:require [clojure.data.json   :as json]
             [clojure.edn         :as edn]
             [clojure.java.io     :as io]
+            [clojure.spec.alpha :as s]
             [clojure.string      :as str]
             [clj-http.client     :as client]
             [cognitect.transit   :as transit]
             [hiccup.page         :refer [html5 include-css include-js]]
-            [triangulum.config   :refer [get-config]]
+            [triangulum.config   :as config :refer [get-config]]
             [triangulum.git      :refer [current-version]]
             [triangulum.errors   :refer [nil-on-error]]
             [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab->camel]]))
+
+;; sepc 
+
+;; views
+(s/def ::lang keyword?)
+(s/def ::localized-text (s/and map?
+                               (s/keys :req-un [::lang])
+                               (s/every-kv ::lang string?)))
+(s/def ::title ::localized-text)
+(s/def ::description ::localized-text)
+(s/def ::keywords ::localized-text)
+(s/def ::hiccup-tag keyword?)
+(s/def ::hiccup-attrs map?)
+(s/def ::hiccup-element (s/tuple ::hiccup-tag ::hiccup-attrs))
+(s/def ::extra-head-tags (s/coll-of ::hiccup-element :kind vector?))
+(s/def ::gtag-id (s/and ::config/string #(clojure.string/starts-with? % "G-")))
+(s/def ::static-file-paths (s/coll-of ::config/static-file-path :kind vector?))
+(s/def ::static-css-files ::static-file-paths)
+(s/def ::static-js-files ::static-file-paths)
+(s/def ::get-user-lang ::config/namespaced-symbol)
+(s/def ::js-init ::config/static-file-path)
+(s/def ::cljs-init ::config/namespaced-symbol)
+(s/def ::client-keys map?)
+;; git 
+(s/def ::tags-url ::config/url)
 
 (defn find-cljs-app-js
   "Pull "
@@ -136,13 +162,13 @@
       [:script {:type "module"}
        (if (= "prod" (get-config :server :mode))
          (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
-                     entry-file
-                     js-params
-                     js-session)
+                 entry-file
+                 js-params
+                 js-session)
          (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
-                     (str "http://localhost:5173" (get-config :app :js-init))
-                     js-params
-                     js-session))])))
+                 (str "http://localhost:5173" (get-config :app :js-init))
+                 js-params
+                 js-session))])))
 
 (defn- announcement-banner []
   (let [announcement (-> (slurp "announcement.txt")

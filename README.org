@@ -98,7 +98,7 @@ Usage:
 
 Require the namespace in your project.
 Use 'create-handler-stack' to create a Ring handler stack with your custom routing handler and the desired middlewares.
-Use 'development-app' for a development handler stack with an active wrap-reload middleware.
+Use 'create-development-app' for a development handler stack with an active wrap-reload middleware, can be used with ~figwheel-main.edn~ for example.
 Example:
 #+BEGIN_SRC clojure
 (ns my-app.core
@@ -378,7 +378,7 @@ clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-d
 This will install a file named ~cljweb-<repo>.service~ into the
 ~/.config/systemd/user/~ directory, reload the systemctl daemon, and have
 enabled your service. By default the current directory will be used in the
-service as the working directory. To supply an alternative, you can use ~-d~.
+service as the working directory. The server will alaways be started using `clojure -M:server start`. To supply an alternative, you can use ~-d~.
 This will look for a clojure project in that directory.
 
 To enable your user services to start on system reboot, you will need to run:

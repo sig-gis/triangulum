@@ -40,7 +40,7 @@
             :cljs-init         product-ns.client.init ; for ClojureScript projects
             :client-keys       {:mapbox-token "token123"}
 
-            ;;git 
+            ;; git 
             :tags-url          "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"}
 
 

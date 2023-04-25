@@ -131,7 +131,7 @@
 (defn- string-to-bytes [^String s] (.getBytes s))
 
 (defn create-handler-stack
-  "Create the Ring handler stack"
+  "Create the Ring handler stack."
   [routing-handler ssl? reload?]
   (-> routing-handler
       (optional-middleware wrap-ssl-redirect ssl?)
@@ -159,8 +159,9 @@
       wrap-exceptions
       (optional-middleware wrap-reload reload?)))
 
-(def development-app
-  "Creates a development handler stack using the given config.edn handler with an active wrap-reload middleware"
+(defn create-development-app
+  "Creates a development handler stack using the given config.edn handler with an active wrap-reload middleware."
+  []
   (create-handler-stack
    (-> (get-config :server :handler) resolve-foreign-symbol)
    false

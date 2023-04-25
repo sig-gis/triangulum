@@ -20,10 +20,30 @@
 (def ^:private ks-scan-interval 60) ; seconds
 
 ;; spec
-(s/def ::mode (s/and ::string #{"prod" "dev"}))
+
+;; server 
 (s/def ::http-port ::config/port)
 (s/def ::https-port ::config/port)
+(s/def ::nrepl-port ::config/string)
+(s/def ::nrepl-host ::config/string)
+(s/def ::nrepl boolean?)
+(s/def ::cider-nrepl boolean?)
+(s/def ::mode (s/and ::string #{"dev" "prod"}))
 (s/def ::log-dir ::config/string)
+(s/def ::handler ::config/namespaced-symbol)
+(s/def ::worker
+  (s/keys :req-un [:start :stop]))
+(s/def ::workers
+  (s/or :map (s/map-of keyword? ::worker)
+        :vector (s/coll-of ::worker :kind vector?)))
+(s/def ::keystore-file ::config/string)
+(s/def ::keystore-type ::config/string)
+(s/def ::keystore-password ::config/string)
+;; handler
+(s/def ::session-key (s/and ::string #(= 16 (count %))))
+(s/def ::bad-tokens (s/coll-of ::string :kind set? :min-count 0))
+;; response
+(s/def ::response-type (s/and keyword? #(contains? #{:json :end :transit} %)))
 
 ;;===============================================
 ;; Workers
