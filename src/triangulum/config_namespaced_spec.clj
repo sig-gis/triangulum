@@ -1,42 +1,24 @@
 (ns triangulum.config-namespaced-spec
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [triangulum.config-nested-spec :refer [server-req server-opt
+                                                   app-req app-opt
+                                                   database-req database-opt
+                                                   mail-req mail-opt
+                                                   https-req https-opt]]))
 
 ;; New Format (namespaced)
-;; TODO add missing keys (reference the config.example.edn)
 
-(s/def ::server   (s/keys :opt [;; server 
-                                :triangulum.server/http-port
-                                :triangulum.server/https-port
-                                :triangulum.server/nrepl
-                                :triangulum.server/nrepl-port
-                                :triangulum.server/nrepl-host
-                                :triangulum.server/cider-nrepl
-                                :triangulum.server/mode
-                                :triangulum.server/log-dir
-                                :triangulum.server/handler
-                                :triangumum.server/workers
-                                :triangumum.server/keystore-file
-                                :triangumum.server/keystore-type
-                                :triangumum.server/keystore-password
-                                ;; handler
-                                :triangumum.server/session-key
-                                :triangumum.server/bad-tokens
-                                ;; response
-                                :triangumum.server/response-type]))
+(s/def ::server   (s/keys :req server-req
+                          :opt server-opt))
 
-(s/def ::app      (constantly true))
+(s/def ::app      (s/keys  :req app-req
+                           :opt app-opt))
 
-(s/def ::database (s/keys :req [:triangulum.database/dbname
-                                :triangulum.database/user
-                                :triangulum.database/password]
-                          :opt [:triangulum.database/host
-                                :triangulum.database/port]))
+(s/def ::database (s/keys :req database-req
+                          :opt database-opt))
 
-(s/def ::mail     (s/keys :req [:triangulum.email/host
-                                :triangulum.email/user
-                                :triangulum.email/pass]
-                          :opt [:triangulum.email/port]))
+(s/def ::mail     (s/keys :req mail-req
+                          :opt mail-opt))
 
-(s/def ::https    (s/keys :req [:triangulum.https/domain
-                                :triangulum.https/email]))
-
+(s/def ::https    (s/keys :req https-req
+                          :opt https-opt))

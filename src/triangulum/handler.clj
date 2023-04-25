@@ -2,6 +2,7 @@
   (:require
    [clojure.edn                        :as edn]
    [clojure.data.json                  :as json]
+   [clojure.spec.alpha                 :as s]
    [clojure.string                     :as str]
    [ring.util.codec                    :refer [url-decode]]
    [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
@@ -28,6 +29,10 @@
    [triangulum.utils                   :refer [resolve-foreign-symbol]]
    [triangulum.response                :refer [forbidden-response data-response]]))
 
+;; spec 
+
+(s/def ::session-key (s/and ::string #(= 16 (count %))))
+(s/def ::bad-tokens (s/coll-of ::string :kind set? :min-count 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares

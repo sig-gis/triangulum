@@ -39,11 +39,6 @@
 (s/def ::keystore-file ::config/string)
 (s/def ::keystore-type ::config/string)
 (s/def ::keystore-password ::config/string)
-;; handler
-(s/def ::session-key (s/and ::string #(= 16 (count %))))
-(s/def ::bad-tokens (s/coll-of ::string :kind set? :min-count 0))
-;; response
-(s/def ::response-type (s/and keyword? #(contains? #{:json :end :transit} %)))
 
 ;;===============================================
 ;; Workers

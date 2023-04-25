@@ -17,7 +17,9 @@
 (s/def ::email  (s/and string? #(re-matches #"(?i)^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$" %)))
 (s/def ::namespaced-symbol (s/and symbol? #(namespace %)))
 (s/def ::url (s/and string? #(re-matches #"^https?://.+" %)))
-(s/def ::static-file-path (s/and string? #(str/starts-with? % "/")))
+(s/def ::static-file-path (s/and string? #(re-matches #"/[^:*?\"<>|]*" %)))
+(s/def ::path (s/and string? #(re-matches #"[./][^:*?\"<>|]*" %)))
+(s/def ::hostname (s/and string? #(re-matches #"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" %)))
 
 ;; Config file
 

@@ -10,8 +10,12 @@
 (def ^:private path-env (System/getenv "PATH"))
 
 ;; spec
-(s/def ::domain ::config/string)
+
+(s/def ::domain ::config/hostname)
 (s/def ::email ::config/email)
+(s/def ::path ::config/static-file-path)
+(s/def ::cert-only boolean?)
+(s/def ::webroot ::config/path)
 
 ;; Helper functions
 

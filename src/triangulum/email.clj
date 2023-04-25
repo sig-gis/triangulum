@@ -5,7 +5,8 @@
             [postal.core        :refer [send-message]]))
 
 ;; spec
-(s/def ::host ::config/string)
+
+(s/def ::host ::config/hostname)
 (s/def ::user ::config/string)
 (s/def ::pass ::config/string)
 (s/def ::port ::config/port)

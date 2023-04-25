@@ -35,8 +35,7 @@
 (s/def ::js-init ::config/static-file-path)
 (s/def ::cljs-init ::config/namespaced-symbol)
 (s/def ::client-keys map?)
-;; git 
-(s/def ::tags-url ::config/url)
+
 
 (defn find-cljs-app-js
   "Pull "
