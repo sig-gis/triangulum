@@ -1,10 +1,11 @@
 (ns triangulum.utils
-  (:import java.io.ByteArrayOutputStream)
-  (:require [clojure.data.json   :as json]
-            [clojure.java.shell  :as sh]
+  (:require [babashka.process :refer [shell]]
+            [clojure.data.json   :as json]
             [clojure.set         :as set]
             [clojure.string      :as str]
-            [cognitect.transit   :as transit]))
+            [cognitect.transit   :as transit]
+            [triangulum.logging :refer [log-str]])
+  (:import java.io.ByteArrayOutputStream))
 
 ;; Text parsing
 
@@ -73,17 +74,37 @@
 
 (def ^:private path-env (System/getenv "PATH"))
 
-(defn sh-wrapper
-  "Provides a given path and environment to a set of bash commands,
-  and parses the output, creating an array as described in `parse-as-sh-cmd`."
-  [dir env verbose & commands]
-  (sh/with-sh-dir dir
-    (sh/with-sh-env (merge {:PATH path-env} env)
-      (reduce (fn [acc cmd]
-                (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
-                  (str acc (when verbose out) err)))
-              ""
-              commands))))
+(defn shell-wrapper
+  "A wrapper around babashka.process/shell that logs the output and errors.
+  Accepts an optional opts map as the first argument, followed by the command and its arguments.
+  The :log key in the opts map can be used to control logging (default is true).
+
+  Usage:
+  (shell-wrapper {} \"ls\" \"-l\") ; With an opts map
+  (shell-wrapper \"ls\" \"-l\") ; Without an opts map
+  (shell-wrapper {:log? false} \"ls\" \"-l\") ; Disabling logging
+
+  Examples:
+  1. Logs the output and errors by default:
+  (shell-wrapper {} \"ls\" \"-l\")
+
+  2. Can be called without an opts map, assuming default values:
+  (shell-wrapper \"ls\" \"-l\")
+
+  3. Disabling logging using the :log? key in the opts map:
+  (shell-wrapper {:log false} \"ls\" \"-l\")"
+  [& args]
+  (let [opts            (if (map? (first args)) (first args) {})
+        cmd             (if (map? (first args)) (rest args) args)
+        log?            (get opts :log true)
+        result          (apply shell
+                               (assoc opts :out :string :err :string)
+                               cmd)]
+    (when log?
+      (log-str "cmd: " (clojure.string/join " " (:cmd result)))
+      (some-> (:out result) not-empty (log-str "out: "))
+      (some-> (:err result) not-empty (log-str "error: ")))
+    result))
 
 ;; Response building
 

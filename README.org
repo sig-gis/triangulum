@@ -517,9 +517,9 @@ Appends a specified string to the end of another string, if it is not already th
 Removes a specified string from the end of another string, if it is there.
 
 ***** Shell Commands
-****** sh-wrapper
+****** shell-wrapper
 
-Runs a set of bash commands in a specified directory and environment. Parses the output, creating an array as described in parse-as-sh-cmd.
+A wrapper around babashka.process/shell that logs the output and errors. Accepts an optional opts map as the first argument, followed by the command and its arguments. The ~:log~ key in the opts map can be used to control logging (default is true).
 
 ***** Response Building
 ****** DEPRECATED: data-response
