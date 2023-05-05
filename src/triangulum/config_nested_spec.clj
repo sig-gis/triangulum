@@ -21,8 +21,8 @@
                  :triangulum.server/keystore-password
                  :triangulum.handler/bad-tokens])
 
-(s/def ::server   (s/keys :req-un server-req
-                          :opt-un server-opt))
+(s/def ::server (s/keys :req-un server-req
+                        :opt-un server-opt))
 
 (def app-req [])
 
@@ -39,12 +39,13 @@
               :triangulum.views/client-keys
               :triangulum.git/tags-url])
 
-(s/def ::app      (s/keys  :req-un app-req
-                           :opt-un app-opt))
+(s/def ::app (s/keys :req-un app-req
+                     :opt-un app-opt))
 
 (def database-req [:triangulum.database/dbname
                    :triangulum.database/user
                    :triangulum.database/password])
+
 (def database-opt [:triangulum.database/host
                    :triangulum.database/port
                    :triangulum.build-db/admin-pass
@@ -61,14 +62,15 @@
 
 (def mail-opt [:triangulum.email/port])
 
-(s/def ::mail     (s/keys :req-un mail-req
-                          :opt-un mail-opt))
+(s/def ::mail (s/keys :req-un mail-req
+                      :opt-un mail-opt))
 
 (def https-req [:triangulum.https/email
                 :triangulum.https/domain])
+
 (def https-opt [:triangulum.https/path
                 :triangulum.https/cert-only
                 :triangulum.https/webroot])
 
-(s/def ::https    (s/keys :req-un https-req
-                          :opt-un https-opt))
+(s/def ::https (s/keys :req-un https-req
+                       :opt-un https-opt))

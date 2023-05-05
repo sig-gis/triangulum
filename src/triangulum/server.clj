@@ -1,6 +1,7 @@
 (ns triangulum.server
   (:import org.eclipse.jetty.server.Server)
   (:require [cider.nrepl         :refer [cider-nrepl-handler]]
+            [clojure.java.io     :as io]
             [clojure.spec.alpha  :as s]
             [nrepl.core          :as nrepl]
             [nrepl.server        :as nrepl-server]
@@ -10,8 +11,7 @@
             [triangulum.handler  :refer [create-handler-stack]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.notify   :refer [available? ready!]]
-            [triangulum.utils    :refer [resolve-foreign-symbol]]
-            [clojure.java.io     :as io]))
+            [triangulum.utils    :refer [resolve-foreign-symbol]]))
 
 (defonce ^:private server       (atom nil))
 (defonce ^:private nrepl-server (atom nil))
@@ -21,25 +21,25 @@
 
 ;; spec
 
-(s/def ::http-port          ::config/port)
-(s/def ::https-port         ::config/port)
-(s/def ::nrepl-port         ::config/string)
-(s/def ::nrepl-host         ::config/string)
-(s/def ::nrepl              boolean?)
-(s/def ::cider-nrepl        boolean?)
-(s/def ::mode               (s/and ::config/string #{"dev" "prod"}))
-(s/def ::log-dir            ::config/string)
+(s/def ::http-port         ::config/port)
+(s/def ::https-port        ::config/port)
+(s/def ::nrepl-port        ::config/string)
+(s/def ::nrepl-host        ::config/string)
+(s/def ::nrepl             boolean?)
+(s/def ::cider-nrepl       boolean?)
+(s/def ::mode              (s/and ::config/string #{"dev" "prod"}))
+(s/def ::log-dir           ::config/string)
 (s/def ::handler            ::config/namespaced-symbol)
-(s/def ::nested-worker      (s/keys :req-un [:start :stop]))
+(s/def ::nested-worker     (s/keys :req-un [:start :stop]))
 
-(s/def ::namespaced-worker  (s/keys :req [:triangulum.worker/name
-                                          :triangulum.worker/start
-                                          :triangulum.worker/stop]))
-(s/def ::workers            (s/or :map    (s/map-of keyword? ::nested-worker)
-                                  :vector (s/coll-of ::namespaced-worker :kind vector?)))
-(s/def                      ::keystore-file ::config/string)
-(s/def                      ::keystore-type ::config/string)
-(s/def                      ::keystore-password ::config/string)
+(s/def ::namespaced-worker (s/keys :req [:triangulum.worker/name
+                                         :triangulum.worker/start
+                                         :triangulum.worker/stop]))
+(s/def ::workers           (s/or :map    (s/map-of keyword? ::nested-worker)
+                                 :vector (s/coll-of ::namespaced-worker :kind vector?)))
+(s/def                     ::keystore-file ::config/string)
+(s/def                     ::keystore-type ::config/string)
+(s/def                     ::keystore-password ::config/string)
 
 ;;===============================================
 ;; Workers

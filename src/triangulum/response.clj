@@ -6,7 +6,7 @@
 
 ;; spec
 
-(s/def ::response-type #{:json :end :transit})
+(s/def ::response-type #{:json :edn :transit})
 
 (defn data-response
   "Creates a response object.

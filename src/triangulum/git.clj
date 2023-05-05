@@ -6,7 +6,6 @@
             [triangulum.config  :as config :refer [get-config]]
             [triangulum.logging :refer [log-str]]))
 
-
 ;; spec
 
 (s/def ::tags-url ::config/url)
