@@ -73,7 +73,7 @@
 
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn start-server!
-  "FIXME: Write docstring"
+  "See README.org -> Web Framework -> triangulum.server for details."
   [{:keys [http-port https-port nrepl cider-nrepl nrepl-port mode log-dir
            handler workers keystore-file keystore-type keystore-password]
     :or {nrepl-port        5555

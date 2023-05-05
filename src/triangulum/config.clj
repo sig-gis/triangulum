@@ -21,6 +21,7 @@
 (s/def ::path (s/and string? #(re-matches #"[./][^:*?\"<>|]*" %)))
 (s/def ::hostname (s/and string? #(re-matches #"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" %)))
 
+
 ;; Config file
 
 (s/def ::nested-config (s/keys :opt-un [::config-nested/server
@@ -87,7 +88,7 @@
                    (clojure.string/split #"\.")
                    second
                    keyword)]
-    (or (get ns->un-mapping new-ns) new-ns)))
+    (get ns->un-mapping new-ns new-ns)))
 
 
 ;;; Public Fns
@@ -119,7 +120,7 @@
   ([key-path] (join-un-key key-path {:prefix "triangulum"}))
   ([key-path {:keys [prefix]}]
    (let [[n k] key-path
-         n (or (get un->ns-mapping n) n)]
+         n (get un->ns-mapping n n)]
      (keyword (str prefix "." (name n)) (name k)))))
 
 ;; Retrieves a configuration value for the given key(s).
