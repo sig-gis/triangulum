@@ -1,34 +1,32 @@
 (ns triangulum.handler
-  (:require
-   [clojure.edn                        :as edn]
-   [clojure.data.json                  :as json]
-   [clojure.set                        :as set]
-   [clojure.string                     :as str]
-   [ring.util.codec                    :refer [url-decode]]
-   [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
-   [ring.middleware.content-type       :refer [wrap-content-type]]
-   [ring.middleware.default-charset    :refer [wrap-default-charset]]
-   [ring.middleware.gzip               :refer [wrap-gzip]]
-   [ring.middleware.json               :refer [wrap-json-params]]
-   [ring.middleware.keyword-params     :refer [wrap-keyword-params]]
-   [ring.middleware.multipart-params   :refer [wrap-multipart-params]]
-   [ring.middleware.nested-params      :refer [wrap-nested-params]]
-   [ring.middleware.not-modified       :refer [wrap-not-modified]]
-   [ring.middleware.params             :refer [wrap-params]]
-   [ring.middleware.reload             :refer [wrap-reload]]
-   [ring.middleware.resource           :refer [wrap-resource]]
-   [ring.middleware.session            :refer [wrap-session]]
-   [ring.middleware.session.cookie     :refer [cookie-store]]
-   [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
-   [ring.middleware.x-headers          :refer [wrap-content-type-options
-                                               wrap-frame-options
-                                               wrap-xss-protection]]
-   [triangulum.config                  :refer [get-config]]
-   [triangulum.logging                 :refer [log-str]]
-   [triangulum.errors                  :refer [nil-on-error]]
-   [triangulum.utils                   :refer [resolve-foreign-symbol]]
-   [triangulum.response                :refer [forbidden-response data-response]]))
-
+  (:require [clojure.edn                        :as edn]
+            [clojure.data.json                  :as json]
+            [clojure.set                        :as set]
+            [clojure.string                     :as str]
+            [ring.util.codec                    :refer [url-decode]]
+            [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
+            [ring.middleware.content-type       :refer [wrap-content-type]]
+            [ring.middleware.default-charset    :refer [wrap-default-charset]]
+            [ring.middleware.gzip               :refer [wrap-gzip]]
+            [ring.middleware.json               :refer [wrap-json-params]]
+            [ring.middleware.keyword-params     :refer [wrap-keyword-params]]
+            [ring.middleware.multipart-params   :refer [wrap-multipart-params]]
+            [ring.middleware.nested-params      :refer [wrap-nested-params]]
+            [ring.middleware.not-modified       :refer [wrap-not-modified]]
+            [ring.middleware.params             :refer [wrap-params]]
+            [ring.middleware.reload             :refer [wrap-reload]]
+            [ring.middleware.resource           :refer [wrap-resource]]
+            [ring.middleware.session            :refer [wrap-session]]
+            [ring.middleware.session.cookie     :refer [cookie-store]]
+            [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
+            [ring.middleware.x-headers          :refer [wrap-content-type-options
+                                                        wrap-frame-options
+                                                        wrap-xss-protection]]
+            [triangulum.config                  :refer [get-config]]
+            [triangulum.logging                 :refer [log-str]]
+            [triangulum.errors                  :refer [nil-on-error]]
+            [triangulum.utils                   :refer [resolve-foreign-symbol]]
+            [triangulum.response                :refer [forbidden-response data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares

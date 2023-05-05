@@ -55,15 +55,12 @@
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
-                    (str/blank?)
                     (conj acc)))
         (recur (->> char-seq (drop-while #(not= \` %)))
                (->> char-seq
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
-
-
                     (#(str/split % #" "))
                     (remove str/blank?)
                     (into acc)))))))
@@ -159,18 +156,17 @@
 (defn filterm
   "Takes a map, filters on pred for each MapEntry, returns a map."
   [pred coll]
-  (persistent!
-    (reduce (fn [acc cur]
-              (if (pred cur)
-                (conj! acc cur)
-                acc))
-            (transient {})
-            coll)))
+  (persistent! (reduce (fn [acc cur]
+                         (if (pred cur)
+                           (conj! acc cur)
+                           acc))
+                       (transient {})
+                       coll)))
 
 ;;; Equality Checking
 
 (defn find-missing-keys
-  "Returnss true if m1's keys are a subset of m2's keys, and that any nested maps
+  "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
    also maintain the same property.
 
    Example:

@@ -13,7 +13,7 @@
             [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab->camel]]))
 
 (defn find-cljs-app-js
-  "Pull "
+  "Returns the relative path of the compiled ClojureScript app.js file."
   []
   (as-> (slurp "target/public/cljs/manifest.edn") app
     (edn/read-string app)
