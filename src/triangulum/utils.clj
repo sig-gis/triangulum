@@ -19,7 +19,6 @@
   [kebab-string]
   (let [words (-> kebab-string
                   (str/lower-case)
-                  (str/replace #"^[^a-z_$]|[^\w-]" "")
                   (str/split #"-"))]
     (->> (map str/capitalize (rest words))
          (cons (first words))
@@ -34,7 +33,7 @@
     (str/join "-" text)))
 
 (defn format-str
-  "Use any char after % for format. All % are converted to %s (string)"
+  "Use any char after % for format. All % are converted to %s (string)."
   [f-str & args]
   (apply format (str/replace f-str #"(%[^ ])" "%s") args))
 
@@ -117,8 +116,8 @@
     (.toString out)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
-(defn data-response
-  "DEPRECATED: Use 'triangulum.response/data-response' instead.
+(defn ^:deprecated data-response
+  "DEPRECATED: Use [[triangulum.response/data-response]] instead.
    Create a response object.
    Body is required. Status, type, and session are optional.
    When a type keyword is passed, the body is converted to that type,
@@ -156,12 +155,13 @@
 (defn filterm
   "Takes a map, filters on pred for each MapEntry, returns a map."
   [pred coll]
-  (persistent! (reduce (fn [acc cur]
-                         (if (pred cur)
-                           (conj! acc cur)
-                           acc))
-                       (transient {})
-                       coll)))
+  (persistent!
+   (reduce (fn [acc cur]
+             (if (pred cur)
+               (conj! acc cur)
+               acc))
+           (transient {})
+           coll)))
 
 ;;; Equality Checking
 
