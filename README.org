@@ -108,15 +108,14 @@ Use ~create-development-app~ for a development handler stack with an active wrap
 ;; Create a handler stack with SSL redirect enabled and without the wrap-reload middleware.
 (def my-app (create-handler-stack my-routing-handler true false))
 
-;; Create a development handler stack with wrap-reload middleware.
-(def my-development-app (create-development-app))
 #+END_SRC
 
-Public Functions
-**** Functions
-***** create-handler-stack
-Takes a routing handler and two boolean flags (ssl? and reload?) as arguments, and creates a Ring handler stack. If ssl? is true, it enables the wrap-ssl-redirect middleware; if reload? is true, it enables the wrap-reload middleware.
+If you need to provide a symbol that is bound to a handler function
+to figwheel-main, you can use ~triangulum.handler/development-app~ to
+load in your project's handler function from `config.edn` with the
+~wrap-reload~ middleware added.
 
+**** Functions
 ***** create-development-app
 Creates a development handler stack using the handler specified in the config.edn file with an active wrap-reload middleware. No arguments are required.
 *** triangulum.views
@@ -157,7 +156,8 @@ This namespace provides functions for rendering pages and handling resources in 
 
 **** Caveat
 
-In dev mode, ~js-init~ (file exporting ~pageInit~ for rendering root component) relies on a running Vite local server. Vite serves JavaScript (JSX), enabling quick reloads and efficient builds.
+In dev mode, ~js-init~ (file exporting ~pageInit~ for rendering root component) relies on a running Vite local server. Vite serves JavaScript (JSX), enabling quick reloads and efficient builds.In ClojureScript projects it is passed under the key ~:cljs-init~. ~pageInit~ is a function that expects to receive request `params` and `session` maps.
+
 *** triangulum.git
 
 You can provide ~:tags-url~, which is a url to the git tags page of

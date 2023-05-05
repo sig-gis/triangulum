@@ -12,14 +12,14 @@
 ;;; spec
 
 ;; Base spec
-(s/def ::port   (s/and nat-int? #(< % 0x10000)))
-(s/def ::string (s/and string? #(not (re-matches #"<.*>" %))))
-(s/def ::email  (s/and string? #(re-matches #"(?i)^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$" %)))
+(s/def ::port              (s/and nat-int? #(< % 0x10000)))
+(s/def ::string            (s/and string? #(not (re-matches #"<.*>" %))))
+(s/def ::email             (s/and string? #(re-matches #"(?i)^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$" %)))
 (s/def ::namespaced-symbol (s/and symbol? #(namespace %)))
-(s/def ::url (s/and string? #(re-matches #"^https?://.+" %)))
-(s/def ::static-file-path (s/and string? #(re-matches #"/[^:*?\"<>|]*" %)))
-(s/def ::path (s/and string? #(re-matches #"[./][^:*?\"<>|]*" %)))
-(s/def ::hostname (s/and string? #(re-matches #"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" %)))
+(s/def ::url               (s/and string? #(re-matches #"^https?://.+" %)))
+(s/def ::static-file-path  (s/and string? #(re-matches #"/[^:*?\"<>|]*" %)))
+(s/def ::path              (s/and string? #(re-matches #"[./][^:*?\"<>|]*" %)))
+(s/def ::hostname          (s/and string? #(re-matches #"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" %)))
 
 
 ;; Config file
@@ -41,12 +41,11 @@
 (def ^:private config-file  (atom "config.edn"))
 (def ^:private config-cache (atom nil))
 (def ^:private ns->un-mapping
-  "Maps namespaced keys namesapces to their unnamespaced counterparts."
+  "Converts namespaces into their equivalent unnamespaced keys."
   {:views :app, :email :mail})
 (def ^:private un->ns-mapping
-  "Maps unnamespaced keys namespaces to their namespaced counterparts."
+  "Convers unnamespaced keys into their equivalent namespaces."
   (reverse-map ns->un-mapping))
-
 
 ;;; Helper Fns
 
@@ -57,12 +56,12 @@
 (defn- namespaced-key?
   "Returns true if the given key has a namespace, otherwise false."
   [k]
-  (namespace k))
+  (some? (namespace k)))
 
 (defn- read-config [file]
   (if (.exists (io/file file))
     (if-let [config (nil-on-error (edn/read-string (slurp file)))]
-      (let [valid-nested-config? (s/valid? ::nested-config config)
+      (let [valid-nested-config?     (s/valid? ::nested-config config)
             valid-namespaced-config? (s/valid? ::namespaced-config config)]
         (cond (or valid-nested-config?
                   valid-namespaced-config?)
@@ -85,7 +84,7 @@
   [ns-key]
   (let [new-ns (-> ns-key
                    namespace
-                   (clojure.string/split #"\.")
+                   (str/split #"\.")
                    second
                    keyword)]
     (get ns->un-mapping new-ns new-ns)))
@@ -107,8 +106,9 @@
   (s/valid? ::namespaced-config config))
 
 (defn nested-config?
+  "Returns true if the given configuration map is unnamespaced nested, otherwise false."
   [config]
-  (not (namespaced-config? config)))
+  (s/valid? ::nested-config config))
 
 (defn split-ns-key
   "Given a namespaced key, returns a vector of unnamespaced keys."
@@ -131,8 +131,8 @@
    ```clojure
    (get-config :mail) -> {:host \"google.com\" :port 543}
    (get-config :mail :host) -> \"google.com\"
-   (get-config :triangulum.email/host) -> \"google.com\" 
-   (get-config :triangulum.views/title :en)
+   (get-config :triangulum.email/host) -> \"google.com\"
+   (get-config :triangulum.views/title :en) -> \"english\"
    ```"
   [& all-keys]
   (let [config (cache-config)
@@ -155,7 +155,7 @@
 
       (and (= (count all-keys) 2)
            (namespaced-config? config)
-           (not (namespaced-key? (first all-keys))))
+           (not (namespaced-key? k)))
       (get config (join-un-key all-keys))
 
       :else

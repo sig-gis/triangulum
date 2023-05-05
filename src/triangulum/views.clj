@@ -13,29 +13,27 @@
             [triangulum.errors   :refer [nil-on-error]]
             [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab->camel]]))
 
-;; sepc
+;; spec
 
-;; views
-(s/def ::lang keyword?)
-(s/def ::localized-text (s/and map?
-                               (s/keys :req-un [::lang])
-                               (s/every-kv ::lang string?)))
-(s/def ::title ::localized-text)
-(s/def ::description ::localized-text)
-(s/def ::keywords ::localized-text)
-(s/def ::hiccup-tag keyword?)
-(s/def ::hiccup-attrs map?)
-(s/def ::hiccup-element (s/tuple ::hiccup-tag ::hiccup-attrs))
-(s/def ::extra-head-tags (s/coll-of ::hiccup-element :kind vector?))
-(s/def ::gtag-id (s/and ::config/string #(clojure.string/starts-with? % "G-")))
+(s/def ::lang              keyword?)
+(s/def ::localized-text    (s/map-of ::lang string?))
+(s/def ::title             ::localized-text)
+(s/def ::description       ::localized-text)
+(s/def ::keywords          ::localized-text)
+(s/def ::hiccup-tag        keyword?)
+(s/def ::hiccup-attrs      map?)
+(s/def ::hiccup-element    (s/cat :tag   ::hiccup-tag
+                                  :attrs (s/? ::hiccup-attrs)
+                                  :body  (s/? any?)))
+(s/def ::extra-head-tags   (s/coll-of ::hiccup-element :kind vector?))
+(s/def ::gtag-id           (s/and ::config/string #(str/starts-with? % "G-")))
 (s/def ::static-file-paths (s/coll-of ::config/static-file-path :kind vector?))
-(s/def ::static-css-files ::static-file-paths)
-(s/def ::static-js-files ::static-file-paths)
-(s/def ::get-user-lang ::config/namespaced-symbol)
-(s/def ::js-init ::config/static-file-path)
-(s/def ::cljs-init ::config/namespaced-symbol)
-(s/def ::client-keys map?)
-
+(s/def ::static-css-files  ::static-file-paths)
+(s/def ::static-js-files   ::static-file-paths)
+(s/def ::get-user-lang     ::config/namespaced-symbol)
+(s/def ::js-init           ::config/static-file-path)
+(s/def ::cljs-init         ::config/namespaced-symbol)
+(s/def ::client-keys       map?)
 
 (defn find-cljs-app-js
   "Pull "

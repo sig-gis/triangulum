@@ -1,8 +1,8 @@
 (ns triangulum.email
-  (:require [triangulum.config  :as config :refer [get-config]]
-            [triangulum.logging :refer [log-str]]
-            [clojure.spec.alpha :as s]
-            [postal.core        :refer [send-message]]))
+  (:require [clojure.spec.alpha :as s]
+            [postal.core        :refer [send-message]]
+            [triangulum.config  :as config :refer [get-config]]
+            [triangulum.logging :refer [log-str]]))
 
 ;; spec
 

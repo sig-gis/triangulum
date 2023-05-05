@@ -23,16 +23,16 @@
    [ring.middleware.x-headers          :refer [wrap-content-type-options
                                                wrap-frame-options
                                                wrap-xss-protection]]
-   [triangulum.config                  :refer [get-config]]
+   [triangulum.config                  :as config :refer [get-config]]
    [triangulum.logging                 :refer [log-str]]
    [triangulum.errors                  :refer [nil-on-error]]
    [triangulum.utils                   :refer [resolve-foreign-symbol]]
    [triangulum.response                :refer [forbidden-response data-response]]))
 
-;; spec 
+;; spec
 
-(s/def ::session-key (s/and ::string #(= 16 (count %))))
-(s/def ::bad-tokens (s/coll-of ::string :kind set? :min-count 0))
+(s/def ::session-key (s/and ::config/string #(= 16 (count %))))
+(s/def ::bad-tokens  (s/coll-of ::config/string :kind set? :min-count 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
@@ -164,10 +164,11 @@
       wrap-exceptions
       (optional-middleware wrap-reload reload?)))
 
-(defn create-development-app
-  "Creates a development handler stack using the given config.edn handler with an active wrap-reload middleware."
-  []
+(def development-app
   (create-handler-stack
-   (-> (get-config :server :handler) resolve-foreign-symbol)
+   (fn [request]
+     (let [user-handler (-> (get-config :server :handler)
+                            resolve-foreign-symbol)]
+       (user-handler request)))
    false
    true))
