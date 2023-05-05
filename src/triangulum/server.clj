@@ -37,9 +37,9 @@
                                          :triangulum.worker/stop]))
 (s/def ::workers           (s/or :map    (s/map-of keyword? ::nested-worker)
                                  :vector (s/coll-of ::namespaced-worker :kind vector?)))
-(s/def                     ::keystore-file ::config/string)
-(s/def                     ::keystore-type ::config/string)
-(s/def                     ::keystore-password ::config/string)
+(s/def ::keystore-file     ::config/string)
+(s/def ::keystore-type     ::config/string)
+(s/def ::keystore-password ::config/string)
 
 ;;===============================================
 ;; Workers
