@@ -1,5 +1,5 @@
 (ns triangulum.database
-  (:import [java.sql Array])
+  (:import java.sql.Array)
   (:require [clojure.string       :as str]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
@@ -26,7 +26,7 @@
   (partition-all (quot 32767 (count fields)) rows))
 
 (def sql-primitive
-  "Return single value for queries that return a value instead of a table."
+  "Returns single value for queries that return a value instead of a table."
   (comp val first first))
 
 ;;; Static Data
