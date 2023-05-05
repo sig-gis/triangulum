@@ -9,19 +9,19 @@
 ;; Text parsing
 
 (defn kebab->snake
-  "kebab-str -> snake_str"
+  "kebab-str -> snake_str."
   [kebab-str]
   (str/replace kebab-str "-" "_"))
 
 (defn kebab->camel
-  "kebab-str -> camelCaseStr"
+  "kebab-str -> camelCaseStr."
   [k]
   (let [words (str/split (name k) #"-")]
     (->> (map str/capitalize (rest words))
          (apply str (first words)))))
 
 (defn format-str
-  "Use any char after % for format. All % are converted to %s (string)"
+  "Use any char after % for format. All % are converted to %s (string)."
   [f-str & args]
   (apply format (str/replace f-str #"(%[^ ])" "%s") args))
 
@@ -93,8 +93,8 @@
     (.toString out)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
-(defn data-response
-  "DEPRECATED: Use 'triangulum.response/data-response' instead.
+(defn ^:deprecated data-response
+  "DEPRECATED: Use [[triangulum.response/data-response]] instead.
    Create a response object.
    Body is required. Status, type, and session are optional.
    When a type keyword is passed, the body is converted to that type,
@@ -132,12 +132,13 @@
 (defn filterm
   "Takes a map, filters on pred for each MapEntry, returns a map."
   [pred coll]
-  (persistent! (reduce (fn [acc cur]
-                         (if (pred cur)
-                           (conj! acc cur)
-                           acc))
-                       (transient {})
-                       coll)))
+  (persistent!
+   (reduce (fn [acc cur]
+             (if (pred cur)
+               (conj! acc cur)
+               acc))
+           (transient {})
+           coll)))
 
 ;; Equality checking
 
