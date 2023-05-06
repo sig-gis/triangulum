@@ -1,7 +1,7 @@
 (ns triangulum.handler
-  (:require [clojure.edn                        :as edn]
-            [clojure.data.json                  :as json]
-            [clojure.set                        :as set]
+  (:require [clojure.data.json                  :as json]
+            [clojure.edn                        :as edn]
+            [clojure.spec.alpha                 :as s]
             [clojure.string                     :as str]
             [ring.util.codec                    :refer [url-decode]]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
@@ -22,23 +22,35 @@
             [ring.middleware.x-headers          :refer [wrap-content-type-options
                                                         wrap-frame-options
                                                         wrap-xss-protection]]
-            [triangulum.config                  :refer [get-config]]
+            [triangulum.config                  :as config :refer [get-config]]
             [triangulum.logging                 :refer [log-str]]
             [triangulum.errors                  :refer [nil-on-error]]
             [triangulum.utils                   :refer [resolve-foreign-symbol]]
             [triangulum.response                :refer [forbidden-response data-response]]))
 
+;; spec
+
+(s/def ::session-key (s/and ::config/string #(= 16 (count %))))
+(s/def ::bad-tokens  (s/coll-of ::config/string :kind set? :min-count 0))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn case-insensitive-substring?
+  "True if s includes substr regardless of case."
+  [s substr]
+  (str/includes? (str/lower-case s)
+                 (str/lower-case substr)))
+
 (defn wrap-bad-uri
-  "Wrapper that checks if the request url contains a bad token from give as input set and returns a forbidden-response if there is or runs the next handler on it"
+  "Wrapper that checks if the request url contains a bad token from the
+  provided set and returns a forbidden-response if so; otherwise,
+  passes the request to the provided handler."
   [handler bad-tokens]
-  (fn [request]
-    (if (some #(str/includes? (str/lower-case (:uri request)) %)
-              bad-tokens)
-      (forbidden-response nil)
+  (fn [{:keys [uri] :as request}]
+    (if (some #(case-insensitive-substring? uri %) bad-tokens)
+      (forbidden-response request)
       (handler request))))
 
 (defn wrap-request-logging
@@ -70,27 +82,6 @@
                  :else
                  (str content-type " response")))
       response)))
-
-
-(def updatable-session-keys
-  "A vector containing session keys that can be updated"
-  [])
-
-(defn wrap-persistent-session
-  "Wrapper to manage session"
-  [handler]
-  (fn [request]
-    (let [{:keys [params session]} request
-          to-update                (select-keys params updatable-session-keys)
-          session                  (apply dissoc session (keys to-update))
-          intersection             (set/intersection (set (keys params)) (set (keys session)))
-          response                 (handler (update request :params merge session))]
-      (when-not (empty? intersection)
-        (log-str "WARNING! The following params are being overwritten by session values: " intersection))
-      (if (and (contains? response :session)
-               (nil? (:session response)))
-        response
-        (update response :session #(merge session to-update %))))))
 
 (defn wrap-exceptions
   "Wrapper to manage exception handling, logging it and responding with 500 in case of an exception"
@@ -144,13 +135,12 @@
 (defn- string-to-bytes [^String s] (.getBytes s))
 
 (defn create-handler-stack
-  "Create the Ring handler stack"
+  "Create the Ring handler stack."
   [routing-handler ssl? reload?]
   (-> routing-handler
       (optional-middleware wrap-ssl-redirect ssl?)
       (wrap-bad-uri (get-config :server :bad-tokens))
       wrap-request-logging
-      wrap-persistent-session
       wrap-keyword-params
       wrap-json-params
       wrap-edn-params
@@ -174,8 +164,10 @@
       (optional-middleware wrap-reload reload?)))
 
 (def development-app
-  "Creates a development handler stack using the given config.edn handler with an active wrap-reload middleware"
   (create-handler-stack
-   (-> (get-config :server :handler) resolve-foreign-symbol)
+   (fn [request]
+     (let [user-handler (-> (get-config :server :handler)
+                            resolve-foreign-symbol)]
+       (user-handler request)))
    false
    true))

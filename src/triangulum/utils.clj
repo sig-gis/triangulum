@@ -1,11 +1,10 @@
 (ns triangulum.utils
-  (:import java.io.ByteArrayOutputStream
-           java.time.LocalDateTime)
-  (:require [clojure.data.json  :as json]
-            [clojure.java.shell :as sh]
-            [clojure.set        :as set]
-            [clojure.string     :as str]
-            [cognitect.transit  :as transit]))
+  (:import java.io.ByteArrayOutputStream)
+  (:require [clojure.data.json   :as json]
+            [clojure.java.shell  :as sh]
+            [clojure.set         :as set]
+            [clojure.string      :as str]
+            [cognitect.transit   :as transit]))
 
 ;;; Text parsing
 
@@ -54,12 +53,15 @@
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+                    (str/blank?)
                     (conj acc)))
         (recur (->> char-seq (drop-while #(not= \` %)))
                (->> char-seq
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+
+
                     (#(str/split % #" "))
                     (remove str/blank?)
                     (into acc)))))))
@@ -163,10 +165,15 @@
            (transient {})
            coll)))
 
-;;; Equality Checking
+(defn reverse-map
+  "Reverses the key-value pairs in a given map."
+  [m]
+  (zipmap (vals m) (keys m)))
+
+;; Equality checking
 
 (defn find-missing-keys
-  "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
+  "Returnss true if m1's keys are a subset of m2's keys, and that any nested maps
    also maintain the same property.
 
    Example:
@@ -186,19 +193,7 @@
     :else
     #{}))
 
-;;; Date Helper Functions
-
-(defn current-year
-  "Returns the current year as an integer."
-  []
-  (.getYear (LocalDateTime/now)))
-
 ;; Namespace operations
-
-(defn get-ns
-  "Returns the namespace symbol of a namespace-qualified symbol."
-  [sym]
-  (symbol (namespace sym)))
 
 (defn resolve-foreign-symbol
   "Given a namespace-qualified symbol, attempt to require its namespace

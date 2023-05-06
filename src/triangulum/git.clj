@@ -1,9 +1,14 @@
 (ns triangulum.git
   (:require [clojure.string     :as str]
             [clojure.data.json  :as json]
+            [clojure.spec.alpha :as s]
             [clj-http.client    :as client]
-            [triangulum.config  :refer [get-config]]
+            [triangulum.config  :as config :refer [get-config]]
             [triangulum.logging :refer [log-str]]))
+
+;; spec
+
+(s/def ::tags-url ::config/url)
 
 ;; Constants
 

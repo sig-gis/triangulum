@@ -3,14 +3,37 @@
   (:require [clojure.data.json   :as json]
             [clojure.edn         :as edn]
             [clojure.java.io     :as io]
+            [clojure.spec.alpha :as s]
             [clojure.string      :as str]
             [clj-http.client     :as client]
             [cognitect.transit   :as transit]
             [hiccup.page         :refer [html5 include-css include-js]]
-            [triangulum.config   :refer [get-config]]
+            [triangulum.config   :as config :refer [get-config]]
             [triangulum.git      :refer [current-version]]
             [triangulum.errors   :refer [nil-on-error]]
             [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab->camel]]))
+
+;; spec
+
+(s/def ::lang              keyword?)
+(s/def ::localized-text    (s/map-of ::lang string?))
+(s/def ::title             ::localized-text)
+(s/def ::description       ::localized-text)
+(s/def ::keywords          ::localized-text)
+(s/def ::hiccup-tag        keyword?)
+(s/def ::hiccup-attrs      map?)
+(s/def ::hiccup-element    (s/cat :tag   ::hiccup-tag
+                                  :attrs (s/? ::hiccup-attrs)
+                                  :body  (s/? any?)))
+(s/def ::extra-head-tags   (s/coll-of ::hiccup-element :kind vector?))
+(s/def ::gtag-id           (s/and ::config/string #(str/starts-with? % "G-")))
+(s/def ::static-file-paths (s/coll-of ::config/static-file-path :kind vector?))
+(s/def ::static-css-files  ::static-file-paths)
+(s/def ::static-js-files   ::static-file-paths)
+(s/def ::get-user-lang     ::config/namespaced-symbol)
+(s/def ::js-init           ::config/static-file-path)
+(s/def ::cljs-init         ::config/namespaced-symbol)
+(s/def ::client-keys       map?)
 
 (defn find-cljs-app-js
   "Returns the relative path of the compiled ClojureScript app.js file."
@@ -103,14 +126,13 @@
        :else
        (list
         [:script {:type "module"}
-         "// import RefreshRuntime from 'http://localhost:5173/@react-refresh'
-         // RefreshRuntime.injectIntoGlobalHook(window)
-         window.$RefreshReg$ = () => {}
-         window.$RefreshSig$ = () => (type) => type
-         window.__vite_plugin_react_preamble_installed__ = true"]
-        [:script {:type "module" :src "http://localhost:5173/@vite/client"}]
-        (map (fn [f] [:script {:type "module" :src (str "http://localhost:5173" f)}])
-             (butlast bundle-js-files))))]))
+         (str/join "\n"
+                   ["import { injectIntoGlobalHook } from 'http://localhost:5173/@react-refresh';"
+                    "injectIntoGlobalHook(window);"
+                    "window.$RefreshReg$ = () => {};"
+                    "window.$RefreshSig$ = () => (type) => type;"
+                    "window.__vite_plugin_react_preamble_installed__ = true;"])]
+        [:script {:type "module" :src "http://localhost:5173/@vite/client"}]))]))
 
 (defn uri->page
   "Returns the JavaScript file home page"
@@ -122,22 +144,28 @@
 
 (defn client-init
   "Returns the script tag necessary to for the browser to load the app"
-  [entry-file params]
-  (let [js-params (-> params
-                      (assoc :versionDeployed (current-version))
-                      (merge (get-config :app :client-keys))
-                      (json/write-str))]
+  [entry-file params session]
+  (let [js-params  (-> params
+                       (json/write-str))
+        js-session (-> session
+                       (assoc :versionDeployed (current-version))
+                       (merge (get-config :app :client-keys))
+                       (json/write-str))]
     (if-let [cljs-init (get-config :app :cljs-init)]
       ;; CLJS app
       [:script {:type "text/javascript"}
-       (format "window.onload = function () { %s(%s); };" (-> cljs-init name kebab->snake) js-params)]
+       (format "window.onload = function () { %s(%s, %s); };" (-> cljs-init name kebab->snake) js-params js-session)]
       ;; JS app
       [:script {:type "module"}
-       (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s); };"
-               (if (= "prod" (get-config :server :mode))
+       (if (= "prod" (get-config :server :mode))
+         (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
                  entry-file
-                 (str "http://localhost:5173" entry-file))
-               js-params)])))
+                 js-params
+                 js-session)
+         (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
+                 (str "http://localhost:5173" (get-config :app :js-init))
+                 js-params
+                 js-session))])))
 
 (defn- announcement-banner []
   (let [announcement (-> (slurp "announcement.txt")
@@ -201,7 +229,8 @@
   "Returns the page's html"
   [uri]
   (fn [request]
-    (let [response-params (get-response-params uri request)]
+    (let [response-params (when (= "prod" (get-config :server :mode))
+                            (get-response-params uri request))]
       {:status  200
        :headers {"Content-Type" "text/html"}
        :body    (html5
@@ -216,7 +245,8 @@
                      (announcement-banner))
                    [:div#app]]
                   (client-init (-> response-params :bundle-js-files last)
-                               (:params request))])})))
+                               (:params request)
+                               (:session request))])})))
 
 (defn not-found-page
   "Produces a not found response"

@@ -1,0 +1,91 @@
+{;; server (server)
+ :triangulum.server/http-port         8080
+ :triangulum.server/https-port        8443
+ :triangulum.server/nrepl             false
+ :triangulum.server/nrepl-port        5555
+ :triangulum.server/nrepl-host        "127.0.0.1"
+ :triangulum.server/cider-nrepl       true
+ :triangulum.server/mode              "dev"
+ :triangulum.server/log-dir           "logs"
+ :triangulum.server/handler           product-ns.routing/handler
+ :triangulum.server/workers           [{:triangulum.worker/name  "scheduler"
+                                        :triangulum.worker/start product-ns.jobs/start-scheduled-jobs!
+                                        :triangulum.worker/stop  product-ns.jobs/stop-scheduled-jobs!}]
+ :triangulum.server/keystore-file     "keystore.pkcs12"
+ :triangulum.server/keystore-type     "pkcs12"
+ :triangulum.server/keystore-password "foobar"
+
+ ;; handler (server)
+ :triangulum.handler/session-key      "changeme12345678" ; must be 16 characters
+ :triangulum.handler/bad-tokens       #{".php"}
+
+ ;; response (server)
+ :triangulum.response/response-type   :json
+
+ ;; views (app)
+ :triangulum.views/title              {:en "Product name in English"
+                                       :es "Product name in Spanish"}
+ :triangulum.views/description        {:en "Description of the product in English"
+                                       :es "Description of the product in Spanish"}
+ :triangulum.views/keywords           {:en "english keywords, satellite imagery, collection, monitoring, fire"
+                                       :es "spanish keywords, satellite imagery, collection, monitoring, fire"}
+ :triangulum.views/extra-head-tags    [[:meta {:name "viewport" :content "width=device-width, user-scalable=no"}]
+                                       [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
+                                       [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]]
+ :triangulum.views/gtag-id            "G-..."
+ :triangulum.views/static-css-files   ["/css/my_global.css"]      ; in resources/public/
+ :triangulum.views/static-js-files    ["/js/jquery-3.4.1.min.js"] ; in resources/public/
+ :triangulum.views/get-user-lang      product-ns.api/get-user-lang
+ :triangulum.views/js-init            "/src/js/main.jsx"     ; for Javascript projects
+ :triangulum.views/cljs-init          product-ns.client.init ; for ClojureScript projects
+ :triangulum.views/client-keys        {:mapbox-token "token123"}
+
+ ;; git (app)
+ :triangulum.git/tags-url             "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"
+
+ ;; database (database)
+ :triangulum.database/host            "localhost"
+ :triangulum.database/port            5432
+ :triangulum.database/dbname          "app-name"
+ :triangulum.database/user            "app-name"
+ :triangulum.database/password        "app-name"
+
+ ;; build-db (database)
+ :triangulum.build-db/admin-pass      "postgres-password"
+ :triangulum.build-db/dev-data        false
+ :triangulum.build-db/file            "db-backup.custom"
+ :triangulum.build-db/verbose         true
+
+ ;; email (mail)
+ :triangulum.email/host               "smtp.gmail.com"
+ :triangulum.email/user               ""
+ :triangulum.email/pass               ""
+ :triangulum.email/tls                true
+ :triangulum.email/port               587
+ :triangulum.email/base-url           "https://my.domain/"
+
+ ;; https (https)
+ :triangulum.https/email              "support@sig-gis.com"
+ :triangulum.https/domain             "app.sig-gis.com"
+ :triangulum.https/path               "/etc/letsencrypt"
+ :triangulum.https/cert-only          false
+ :triangulum.https/webroot            "./resources/public"
+
+ ;; product-ns (my-keys)
+ :product-ns.py-interop/ee-account    "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
+ :product-ns.py-interop/ee-key-path   "gee-auth-key.json"
+ :product-ns.views/mapbox-token       "pk..."
+ :product-ns.views/mapquest-key       "GF..."
+ :product-ns.proxy/nicfi-key          "e5..."
+
+ ;; other 
+ ;; :triangulum.systemd
+ ;; :triangulum.config
+ ;; :triangulum.deploy
+ ;; :tirangulum.cli
+ ;; :tirangulum.errors
+ ;; :tirangulum.utils
+ ;; :triangulum.type-conversion
+ ;; :tirangulum.notify
+ ;; :tirangulum.logging
+ }

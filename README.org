@@ -1,16 +1,19 @@
 * Triangulum
 
-A Clojure library establishing a web app framework around Jetty and Ring.
+A Clojure library that provides:
 
-** Library Usage
+- A web framework based around Jetty and Ring
+- Utility scripts for managing databases, email, logging, SSL certs, systemd services, and more
+- Utility namespaces with functions for common CLI and web server programming tasks
 
-*** Adding the Library to Your Project
+** Adding Triangulum to your Project
 
-Include the following entry in your deps.edn ~:deps~ map:
+1. Add the library's coordinates to the ~:deps~ map in your project's
+   ~deps.edn~ file:
 
 #+begin_src clojure
-sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
-                     :sha "COPY-CURRENT-SHA-HERE"}
+sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
+                    :sha "REPLACE-WITH-CURRENT-SHA"}
 #+end_src
 
 If you want to pull Triangulum into a [[https://babashka.org][Babashka]] script, you can do so
@@ -29,207 +32,167 @@ with ~babashka.deps~ as follows:
 (sh-wrapper "/opt/sig-app" {:HOME "/opt/sig-app"} true "ls")
 #+end_src
 
-*** Configuring the Web Framework via config.edn
+2. Define one or more aliases for Triangulum's utility scripts in the
+   ~:aliases~ map in your project's ~deps.edn file~.
 
-To activate Triangulum's wealth of features for bootstrapping a web
-application, you will need to create a ~config.edn~ file in the
-project's root directory. This file stores your configuration settings
-in a Clojure hashmap. Note that you may also include additional keys
-that are specific to your application in the ~config.edn~ file as long
-as they don't conflict with Triangulum's reserved keys. Here is an
-example:
+NOTE: You can find examples of these aliases in the ~deps.example.edn~ file in the root directory of this repository.
 
-#+begin_src clojure
-{:database {:host       "localhost"
-            :port       5432
-            :dbname     "dbname"
-            :user       "user"
-            :password   "secret-db-password"}
- :https    {:domain     "example.com"
-            :email      "test@example.com"}
- :server   {:http-port  8080
-            :https-port 8443
-            :mode       "dev" ; or "prod"
-            :log-dir    "logs"}
- :mail     {:host       "smtp.gmail.com"
-            :user       "test@example.com"
-            :pass       "secret-mail-password"
-            :port       587}}
-#+end_src
+3. Configure the Triangulum features you want to use in a ~config.edn~ file in the root directory of your repository.
 
-NOTE: You can always refer to the ~config.example.edn~ in Triangulum's
-project root directory for examples of the library's currently accepted
-keys.
+   Two syntaxes are provided for this file, one with nested keywords and one with namespaced keywords. You can see examples of the available features in ~config.example.edn~ and ~config2.example.edn~ within this repository.
 
-NOTE: Add config.edn to your ~.gitignore~ file to keep sensitive
-information out of the git history.
+** Running Tests
 
-To validate your ~config.edn~ file, run:
+To launch the test suite, run:
 
 #+begin_src sh
-clojure -M:config validate [-f FILE]
+clojure -M:test
 #+end_src
 
-In the root there is a ~deps.example.edn~ file that serves as example/template for projects to use. Typically needed in standard SIG project.
-
+** Web Framework
 *** triangulum.server
 
-To start server use, you pass ~--nrepl~ or ~--cider-nrepl~ if your editor (like Emacs, VS Code, etc.) supports the cider middleware features. The default server port is ~5555~.
+This namespace provides a batteries-included Ring Jetty web server, an
+nrepl server for connecting to the live web application, a timestamped
+file logging system, and worker functions for non-HTTP-related tasks.
 
-#+begin_src sh
-clojure -M:server start --nrepl
-clojure -M:server start --cider-nrepl
+1. In config.edn:
+
+#+begin_src clojure
+ :server   {:http-port         8080
+            :https-port        8443   ; Only if you also include the keystore fields below
+            :nrepl-port        5555   ; Must be paired with either :nrepl or :cider-repl below
+            :nrepl             false  ; For a vanilla nrepl
+            :cider-nrepl       true   ; If your editor supports CIDER middleware
+            :mode              "dev"  ; or prod
+            :log-dir           "logs" ; or "" for stdout
+            :handler           product-ns.routing/handler
+            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
+                                            :stop  product-ns.jobs/stop-scheduled-jobs!}}
+            :response-type     :json ; #{:json :edn :transit}
+            :session-key       "changeme12345678"
+            :bad-tokens        #{".php"} ; Reject URLs containing these strings
+            :keystore-file     "keystore.pkcs12" ; Contains your SSL certificate(s)
+            :keystore-type     "pkcs12"
+            :keystore-password "foobar"}
 #+end_src
 
-Before starting the server, you need to set ~:handler~ to a router function that takes a request and routes it to a ring response handler. You can set ~:response-type~ to configure the default ~data-response~ call's return type (json, edn, transit).
+2. At the command line:
 
-**** workers
+Start the server:
 
-Triangulum provides some functionality for sending email from an SMTP server. Given the configuration inside ~:mail~. ~:base-url~ is used to configure the host url, used when sending links in emails. ~:auto-validate~ can be used in development mode, for example, to skip sending emails, which has to be configured.
+#+begin_src sh
+clojure -M:server start
+#+end_src
+
+Stop the server (requires ~:nrepl~ or ~:cider-nrepl~):
+
+#+begin_src sh
+clojure -M:server stop
+#+end_src
+
+Reload your namespaces into the running JVM (requires ~:nrepl~ or ~:cider-nrepl~):
+
+#+begin_src sh
+clojure -M:server reload
+#+end_src
+
+NOTES:
+- To use ~:https-port~, you must also specify ~:keystore-file~, ~:keystore-type~, and ~:keystore-password~.
+- You may not use both ~:nrepl~ and ~:cider-nrepl~ at the same time.
+- The ~:start~ functions for all ~:workers~ will be run before the web server is started.
+- The ~:stop~ functions for all ~:workers~ will be run after the web server is stopped.
+- Before starting the server, you must set ~:handler~ to a namespace-qualified symbol bound to a Ring handler function.
+- If you set ~:mode~ to ~"dev"~, then the ~wrap-reload~ middleware will be added to your handler function. This will automatically reload all of your namespaces into the running JVM on each HTTP request.
+
+*** triangulum.handler
+
+The ~triangulum.handler~ namespace provides core request handling and middleware composition for Triangulum applications. It sets up a Ring handler stack that includes various middlewares, such as request/response logging, exception handling, and request parameter parsing. Optional middlewares like wrap-ssl-redirect and wrap-reload can be applied based on configuration.
+
+**** Usage
+
+If you need to provide a symbol that is bound to a handler function
+to figwheel-main, you can use ~triangulum.handler/development-app~ to
+load in your project's handler function from ~config.edn~ with the
+~wrap-reload~ middleware added.
+
+**** Functions
+*** triangulum.views
+
+This namespace provides functions for rendering pages and handling resources in Triangulum. It defines functions for reading asset files, generating HTML, and handling various types of responses.
+
+**** Usage
+
+1. Require the namespace in your project.
+2. Use 'render-page' to generate the HTML for a specific page.
+3. Use 'not-found-page' to generate a 404 Not Found response.
+
+**** Example
+#+BEGIN_SRC clojure
+(ns my-app.views
+  (:require [triangulum.views :refer [render-page not-found-page]]))
+
+(def my-page (render-page "/my-page"))
+(def not-found (not-found-page))
+#+END_SRC
+
+**** Functions
+***** render-page
+  [uri]
+
+  Returns a function that takes a request and generates the HTML for the specified URI using the request's parameters and session data. The generated HTML includes the necessary head and body sections.
+
+  Example usage:
+  (def my-page (render-page "/my-page"))
+
+***** not-found-page
+  [request]
+
+  Produces a 404 Not Found response for the given request.
+
+  Example usage:
+  (def not-found (not-found-page))
+
+**** Caveat
+
+In JavaScript projects, we assign the relative path (from the project root)
+to the main component JSX file to the ~:js-init~ key. This file should export
+a function called ~pageInit~ that expects two arguments: ~params~ and ~session~.
+You only need to set this key for the development mode to work,
+which enables Vite hot reload. In production, we rely on a manifest file
+generated by the bundling process to find the entry point. However, we still
+need to define ~pageInit~ and export it in the main entry point file.
+
+In ClojureScript projects, we need to assign the namespaced symbol of the init
+function to the ~:cljs-init~ key, which accepts ~params~ and ~session~ as
+arguments, for both production and development environments.
+
+The ~session~ map will also contain the ~:client-keys~ that were added in
+Triangulum's ~config.edn~.
+
+#+begin_src clojure
+  ;; nested config
+  {:app {:client-keys {:token "client-token" }}}
+
+  ;; namespaced config
+  {:triangulum.views/client-keys {:token "client-token" }}}
+#+end_src
+
 
 *** triangulum.git
 
-You can provide ~:tags-url, which is a url to the git tags repo. Triangulum will make it available to the client in the page response under ~:versionDeployed~ passed as an argument to the client's init function.
+You can provide ~:tags-url~, which is a url to the git tags page of
+your repository. Triangulum will extract all tags beginning with
+"prod", sort them lexicographically, and return the last entry. If you
+use tags of the form "prod-YYYY.MM.DD-HASH", then this will return the
+one with the latest date.
 
-*** triangulum.mail
+This tag label will be passed to the browser code in the ~:session~ map under the ~:versionDeployed~ key.
 
-Triangulum provides some functionality for sending email from an SMTP server. Given the configuration inside ~:mail~. ~:base-url~ is used to configure the host url, used when sending links in emails. ~:auto-validate~ can be used in development mode, for example, to skip sending emails, which has to be configured.
-
-*** triangulum.config
-
-To make organizing an application's configurations simpler, create a
-~config.edn~ file in the project's root directory. The file is just a hashmap that is similar to:
-
-#+begin_src clojure
-  ;; config.edn
-  {:database {:host     "localhost"
-              :port     5432
-              :dbname   "dbname"
-              :user     "user"
-              :password "super-secret-password"}
-   :mail     {:host "smtp.gmail.com"
-              :user "test@example.com"
-              :pass "3492734923742"
-              :port 587}
-   :server   {:host           "smtp.gmail.com"
-              :user           ""
-              :pass           ""
-              :tls            true
-              :port           587
-              :base-url       "https://my.domain/"
-              :auto-validate? false}
-   ...}
-#+end_src
-
-You can find an up-to-date example in ~config.example.edn~ file. It can be used as a configuration template for your project.
-
-Add config.edn to your ~.gitignore~ file to keep sensitive information out of
-the git history.
-
-To load this data into your application, call
-~triangulum.config/load-config~. This will read in your ~config.edn~
-file, validate it, and cache it in memory for quick lookups later:
-
-#+begin_src sh
-;; with config.edn in the project root
-(triangulum.config/load-config)
-
-;; with a differently named EDN file
-(triangulum.config/load-config "relative/path/non-standard-config-name.edn")
-#+end_src
-
-To retrieve values from a loaded configuration map, use
-~triangulum.config/get-config~. You can supply nested configuration
-keys as follows:
-
-#+begin_src clojure
-(triangulum.config/get-config :database) ;; -> {:user "triangulum" :password "..."}
-(triangulum.config/get-config :database :user) ;; -> "triangulum"
-
-(triangulum.config/get-config :server) ;; -> {:http-port 8080 :mode "dev"}
-(triangulum.config/get-config :server :http-port) ;; -> 8080
-#+end_src
-
-** Useful Namespaces
-
-See each section below for an example configuration if one is required for use.
-
-*** triangulum.logging
-
-To send a message to the logger, use ~log~ or ~log-str~. ~log~ can
-take an optional argument to override its non-default behavior. The
-default values are shown below. ~log-str~ always uses the default
-values.
-
-#+begin_src clojure
-(log "Hello world" {:newline? true :pprint? false :force-stdout? false :truncate? true})
-(log-str "Hello " "world")
-#+end_src
-
-By default the above will log to standard out. If you would like to
-have the system log to timestamped files of the form ~YYYY-DD-MM.log~,
-you will need to set a logging directory with ~set-log-path!~. You can
-either specify a path relative to the toplevel directory of the main
-project repository or an absolute path on your filesystem. The logger
-will keep the 10 most recent logs (where a new log is created every
-day at midnight). To stop the logging server and resume logging to
-standard out, set the log path to ~""~.
-
-#+begin_src clojure
-(set-log-path! "logs")
-(set-log-path! "")
-#+end_src
-
-*** triangulum.database
-
-To use ~triangulum.database~, first add your database connection
-parameters to your ~config.edn~ file.
-
-For example:
-
-#+begin_src clojure
-{:database {:dbtype   "postgresql"
-            :host     "localhost"
-            :port     5432
-            :dbname   "dbname"
-            :user     "user"
-            :password "super-secret-password"}}
-#+end_src
-
-NOTE: If ~:dbtype~ is not specified, it will default to "postgresql".
-
-To run a SQL command on the database server, use ~call-sql~. If you
-would like to override its default parameters (see below), you may
-pass an options map as the first argument after the function name:
-
-#+begin_src clojure
-(call-sql "function" "param1" "param2" "param3")
-
-(call-sql "function" {:log? true :use-vec? false} "param1" "param2" ... "paramN")
-#+end_src
-
-To run a sqllite3 SQL command, use ~call-sqlite~. An existing sqllite3
-database must be provided.
-
-#+begin_src clojure
-(call-sqlite "select * from table" "path/db-file")
-#+end_src
-
-To insert new rows or update existing rows use ~insert-rows!~ and
-~update-rows!~. If fields are not provided, the first row will be assumed to
-be the field names.
-
-#+begin_src clojure
-(insert-rows! table-name rows-vector fields-map)
-
-(update-rows! table-name rows-vector column-to-update fields-map)
-#+end_src
-
-** Useful DevOps Aliases
-
+** Utility Scripts
 *** triangulum.build-db
-
 **** Required Prerequisites
+
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
 
 To set up the folder and file structure for use with ~build-db~, use the following directory structure:
@@ -318,8 +281,68 @@ for filename in ./src/sql/changes/*.sql; do psql -U <db-name> -f $filename; done
 triangulum.build-db can also be configured through config.edn.  It uses
 the same configuration as [[#triangulumdatabase][triangulum.database]] (see above).
 
-*** triangulum.https
+*** triangulum.config
 
+To make organizing an application's configurations simpler, create a
+~config.edn~ file in the project's root directory. The file is just a hashmap that is similar to:
+
+#+begin_src clojure
+  ;; config.edn
+  {:database {:host     "localhost"
+              :port     5432
+              :dbname   "dbname"
+              :user     "user"
+              :password "super-secret-password"}
+   :mail     {:host "smtp.gmail.com"
+              :user "test@example.com"
+              :pass "3492734923742"
+              :port 587}
+   :server   {:host           "smtp.gmail.com"
+              :user           ""
+              :pass           ""
+              :tls            true
+              :port           587
+              :base-url       "https://my.domain/"
+              :auto-validate? false}
+   ...}
+#+end_src
+
+You can find an up-to-date example in ~config.example.edn~ file. It can be used as a configuration template for your project.
+
+Add config.edn to your ~.gitignore~ file to keep sensitive information out of
+the git history.
+
+To validate the config.edn file, run:
+#+begin_src sh
+clojure -M:config validate [-f FILE]
+#+end_src
+
+To retrieve a configuration, use ~get-config~. You can supply nested
+configuration keys as follows:
+
+#+begin_src clojure
+(triangulum.config/get-config :database) ;; -> {:user "triangulum" :pass "..."}
+(triangulum.config/get-config :database :user) ;; -> "triangulum"
+
+(triangulum.config/get-config :server) ;; -> {:http-port 8080 :mode "dev"}
+(triangulum.config/get-config :server :http-port) ;; -> 8080
+#+end_src
+
+See each section below for an example configuration if one is required for use.
+
+*** triangulum.deploy
+
+To build a JAR file from your repository and deploy it to clojars.org, run:
+
+#+begin_src sh
+env CLOJARS_USERNAME=$YOUR_USERNAME CLOJARS_PASSWORD=$YOUR_CLOJARS_TOKEN clojure -M:deploy $GROUP_ID $ARTIFACT_ID
+#+end_src
+
+NOTE: As of 2020-06-27, Clojars will no longer accept your Clojars
+password when deploying. You will have to use a token instead. Please
+read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][here]]
+
+*** triangulum.https
 **** Required Prerequisites
 - [[https://certbot.eff.org/][certbot]]
 - [[https://www.openssl.org/source/][openssl]]
@@ -408,7 +431,7 @@ clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-d
 This will install a file named ~cljweb-<repo>.service~ into the
 ~/.config/systemd/user/~ directory, reload the systemctl daemon, and have
 enabled your service. By default the current directory will be used in the
-service as the working directory. To supply an alternative, you can use ~-d~.
+service as the working directory. The server will alaways be started using ~clojure -M:server start~. To supply an alternative, you can use ~-d~.
 This will look for a clojure project in that directory.
 
 To enable your user services to start on system reboot, you will need to run:
@@ -423,36 +446,293 @@ clojure -M:systemd stop -r <REPO>
 clojure -M:systemd restart -r <REPO>
 #+end_src
 
-** Useful Development Aliases
+** Utility Namespaces
+*** triangulum.cli
+The triangulum.cli namespace provides a command-line interface (CLI) for Triangulum applications. It includes functions for parsing command-line options, displaying usage information, and checking for errors in the provided arguments.
 
-*** check-deps
+**** Usage
+Use get-cli-options to parse command-line arguments and return the user's options.
 
-To check for outdated dependencies, run:
+**** Example
+#+BEGIN_SRC clojure
+  (def cli-options {...})
 
-#+begin_src sh
-clojure -M:check-deps
+  (def cli-actions {...})
+  (def alias-str "...")
+
+  (get-cli-options command-line-args cli-options cli-actions alias-str)
+#+END_SRC
+
+**** Functions
+***** get-cli-options
+Takes the command-line arguments, a map of CLI options, a map of CLI actions, an alias string, and an optional config map. Checks for valid CLI calls and returns the user's options.
+#+END_SRC
+*** triangulum.errors
+
+The triangulum.errors namespace provides error handling utilities for the Triangulum application. It includes functions and macros to handle exceptions and log errors.
+
+**** Functions
+***** init-throw
+
+Takes a message string as input and throws an exception with the provided message.
+
+****** Example
+
+#+BEGIN_SRC clojure
+(init-throw "Error: Invalid input")
+#+END_SRC
+
+***** try-catch-throw
+
+Takes a function try-fn and a message string as input. Executes the function and, if it throws an exception, catches the exception, logs the error, and then throws an exception with the augmented input message.
+
+****** Example
+
+#+BEGIN_SRC clojure
+(try-catch-throw (fn [] (throw (ex-info "Initial error" {}))) "Augmented error message")
+#+END_SRC
+
+Public Macros
+***** nil-on-error
+
+Catches any exceptions thrown within its body and returns nil if an exception occurs. If no exception occurs, it returns the result of the body's evaluation.
+
+****** Example
+
+#+BEGIN_SRC clojure
+(nil-on-error (/ 1 0)) ; Returns nil
+(nil-on-error (+ 2 3)) ; Returns 5
+#+END_SRC
+*** triangulum.response
+
+You can set ~:response-type~ to configure the ~data-response~ function's default return type (~:json~, ~:edn~, ~:transit~).
+
+*** triangulum.utils
+
+The triangulum.utils namespace provides a collection of utility functions for various purposes, such as text parsing, shell command execution, response building, and operations on maps and namespaces.
+
+**** Functions
+***** Text Parsing
+****** kebab->snake
+
+Converts a kebab-cased string to a snake_cased string.
+
+****** kebab->camel
+
+Converts a kebab-cased string to a camelCased string.
+
+****** format-str
+
+Formats a string with placeholders (e.g., "%s") replaced by the provided arguments.
+
+****** parse-as-sh-cmd
+
+Splits a string into an array for use with clojure.java.shell/sh.
+
+****** end-with
+
+Appends a specified string to the end of another string, if it is not already there.
+
+****** remove-end
+
+Removes a specified string from the end of another string, if it is there.
+
+***** Shell Commands
+****** sh-wrapper
+
+Runs a set of bash commands in a specified directory and environment. Parses the output, creating an array as described in parse-as-sh-cmd.
+
+***** Response Building
+****** DEPRECATED: data-response
+
+Use 'triangulum.response/data-response' instead. Creates a response object with a specified body, status, content type, and session.
+
+Operations on Maps
+****** mapm
+
+Applies a function to each MapEntry of a map, returning a new map.
+
+****** filterm
+
+Filters a map based on a predicate applied to each MapEntry, returning a new map.
+
+****** reverse-map
+
+Reverses the key-value pairs in a given map.
+
+***** Equality Checking
+****** find-missing-keys
+
+Checks if the keys of one map are a subset of another map's keys, including nested maps.
+
+***** Namespace Operations
+****** resolve-foreign-symbol
+
+Attempts to require a namespace-qualified symbol's namespace and resolve the symbol within that namespace to a value.
+*** triangulum.type-conversion
+
+The triangulum.type-conversion namespace provides a collection of functions for converting between different data types and formats, including conversions between numbers, booleans, JSON, and PostgreSQL data types.
+
+**** Functions
+***** Converting Numbers
+****** val->int
+
+Converts a value to a Java Integer. Default value for failed conversion is -1.
+
+****** val->long
+
+Converts a value to a Java Long. Default value for failed conversion is -1.
+
+****** val->float
+
+Converts a value to a Java Float. Default value for failed conversion is -1.0. Note that Postgres real is equivalent to Java Float.
+
+****** val->double
+
+Converts a value to a Java Double. Default value for failed conversion is -1.0. Note that Postgres float is equivalent to Java Double.
+
+***** Converting Booleans
+****** val->bool
+
+Converts a value to a Java Boolean. Default value for failed conversion is false.
+
+***** JSON Conversions
+****** json->clj
+
+Converts a JSON string to its Clojure equivalent.
+
+****** jsonb->json
+
+Converts a PostgreSQL jsonb object to a JSON string.
+
+****** jsonb->clj
+
+Converts a PostgreSQL jsonb object to its Clojure equivalent.
+
+****** clj->json
+
+Converts a Clojure value to a JSON string.
+
+*****  PostgreSQL Conversions
+****** str->pg
+
+Converts a string to a PostgreSQL object of a specified type.
+
+****** json->jsonb
+
+Converts a JSON string to a PostgreSQL jsonb object.
+
+****** clj->jsonb
+
+Converts a Clojure value to a PostgreSQL jsonb object.
+*** triangulum.sockets
+The triangulum.sockets namespace provides functionality for creating and managing client and server sockets. It includes functions for opening and checking socket connections, sending messages to the server, and starting/stopping socket servers with custom request handlers. This namespace enables communication between distributed systems and allows you to implement networked applications.
+
+**** Functions
+***** Client Socket Functions
+****** socket-open?
+
+Checks if the socket at the specified host and port is open.
+
+****** send-to-server!
+
+Attempts to send a socket message. Returns :success if successful.
+
+*****  Server Socket Functions
+****** stop-socket-server!
+
+Stops the running socket server.
+
+****** start-socket-server!
+
+Starts a socket server at the specified port with a custom request handler.
+*** triangulum.notify
+The triangulum.notify namespace provides functions to interact with systemd for process management and notifications. It utilizes the SDNotify Java library to send notifications and check the availability of the current process. The functions in this namespace allow you to check if the process is managed by systemd, send "ready," "reloading," and "stopping" messages, and send custom status messages. These functions can be helpful when integrating your application with systemd for better process supervision and management.
+
+**** Functions
+***** available?
+
+Checks if this process is a process managed by systemd.
+
+***** ready!
+
+Sends a ready message to systemd. Systemd file must include Type=notify to be used.
+
+***** reloading!
+
+Sends a reloading message to systemd. Must call send-notify! once reloading has been completed.
+
+***** stopping!
+
+Sends a stopping message to systemd.
+
+***** send-status!
+
+Sends a custom status message to systemd. (e.g. (send-status! \"READY=1\")).
+*** triangulum.email
+
+Triangulum provides some functionality for sending email from an SMTP server. Given the configuration inside ~:mail~. ~:base-url~ is used to configure the host url, used when sending links in emails. ~:auto-validate~ can be used in development mode, for example, to skip sending emails, which has to be configured.
+
+*** triangulum.logging
+
+To send a message to the logger use ~log~ or ~log-str~. ~log~ can take an
+optional argument to specify not default behavior. The default values are
+shown below. ~log-str~ always uses the default values.
+
+#+begin_src clojure
+(log "Hello world" {:newline? true :pprint? false :force-stdout? false})
+(log-str "Hello" "world")
 #+end_src
 
-Remember to update deps.edn with any new versions that are found.
+By default the above will log to standard out. If you would like to
+have the system log to YYYY-DD-MM.log, set a log path. You can either specify
+a path relative to the toplevel directory of the main project repository or an
+absolute path on your filesystem. The logger will keep the 10 most recent logs
+(where a new log is created every day at midnight). To stop the logging server
+set path to "".
 
-*** deploy-jar
-
-To build a JAR from this library and deploy it to clojars.org, run:
-
-#+begin_src sh
-env CLOJARS_USERNAME=your-username CLOJARS_PASSWORD=your-clojars-token clojure -M:deploy-jar
+#+begin_src clojure
+(set-log-path "logs")
+(set-log-path "")
 #+end_src
 
-NOTE: As of 2020-06-27, Clojars will no longer accept your Clojars
-password when deploying. You will have to use a token instead. Please
-read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][here]].
+*** triangulum.database
 
-*** test
+To use ~triangulum.database~, first add your database connection
+configurations to a ~config.edn~ file in your project's root directory.
 
-To launch the test suite, run:
+For example:
+#+begin_src clojure
+;; config.edn
+{:database {:host     "localhost"
+            :port     5432
+            :dbname   "pyregence"
+            :user     "pyregence"
+            :password "pyregence"}}
+#+end_src
 
-#+begin_src sh
-clojure -M:test
+To run a postgres sql command use ~call-sql~. Currently ~call-sql~
+only works with postgres. With the second parameter can be an
+optional settings map (default values shown below).
+
+#+begin_src clojure
+(call-sql "function" {:log? true :use-vec? false} "param1" "param2" ... "paramN")
+#+end_src
+
+To run a sqllite3 sql command use ~call-sqlite~. An existing sqllite3 database
+must be provided.
+
+#+begin_src clojure
+(call-sqlite "select * from table" "path/db-file")
+#+end_src
+
+To insert new rows or update existing rows use ~insert-rows!~ and
+~update-rows!~. If fields are not provided, the first row will be assumed to
+be the field names.
+
+#+begin_src clojure
+(insert-rows! table-name rows-vector fields-map)
+(update-rows! table-name rows-vector column-to-update fields-map)
 #+end_src
 
 ** License

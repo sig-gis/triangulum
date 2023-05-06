@@ -1,7 +1,12 @@
 (ns triangulum.response
-  (:require [clojure.string    :as str]
-            [triangulum.config :refer [get-config]]
-            [triangulum.utils  :as utils]))
+  (:require [clojure.spec.alpha :as s]
+            [clojure.string     :as str]
+            [triangulum.config  :refer [get-config]]
+            [triangulum.utils   :as utils]))
+
+;; spec
+
+(s/def ::response-type #{:json :edn :transit})
 
 (defn data-response
   "Creates a response object.

@@ -1,7 +1,15 @@
 (ns triangulum.email
-  (:require [triangulum.config  :refer [get-config]]
-            [triangulum.logging :refer [log-str]]
-            [postal.core :refer [send-message]]))
+  (:require [clojure.spec.alpha :as s]
+            [postal.core        :refer [send-message]]
+            [triangulum.config  :as config :refer [get-config]]
+            [triangulum.logging :refer [log-str]]))
+
+;; spec
+
+(s/def ::host ::config/hostname)
+(s/def ::user ::config/string)
+(s/def ::pass ::config/string)
+(s/def ::port ::config/port)
 
 (defn get-base-url
   "Gets the homepage url"
@@ -16,14 +24,14 @@
 
 (defn- send-postal [to-addresses cc-addresses bcc-addresses subject body content-type]
   (send-message
-    (select-keys (get-config :mail) [:host :user :pass :tls :port])
-    {:from    (get-config :mail :user)
-     :to      to-addresses
-     :cc      cc-addresses
-     :bcc     bcc-addresses
-     :subject subject
-     :body    [{:type    (or content-type "text/plain")
-                :content body}]}))
+   (select-keys (get-config :mail) [:host :user :pass :tls :port])
+   {:from    (get-config :mail :user)
+    :to      to-addresses
+    :cc      cc-addresses
+    :bcc     bcc-addresses
+    :subject subject
+    :body    [{:type    (or content-type "text/plain")
+               :content body}]}))
 
 (defn send-mail
   "Sends email (text or html) to given addresses"

@@ -1,15 +1,5 @@
-{:database {:host       "localhost"
-            :port       "INVALID"
-            :dbname     "dbname"
-            :user       "user"
-            :password   "testing-password"}
- :https    {:domain     "example.com"
-            :email      "test@example.com"}
- :server   {:http-port  8080
-            :https-port 8443
-            :mode       "dev" ; or "prod"
-            :log-dir    "logs"}
- :mail     {:host       "smtp.gmail.com"
-            :user       "test@example.com"
-            :pass       "secret-mail-password"
-            :port       587}}
+{:database {:host     "localhost"
+            :port     "INVALID"
+            :dbname   "dbname"
+            :user     "user"
+            :password "testing-password"}}

@@ -1,50 +1,81 @@
-;; This is an example config file for testing and reference. Please
-;; make your own config.edn file in your project root with any fields
-;; from this file that you intend to use.
-{:database {:host     "localhost"
-            :port     5432
-            :dbname   "dbname"
-            :user     "user"
-            :password "secret-db-password"}
- :mail     {:host           "smtp.gmail.com"
-            :user           "test@example.com"
-            :pass           "secret-mail-password"
-            :tls            true
-            :port           587
-            :base-url       "https://my.domain/"
-            :auto-validate? false}
- :server   {:http-port     8080
-            :https-port    8443
-            :mode          "dev" ; or "prod"
-            :log-dir       ""    ; or "logs"
-            :handler       product.ns/handler
-            :workers       {:scheduler {:start product.ns/start-scheduled-jobs!
-                                        :stop  product.ns/stop-scheduled-jobs!}}
-            :response-type :json ; :edn or :transit
-            :bad-tokens    #{"php"}
-            :session-key   "changeme12345678"}
- :https    {:domain "example.com"
-            :email  "test@example.com"}
- :app      {:title            {:en "Colombian Mining Monitoring"
-                               :es "Monitoreo Minero Colombiano"}
-            :description      {:en "Colombian Mining Monitoring (CoMiMo) is an online mining monitoring application."
-                               :es "Monitoreo Minero Colombiano (CoMiMo) es una aplicación de monitoreo minero en línea."}
-            :keywords         {:en "colombian mining monitoring, comimo, satellite imagery, illegal mining."
-                               :es "monitoreo minero colombiano, comimo, imágenes satelitales, minería illegal."}
-            :extra-head-tags  [[:meta {:name "viewport" :content "width=device-width, user-scalable=no"}]
-                               [:link {:rel "apple-touch-icon" :sizes "180x180" :href "/favicon/apple-touch-icon.png"}]
-                               [:link {:rel "icon" :type "image/png" :sizes "32x32" :href "/favicon/favicon-32x32.png"}]
-                               [:link {:rel "icon" :type "image/png" :sizes "16x16" :href "/favicon/favicon-16x16.png"}]
-                               [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
-                               [:link {:rel "mask-icon" :color "#5bbad5" :href "/favicon/safari-pinned-tab.svg"}]
-                               [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]
-                               [:meta {:name "msapplication-TileColor" :content "#ffc40d"}]
-                               [:meta {:name "msapplication-config" :content "/favicon/browserconfig.xml"}]
-                               [:meta {:name "theme-color" :content "#ffffff"}]]
-            :gtag-id          nil
-            :static-css-files ["/css/comimo_global.css"]  ;; in resources/public folder
-            :static-js-files  ["/js/jquery-3.4.1.min.js"]
-            :get-user-lang    product-ns.api/get-user-lang
-            :tags-url         "https://api.github.com/repos/sig-gis/product-name/tags"
-            :cljs-init        product-ns.client.init ;; for ClojureScript projects
-            :client-keys      {:mapbox-token "token123"}}}
+{:server   {;; server 
+            :http-port         8080
+            :https-port        8443
+            :nrepl             false
+            :nrepl-port        5555
+            :nprel-host        "127.0.0.1"
+            :cider-nrepl       true
+            :mode              "dev"
+            :log-dir           "logs"
+            :handler           product-ns.routing/handler
+            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
+                                            :stop  product-ns.jobs/stop-scheduled-jobs!}}
+            :keystore-file     "keystore.pkcs12"
+            :keystore-type     "pkcs12"
+            :keystore-password "foobar"
+
+            ;; handler
+            :session-key       "changeme12345678" ; must be 16 characters
+            :bad-tokens        #{".php"}
+
+            ;; response
+            :response-type     :json ; :edn or :transit
+            }
+
+ :app      {;; views 
+            :title             {:en "Product name in English"
+                                :es "Product name in Spanish"}
+            :description       {:en "Description of the product in English"
+                                :es "Description of the product in Spanish"}
+            :keywords          {:en "english keywords, satellite imagery, collection, monitoring, fire"
+                                :es "spanish keywords, satellite imagery, collection, monitoring, fire"}
+            :extra-head-tags   [[:meta {:name "viewport" :content "width=device-width, user-scalable=no"}]
+                                [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
+                                [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]]
+            :gtag-id           "G-..."
+            :static-css-files  ["/css/my_global.css"]      ; in resources/public/
+            :static-js-files   ["/js/jquery-3.4.1.min.js"] ; in resources/public/
+            :get-user-lang     product-ns.api/get-user-lang
+            :js-init           "/src/js/main.jsx"     ; for Javascript projects
+            :cljs-init         product-ns.client.init ; for ClojureScript projects
+            :client-keys       {:mapbox-token "token123"}
+
+            ;; git 
+            :tags-url          "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"}
+
+
+
+ :database {;; database
+            :host              "localhost"
+            :port              5432
+            :dbname            "app-name"
+            :user              "app-name"
+            :password          "app-name"
+
+            ;; build-db
+            :admin-pass        "postgres-password"
+            :file              "db-backup.custom"
+            :dev-data          false
+            :verbose           true}
+
+ :mail     {;; email
+            :host              "smtp.gmail.com"
+            :user              ""
+            :pass              ""
+            :tls               true
+            :port              587
+            :base-url          "https://my.domain/"}
+
+ :https    {;; https
+            :email             "support@sig-gis.com"
+            :domain            "app.sig-gis.com"
+            :path              "/etc/letsencrypt"
+            :cert-only         false
+            :webroot           "./resources/public"}
+
+ :my-keys  {;; product-ns 
+            :ee-account        "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
+            :ee-key-path       "gee-auth-key.json"
+            :mapbox-token      "pk..."
+            :mapquest-key      "GF..."
+            :nicfi-key         "e5..."}}
