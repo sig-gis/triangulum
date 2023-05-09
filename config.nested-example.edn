@@ -3,7 +3,7 @@
             :https-port        8443
             :nrepl             false
             :nrepl-port        5555
-            :nprel-host        "127.0.0.1"
+            :nprel-bind        "127.0.0.1"
             :cider-nrepl       true
             :mode              "dev"
             :log-dir           "logs"

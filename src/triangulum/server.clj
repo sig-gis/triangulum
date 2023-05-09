@@ -24,7 +24,7 @@
 (s/def ::http-port         ::config/port)
 (s/def ::https-port        ::config/port)
 (s/def ::nrepl-port        ::config/string)
-(s/def ::nrepl-host        ::config/string)
+(s/def ::nrepl-bind        ::config/string)
 (s/def ::nrepl             boolean?)
 (s/def ::cider-nrepl       boolean?)
 (s/def ::mode              (s/and ::config/string #{"dev" "prod"}))
@@ -75,9 +75,10 @@
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn start-server!
   "See README.org -> Web Framework -> triangulum.server for details."
-  [{:keys [http-port https-port nrepl cider-nrepl nrepl-port mode log-dir
+  [{:keys [http-port https-port nrepl cider-nrepl nrepl-bind nrepl-port mode log-dir
            handler workers keystore-file keystore-type keystore-password]
-    :or {nrepl-port        5555
+    :or {nrepl-bind        "127.0.0.1"
+         nrepl-port        5555
          keystore-file     "./.key/keystore.pkcs12"
          keystore-type     "pkcs12"
          keystore-password "foobar"}}]
@@ -112,11 +113,11 @@
       :else
       (do
         (when nrepl
-          (println "Starting nREPL server on port" nrepl-port)
-          (reset! nrepl-server (nrepl-server/start-server :port nrepl-port)))
+          (println "Starting nREPL server on" (str nrepl-bind ":" nrepl-port))
+          (reset! nrepl-server (nrepl-server/start-server :bind nrepl-bind :port nrepl-port)))
         (when cider-nrepl
-          (println "Starting CIDER nREPL server on port" nrepl-port)
-          (reset! nrepl-server (nrepl-server/start-server :port nrepl-port :handler cider-nrepl-handler)))
+          (println "Starting CIDER nREPL server on" (str nrepl-bind ":" nrepl-port))
+          (reset! nrepl-server (nrepl-server/start-server :bind nrepl-bind :port nrepl-port :handler cider-nrepl-handler)))
         (when (seq workers)
           (println "Starting worker jobs")
           (start-workers! workers))
@@ -136,29 +137,31 @@
 
 (defn send-to-nrepl-server!
   "Sends form to the nrepl server"
-  [msg & [{:keys [host port] :or {host "127.0.0.1" port 5555}}]]
+  [msg & [{:keys [bind port] :or {bind "127.0.0.1" port 5555}}]]
   (try
-    (with-open [conn ^nrepl.server.Server (nrepl/connect :host host :port port)]
+    (with-open [conn ^nrepl.server.Server (nrepl/connect :host bind :port port)]
       (-> (nrepl/client conn 1000)  ; message receive timeout required
           (nrepl/message {:op "eval" :code msg})
           nrepl/response-values))
     (catch Exception _
-      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with either the '-r/--nrepl' or '-c/--cider-nrepl' flag." host port))
+      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with either the '-r/--nrepl' or '-c/--cider-nrepl' flag." bind port))
       (System/exit 1)))
   (System/exit 0))
 
 (defn stop-running-server!
   "Sends stop-server! call to the nrepl server"
-  [{:keys [nrepl-port]}]
+  [{:keys [nrepl-bind nrepl-port]}]
   (send-to-nrepl-server! "(do (require '[triangulum.server :as server]) (server/stop-server!))"
                          (cond-> {}
+                           nrepl-bind (assoc :host nrepl-bind)
                            nrepl-port (assoc :port nrepl-port))))
 
 (defn reload-running-server!
-  "Reloads the server namespace"
-  [{:keys [nrepl-port]}]
+  "Reloads the server namespace and its dependencies"
+  [{:keys [nrepl-bind nrepl-port]}]
   (send-to-nrepl-server! "(require 'triangulum.server :reload-all)"
                          (cond-> {}
+                           nrepl-bind (assoc :host nrepl-bind)
                            nrepl-port (assoc :port nrepl-port))))
 
 ;;===============================================
@@ -175,6 +178,7 @@
                       :parse-fn ensure-int]
    :nrepl-port       ["-n" "--nrepl-port PORT" "Port for an nREPL server (e.g., 5555)"
                       :parse-fn ensure-int]
+   :nrepl-bind       ["-b" "--nrepl-bind IP" "IP address to bind nREPL server (eg., 127.0.0.1)"]
    :nrepl            ["-r" "--nrepl" "Launch an nREPL server (on nrepl-port or 5555)"]
    :cider-nrepl      ["-c" "--cider-nrepl" "Launch a CIDER nREPL server (on nrepl-port or 5555)"]
    :mode             ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
