@@ -42,7 +42,9 @@
 (def ^:private config-cache (atom nil))
 (def ^:private ns->un-mapping
   "Converts namespaces into their equivalent unnamespaced keys."
-  {:views :app, :email :mail})
+  {:views  :app
+   :email  :mail
+   :worker :server})
 (def ^:private un->ns-mapping
   "Convers unnamespaced keys into their equivalent namespaces."
   (reverse-map ns->un-mapping))

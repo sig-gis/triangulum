@@ -8,8 +8,6 @@
             :mode              "dev"
             :log-dir           "logs"
             :handler           product-ns.routing/handler
-            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
-                                            :stop  product-ns.jobs/stop-scheduled-jobs!}}
             :keystore-file     "keystore.pkcs12"
             :keystore-type     "pkcs12"
             :keystore-password "foobar"
@@ -17,6 +15,10 @@
             ;; handler
             :session-key       "changeme12345678" ; must be 16 characters
             :bad-tokens        #{".php"}
+
+            ;; workers 
+            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
+                                            :stop  product-ns.jobs/stop-scheduled-jobs!}}
 
             ;; response
             :response-type     :json ; :edn or :transit

@@ -8,9 +8,6 @@
  :triangulum.server/mode              "dev"
  :triangulum.server/log-dir           "logs"
  :triangulum.server/handler           product-ns.routing/handler
- :triangulum.server/workers           [{:triangulum.worker/name  "scheduler"
-                                        :triangulum.worker/start product-ns.jobs/start-scheduled-jobs!
-                                        :triangulum.worker/stop  product-ns.jobs/stop-scheduled-jobs!}]
  :triangulum.server/keystore-file     "keystore.pkcs12"
  :triangulum.server/keystore-type     "pkcs12"
  :triangulum.server/keystore-password "foobar"
@@ -18,6 +15,11 @@
  ;; handler (server)
  :triangulum.handler/session-key      "changeme12345678" ; must be 16 characters
  :triangulum.handler/bad-tokens       #{".php"}
+
+ ;; workers (server)
+ :triangulum.worker/workers           [{:triangulum.worker/name  "scheduler"
+                                        :triangulum.worker/start product-ns.jobs/start-scheduled-jobs!
+                                        :triangulum.worker/stop  product-ns.jobs/stop-scheduled-jobs!}]
 
  ;; response (server)
  :triangulum.response/response-type   :json ; :edn or :transit

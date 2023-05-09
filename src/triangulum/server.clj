@@ -11,13 +11,8 @@
             [triangulum.handler  :refer [create-handler-stack]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.notify   :refer [available? ready!]]
-            [triangulum.utils    :refer [resolve-foreign-symbol]]))
-
-(defonce ^:private server       (atom nil))
-(defonce ^:private nrepl-server (atom nil))
-(defonce ^:private workers      (atom {}))
-
-(def ^:private ks-scan-interval 60) ; seconds
+            [triangulum.utils    :refer [resolve-foreign-symbol]]
+            [triangulum.worker   :refer [start-workers! stop-workers!]]))
 
 ;; spec
 
@@ -30,43 +25,15 @@
 (s/def ::mode              (s/and ::config/string #{"dev" "prod"}))
 (s/def ::log-dir           ::config/string)
 (s/def ::handler            ::config/namespaced-symbol)
-(s/def ::nested-worker     (s/keys :req-un [:start :stop]))
-
-(s/def ::namespaced-worker (s/keys :req [:triangulum.worker/name
-                                         :triangulum.worker/start
-                                         :triangulum.worker/stop]))
-(s/def ::workers           (s/or :map    (s/map-of keyword? ::nested-worker)
-                                 :vector (s/coll-of ::namespaced-worker :kind vector?)))
 (s/def ::keystore-file     ::config/string)
 (s/def ::keystore-type     ::config/string)
 (s/def ::keystore-password ::config/string)
 
-;;===============================================
-;; Workers
-;;===============================================
+;; state
 
-(defn- start-workers! [worker-map]
-  (reset! workers
-          (reduce-kv (fn [acc worker-name {:keys [start]}]
-                       (let [value (try
-                                     (let [start-fn (resolve-foreign-symbol start)]
-                                       (start-fn))
-                                     (catch Exception e
-                                       (log-str "Error starting worker "
-                                                worker-name ": " (ex-message e))
-                                       e))]
-                         (assoc-in acc [worker-name :value] value)))
-                     worker-map
-                     worker-map)))
-
-(defn- stop-workers! []
-  (doseq [[worker-name {:keys [stop value]}] @workers]
-    (when (and stop (not (instance? Exception value)))
-      (try
-        (let [stop-fn (resolve-foreign-symbol stop)]
-          (stop-fn value))
-        (catch Exception e
-          (log-str "Error stopping worker " worker-name ": " (ex-message e)))))))
+(defonce ^:private server       (atom nil))
+(defonce ^:private nrepl-server (atom nil))
+(def ^:private ks-scan-interval 60) ; seconds
 
 ;;===============================================
 ;; Actions
