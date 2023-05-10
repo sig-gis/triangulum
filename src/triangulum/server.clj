@@ -104,14 +104,14 @@
 
 (defn send-to-nrepl-server!
   "Sends form to the nrepl server"
-  [msg & [{:keys [bind port] :or {bind "127.0.0.1" port 5555}}]]
+  [msg & [{:keys [host port] :or {host "127.0.0.1" port 5555}}]]
   (try
-    (with-open [conn ^nrepl.server.Server (nrepl/connect :host bind :port port)]
+    (with-open [conn ^nrepl.server.Server (nrepl/connect :host host :port port)]
       (-> (nrepl/client conn 1000)  ; message receive timeout required
           (nrepl/message {:op "eval" :code msg})
           nrepl/response-values))
     (catch Exception _
-      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with either the '-r/--nrepl' or '-c/--cider-nrepl' flag." bind port))
+      (println (format "Unable to connect to nREPL server at %s:%s. Restart the server with either the '-r/--nrepl' or '-c/--cider-nrepl' flag." host port))
       (System/exit 1)))
   (System/exit 0))
 
