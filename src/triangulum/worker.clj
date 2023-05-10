@@ -3,7 +3,7 @@
              [triangulum.logging  :refer [log-str]]
              [triangulum.utils    :refer [resolve-foreign-symbol]]))
 
-;;spec 
+;;spec
 
 (s/def ::nested-worker     (s/keys :req-un [::start ::stop]))
 (s/def ::namespaced-worker (s/keys :req [::name
