@@ -1,4 +1,4 @@
-{:server   {;; server 
+{:server   {;; server
             :http-port         8080
             :https-port        8443
             :nrepl             false
@@ -24,7 +24,7 @@
             :response-type     :json ; :edn or :transit
             }
 
- :app      {;; views 
+ :app      {;; views
             :title             {:en "Product name in English"
                                 :es "Product name in Spanish"}
             :description       {:en "Description of the product in English"
@@ -42,7 +42,7 @@
             :cljs-init         product-ns.client.init ; for ClojureScript projects
             :client-keys       {:mapbox-token "token123"}
 
-            ;; git 
+            ;; git
             :tags-url          "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"}
 
 
@@ -75,7 +75,7 @@
             :cert-only         false
             :webroot           "./resources/public"}
 
- :my-keys  {;; product-ns 
+ :my-keys  {;; product-ns
             :ee-account        "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
             :ee-key-path       "gee-auth-key.json"
             :mapbox-token      "pk..."
