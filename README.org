@@ -13,7 +13,17 @@ A Clojure library that provides:
 
 #+begin_src clojure
 sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
-                    :sha "REPLACE-WITH-CURRENT-SHA"}
+                    :git/sha "REPLACE-WITH-CURRENT-SHA"}
+#+end_src
+
+If you want to pull Triangulum into a [[https://babashka.org][Babashka]] script, you can do so
+with ~babashka.deps~ as follows:
+
+#+begin_src clojure
+(require '[babashka.deps :refer [add-deps]])
+
+(add-deps '{:deps {sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
+                                       :git/sha "REPLACE-WITH-CURRENT-SHA"}}})
 #+end_src
 
 2. Define one or more aliases for Triangulum's utility scripts in the
@@ -23,7 +33,7 @@ NOTE: You can find examples of these aliases in the ~deps.example.edn~ file in t
 
 3. Configure the Triangulum features you want to use in a ~config.edn~ file in the root directory of your repository.
 
-   Two syntaxes are provided for this file, one with nested keywords and one with namespaced keywords. You can see examples of the available features in ~config.example.edn~ and ~config2.example.edn~ within this repository.
+   Two syntaxes are provided for this file, one with nested keywords and one with namespaced keywords. You can see examples of the available features in ~config.nested-example.edn~ and ~config.namespaced-example.edn~ within this repository.
 
 ** Running Tests
 
@@ -162,7 +172,6 @@ Triangulum's ~config.edn~.
   {:triangulum.views/client-keys {:token "client-token" }}}
 #+end_src
 
-
 *** triangulum.git
 
 You can provide ~:tags-url~, which is a url to the git tags page of
@@ -291,7 +300,7 @@ To make organizing an application's configurations simpler, create a
    ...}
 #+end_src
 
-You can find an up-to-date example in ~config.example.edn~ file. It can be used as a configuration template for your project.
+You can find an up-to-date example in ~config.nested-example.edn~ file. It can be used as a configuration template for your project.
 
 Add config.edn to your ~.gitignore~ file to keep sensitive information out of
 the git history.
@@ -359,7 +368,7 @@ certificate is renewed, any script in ~/etc/letsencrypt/renewal-hooks/deploy~
 will be run automatically to repackage the updated certificate into the correct
 format.
 
-**** Default renewal hook
+**** Default Renewal Hook
 
 If certbot runs successfully and --cert-only is not specified, then a shell script
 [mydomain].sh will be created in the certbot deploy hooks folder.
@@ -374,7 +383,7 @@ shell:
 sudo clojure -M:https package-cert -d mydomain.com [-p certbot-dir]
 #+end_src
 
-**** Custom renewal hook
+**** Custom Renewal Hook
 
 Create a shell script in ~/etc/letsencrypt/renewal-hooks/deploy~ and update permissions.
 

@@ -11,7 +11,7 @@
   [try-fn message]
   (try (try-fn)
        (catch Exception e
-         (log (ex-message e))
+         (log (ex-message e) :truncate? false)
          (let [causes (conj (:causes (ex-data e) []) message)]
            (throw (ex-info message {:causes causes}))))))
 

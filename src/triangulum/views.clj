@@ -36,7 +36,7 @@
 (s/def ::client-keys       map?)
 
 (defn find-cljs-app-js
-  "Pull "
+  "Returns the relative path of the compiled ClojureScript app.js file."
   []
   (as-> (slurp "target/public/cljs/manifest.edn") app
     (edn/read-string app)

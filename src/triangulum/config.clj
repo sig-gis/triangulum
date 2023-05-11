@@ -42,7 +42,9 @@
 (def ^:private config-cache (atom nil))
 (def ^:private ns->un-mapping
   "Converts namespaces into their equivalent unnamespaced keys."
-  {:views :app, :email :mail})
+  {:views  :app
+   :email  :mail
+   :worker :server})
 (def ^:private un->ns-mapping
   "Convers unnamespaced keys into their equivalent namespaces."
   (reverse-map ns->un-mapping))
@@ -163,8 +165,8 @@
 
 (defn valid-config?
   "Validates `file` as a configuration file."
-  [{:keys [file] :or {file @config-file}}]
-  (map? (read-config file)))
+  [{:keys [file]}]
+  (map? (read-config (or file @config-file))))
 
 (def ^:private cli-options
   {:file ["-f" "--file FILE" "Configuration file to validate."]})

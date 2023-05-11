@@ -2,7 +2,7 @@
 
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
         sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
-                             :sha     "REPLACE-WITH-CURRENT-SHA"}}
+                             :git/sha "REPLACE-WITH-CURRENT-SHA"}}
 
  :aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}
            :config   {:main-opts ["-m" "triangulum.config"]}

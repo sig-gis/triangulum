@@ -3,14 +3,11 @@
  :triangulum.server/https-port        8443
  :triangulum.server/nrepl             false
  :triangulum.server/nrepl-port        5555
- :triangulum.server/nrepl-host        "127.0.0.1"
+ :triangulum.server/nrepl-bind        "127.0.0.1"
  :triangulum.server/cider-nrepl       true
  :triangulum.server/mode              "dev"
  :triangulum.server/log-dir           "logs"
  :triangulum.server/handler           product-ns.routing/handler
- :triangulum.server/workers           [{:triangulum.worker/name  "scheduler"
-                                        :triangulum.worker/start product-ns.jobs/start-scheduled-jobs!
-                                        :triangulum.worker/stop  product-ns.jobs/stop-scheduled-jobs!}]
  :triangulum.server/keystore-file     "keystore.pkcs12"
  :triangulum.server/keystore-type     "pkcs12"
  :triangulum.server/keystore-password "foobar"
@@ -19,8 +16,13 @@
  :triangulum.handler/session-key      "changeme12345678" ; must be 16 characters
  :triangulum.handler/bad-tokens       #{".php"}
 
+ ;; workers (server)
+ :triangulum.worker/workers           [{:triangulum.worker/name  "scheduler"
+                                        :triangulum.worker/start product-ns.jobs/start-scheduled-jobs!
+                                        :triangulum.worker/stop  product-ns.jobs/stop-scheduled-jobs!}]
+
  ;; response (server)
- :triangulum.response/response-type   :json
+ :triangulum.response/response-type   :json ; :edn or :transit
 
  ;; views (app)
  :triangulum.views/title              {:en "Product name in English"
@@ -76,16 +78,4 @@
  :product-ns.py-interop/ee-key-path   "gee-auth-key.json"
  :product-ns.views/mapbox-token       "pk..."
  :product-ns.views/mapquest-key       "GF..."
- :product-ns.proxy/nicfi-key          "e5..."
-
- ;; other 
- ;; :triangulum.systemd
- ;; :triangulum.config
- ;; :triangulum.deploy
- ;; :tirangulum.cli
- ;; :tirangulum.errors
- ;; :tirangulum.utils
- ;; :triangulum.type-conversion
- ;; :tirangulum.notify
- ;; :tirangulum.logging
- }
+ :product-ns.proxy/nicfi-key          "e5..."}

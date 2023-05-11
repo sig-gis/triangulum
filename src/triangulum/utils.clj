@@ -7,22 +7,33 @@
             [triangulum.logging :refer [log-str]])
   (:import java.io.ByteArrayOutputStream))
 
-;; Text parsing
+;;; Text parsing
 
 (defn kebab->snake
-  "kebab-str -> snake_str"
+  "Converts kebab-str to snake_str."
   [kebab-str]
   (str/replace kebab-str "-" "_"))
 
 (defn kebab->camel
-  "kebab-str -> camelCaseStr"
-  [k]
-  (let [words (str/split (name k) #"-")]
+  "Converts kebab-string to camelString."
+  [kebab-string]
+  (let [words (-> kebab-string
+                  (str/lower-case)
+                  (str/split #"-"))]
     (->> (map str/capitalize (rest words))
-         (apply str (first words)))))
+         (cons (first words))
+         (str/join ""))))
+
+(defn camel->kebab
+  "Converts camelString to kebab-string."
+  [camel-string]
+  (as-> camel-string text
+    (str/split text #"(?<=[a-z])(?=[A-Z])")
+    (map str/lower-case text)
+    (str/join "-" text)))
 
 (defn format-str
-  "Use any char after % for format. All % are converted to %s (string)"
+  "Use any char after % for format. All % are converted to %s (string)."
   [f-str & args]
   (apply format (str/replace f-str #"(%[^ ])" "%s") args))
 
@@ -70,7 +81,7 @@
     (subs s 0 (- (count s) (count end)))
     s))
 
-;; Shell commands
+;;; Shell commands
 
 (defn shell-wrapper
   "A wrapper around babashka.process/shell that logs the output and errors.
@@ -123,7 +134,7 @@
           ""
           commands))
 
-;; Response building
+;;; Response building
 
 (defn- clj->transit
   "Converts a clj body to transit."
@@ -134,8 +145,8 @@
     (.toString out)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
-(defn data-response
-  "DEPRECATED: Use 'triangulum.response/data-response' instead.
+(defn ^:deprecated data-response
+  "DEPRECATED: Use [[triangulum.response/data-response]] instead.
    Create a response object.
    Body is required. Status, type, and session are optional.
    When a type keyword is passed, the body is converted to that type,

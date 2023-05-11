@@ -11,62 +11,29 @@
             [triangulum.handler  :refer [create-handler-stack]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.notify   :refer [available? ready!]]
-            [triangulum.utils    :refer [resolve-foreign-symbol]]))
-
-(defonce ^:private server       (atom nil))
-(defonce ^:private nrepl-server (atom nil))
-(defonce ^:private workers      (atom {}))
-
-(def ^:private ks-scan-interval 60) ; seconds
+            [triangulum.utils    :refer [resolve-foreign-symbol]]
+            [triangulum.worker   :refer [start-workers! stop-workers!]]))
 
 ;; spec
 
 (s/def ::http-port         ::config/port)
 (s/def ::https-port        ::config/port)
 (s/def ::nrepl-port        ::config/string)
-(s/def ::nrepl-host        ::config/string)
+(s/def ::nrepl-bind        ::config/string)
 (s/def ::nrepl             boolean?)
 (s/def ::cider-nrepl       boolean?)
 (s/def ::mode              (s/and ::config/string #{"dev" "prod"}))
 (s/def ::log-dir           ::config/string)
 (s/def ::handler            ::config/namespaced-symbol)
-(s/def ::nested-worker     (s/keys :req-un [:start :stop]))
-
-(s/def ::namespaced-worker (s/keys :req [:triangulum.worker/name
-                                         :triangulum.worker/start
-                                         :triangulum.worker/stop]))
-(s/def ::workers           (s/or :map    (s/map-of keyword? ::nested-worker)
-                                 :vector (s/coll-of ::namespaced-worker :kind vector?)))
 (s/def ::keystore-file     ::config/string)
 (s/def ::keystore-type     ::config/string)
 (s/def ::keystore-password ::config/string)
 
-;;===============================================
-;; Workers
-;;===============================================
+;; state
 
-(defn- start-workers! [worker-map]
-  (reset! workers
-          (reduce-kv (fn [acc worker-name {:keys [start]}]
-                       (let [value (try
-                                     (let [start-fn (resolve-foreign-symbol start)]
-                                       (start-fn))
-                                     (catch Exception e
-                                       (log-str "Error starting worker "
-                                                worker-name ": " (ex-message e))
-                                       e))]
-                         (assoc-in acc [worker-name :value] value)))
-                     worker-map
-                     worker-map)))
-
-(defn- stop-workers! []
-  (doseq [[worker-name {:keys [stop value]}] @workers]
-    (when (and stop (not (instance? Exception value)))
-      (try
-        (let [stop-fn (resolve-foreign-symbol stop)]
-          (stop-fn value))
-        (catch Exception e
-          (log-str "Error stopping worker " worker-name ": " (ex-message e)))))))
+(defonce ^:private server       (atom nil))
+(defonce ^:private nrepl-server (atom nil))
+(def ^:private ks-scan-interval 60) ; seconds
 
 ;;===============================================
 ;; Actions
@@ -75,9 +42,10 @@
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn start-server!
   "See README.org -> Web Framework -> triangulum.server for details."
-  [{:keys [http-port https-port nrepl cider-nrepl nrepl-port mode log-dir
+  [{:keys [http-port https-port nrepl cider-nrepl nrepl-bind nrepl-port mode log-dir
            handler workers keystore-file keystore-type keystore-password]
-    :or {nrepl-port        5555
+    :or {nrepl-bind        "127.0.0.1"
+         nrepl-port        5555
          keystore-file     "./.key/keystore.pkcs12"
          keystore-type     "pkcs12"
          keystore-password "foobar"}}]
@@ -112,11 +80,11 @@
       :else
       (do
         (when nrepl
-          (println "Starting nREPL server on port" nrepl-port)
-          (reset! nrepl-server (nrepl-server/start-server :port nrepl-port)))
+          (println "Starting nREPL server on" (str nrepl-bind ":" nrepl-port))
+          (reset! nrepl-server (nrepl-server/start-server :bind nrepl-bind :port nrepl-port)))
         (when cider-nrepl
-          (println "Starting CIDER nREPL server on port" nrepl-port)
-          (reset! nrepl-server (nrepl-server/start-server :port nrepl-port :handler cider-nrepl-handler)))
+          (println "Starting CIDER nREPL server on" (str nrepl-bind ":" nrepl-port))
+          (reset! nrepl-server (nrepl-server/start-server :bind nrepl-bind :port nrepl-port :handler cider-nrepl-handler)))
         (when (seq workers)
           (println "Starting worker jobs")
           (start-workers! workers))
@@ -149,16 +117,18 @@
 
 (defn stop-running-server!
   "Sends stop-server! call to the nrepl server"
-  [{:keys [nrepl-port]}]
+  [{:keys [nrepl-bind nrepl-port]}]
   (send-to-nrepl-server! "(do (require '[triangulum.server :as server]) (server/stop-server!))"
                          (cond-> {}
+                           nrepl-bind (assoc :host nrepl-bind)
                            nrepl-port (assoc :port nrepl-port))))
 
 (defn reload-running-server!
-  "Reloads the server namespace"
-  [{:keys [nrepl-port]}]
+  "Reloads the server namespace and its dependencies"
+  [{:keys [nrepl-bind nrepl-port]}]
   (send-to-nrepl-server! "(require 'triangulum.server :reload-all)"
                          (cond-> {}
+                           nrepl-bind (assoc :host nrepl-bind)
                            nrepl-port (assoc :port nrepl-port))))
 
 ;;===============================================
@@ -175,6 +145,7 @@
                       :parse-fn ensure-int]
    :nrepl-port       ["-n" "--nrepl-port PORT" "Port for an nREPL server (e.g., 5555)"
                       :parse-fn ensure-int]
+   :nrepl-bind       ["-b" "--nrepl-bind IP" "IP address to bind nREPL server (eg., 127.0.0.1)"]
    :nrepl            ["-r" "--nrepl" "Launch an nREPL server (on nrepl-port or 5555)"]
    :cider-nrepl      ["-c" "--cider-nrepl" "Launch a CIDER nREPL server (on nrepl-port or 5555)"]
    :mode             ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
