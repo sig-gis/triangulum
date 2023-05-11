@@ -1,7 +1,8 @@
 (ns triangulum.utils-test
   (:require [clojure.test        :refer [is deftest testing]]
-            [triangulum.response :refer [data-response]]
             [triangulum.utils    :refer [end-with
+                                         #_{:clj-kondo/ignore [:deprecated-var]}
+                                         data-response
                                          format-str
                                          kebab->snake
                                          filterm
@@ -33,6 +34,7 @@
     (is (= (parse-as-sh-cmd "psql -p 5432 -U=username -W")
            ["psql" "-p" "5432" "-U=username" "-W"]))))
 
+#_{:clj-kondo/ignore [:deprecated-var]}
 (deftest data-response-test
   (testing "Defaults to status 200, body encoded as edn"
     (let [res (data-response {:message "Hello world"})]
