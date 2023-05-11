@@ -1,6 +1,7 @@
 (ns triangulum.utils
   (:require [babashka.process   :refer [shell]]
             [clojure.data.json  :as json]
+            [clojure.java.shell :as sh]
             [clojure.set        :as set]
             [clojure.string     :as str]
             [cognitect.transit  :as transit]
@@ -133,6 +134,17 @@
               (str acc (when verbose out) err)))
           ""
           commands))
+
+(defn sh-exec-with
+  "Provides a path (`dir`) and environment (`env`) to one bash `command`
+   and executes it. Returns a map in the following format:
+   `{:exit 0 :out 'Output message\n' :err ''}`"
+  [dir env command]
+  (-> (shell-wrapper {:dir dir
+                      :extra-env env
+                      :log false}
+                     command)
+      (select-keys [:exit :out :err])))
 
 ;;; Response building
 
