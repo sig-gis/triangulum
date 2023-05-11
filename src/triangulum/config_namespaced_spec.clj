@@ -11,8 +11,8 @@
 (s/def ::server   (s/keys :req server-req
                           :opt server-opt))
 
-(s/def ::app      (s/keys  :req app-req
-                           :opt app-opt))
+(s/def ::app      (s/keys :req app-req
+                          :opt app-opt))
 
 (s/def ::database (s/keys :req database-req
                           :opt database-opt))

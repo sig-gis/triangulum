@@ -8,12 +8,12 @@
             [triangulum.config  :as config :refer [get-config]]
             [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
 
-;; spec 
+;; spec
 
 (s/def ::admin-pass ::config/string)
-(s/def ::dev-data boolean?)
-(s/def ::file ::config/string)
-(s/def ::verbose boolean?)
+(s/def ::dev-data   boolean?)
+(s/def ::file       ::config/string)
+(s/def ::verbose    boolean?)
 
 (def ^:private path-env (System/getenv "PATH"))
 

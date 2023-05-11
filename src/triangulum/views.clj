@@ -13,29 +13,27 @@
             [triangulum.errors   :refer [nil-on-error]]
             [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab->camel]]))
 
-;; sepc 
+;; spec
 
-;; views
-(s/def ::lang keyword?)
-(s/def ::localized-text (s/and map?
-                               (s/keys :req-un [::lang])
-                               (s/every-kv ::lang string?)))
-(s/def ::title ::localized-text)
-(s/def ::description ::localized-text)
-(s/def ::keywords ::localized-text)
-(s/def ::hiccup-tag keyword?)
-(s/def ::hiccup-attrs map?)
-(s/def ::hiccup-element (s/tuple ::hiccup-tag ::hiccup-attrs))
-(s/def ::extra-head-tags (s/coll-of ::hiccup-element :kind vector?))
-(s/def ::gtag-id (s/and ::config/string #(clojure.string/starts-with? % "G-")))
+(s/def ::lang              keyword?)
+(s/def ::localized-text    (s/map-of ::lang string?))
+(s/def ::title             ::localized-text)
+(s/def ::description       ::localized-text)
+(s/def ::keywords          ::localized-text)
+(s/def ::hiccup-tag        keyword?)
+(s/def ::hiccup-attrs      map?)
+(s/def ::hiccup-element    (s/cat :tag   ::hiccup-tag
+                                  :attrs (s/? ::hiccup-attrs)
+                                  :body  (s/? any?)))
+(s/def ::extra-head-tags   (s/coll-of ::hiccup-element :kind vector?))
+(s/def ::gtag-id           (s/and ::config/string #(str/starts-with? % "G-")))
 (s/def ::static-file-paths (s/coll-of ::config/static-file-path :kind vector?))
-(s/def ::static-css-files ::static-file-paths)
-(s/def ::static-js-files ::static-file-paths)
-(s/def ::get-user-lang ::config/namespaced-symbol)
-(s/def ::js-init ::config/static-file-path)
-(s/def ::cljs-init ::config/namespaced-symbol)
-(s/def ::client-keys map?)
-
+(s/def ::static-css-files  ::static-file-paths)
+(s/def ::static-js-files   ::static-file-paths)
+(s/def ::get-user-lang     ::config/namespaced-symbol)
+(s/def ::js-init           ::config/static-file-path)
+(s/def ::cljs-init         ::config/namespaced-symbol)
+(s/def ::client-keys       map?)
 
 (defn find-cljs-app-js
   "Pull "
@@ -249,28 +247,6 @@
                   (client-init (-> response-params :bundle-js-files last)
                                (:params request)
                                (:session request))])})))
-
-#_(defn render-page
-    [uri]
-    (fn [request]
-      {:status 200
-       :headers {"Content-Type" "text/html"}
-       :body (html5
-              [:head
-               #_[:script {:type "module"}
-                  "import { injectIntoGlobalHook } from \"/@react-refresh\";
-                     injectIntoGlobalHook(window);
-                     window.$RefreshReg$ = () => {};
-                     window.$RefreshSig$ = () => (type) => type;"]
-               [:script {:type "module"
-                         :src "http://localhost:5173/index.html?html-proxy&index=0.js"}]
-               #_[:script {:type "module" :src "http://localhost:5173/@vite/client"}]
-               #_[:meta {:charset "UTF-8"}] [:link {:rel "icon" :type "image/svg+xml" :href "/vite.svg"}]
-               #_[:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
-               #_[:title "Vite + React + TS + Emotion"]]
-              [:body
-               [:div#app]
-               (client-init nil (:params request) (:session request))])}))
 
 (defn not-found-page
   "Produces a not found response"
