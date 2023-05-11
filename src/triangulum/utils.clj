@@ -1,9 +1,9 @@
 (ns triangulum.utils
-  (:require [babashka.process :refer [shell]]
-            [clojure.data.json   :as json]
-            [clojure.set         :as set]
-            [clojure.string      :as str]
-            [cognitect.transit   :as transit]
+  (:require [babashka.process   :refer [shell]]
+            [clojure.data.json  :as json]
+            [clojure.set        :as set]
+            [clojure.string     :as str]
+            [cognitect.transit  :as transit]
             [triangulum.logging :refer [log-str]])
   (:import java.io.ByteArrayOutputStream))
 
@@ -72,8 +72,6 @@
 
 ;; Shell commands
 
-(def ^:private path-env (System/getenv "PATH"))
-
 (defn shell-wrapper
   "A wrapper around babashka.process/shell that logs the output and errors.
   Accepts an optional opts map as the first argument, followed by the command and its arguments.
@@ -82,7 +80,7 @@
   Usage:
   (shell-wrapper {} \"ls\" \"-l\") ; With an opts map
   (shell-wrapper \"ls\" \"-l\") ; Without an opts map
-  (shell-wrapper {:log? false} \"ls\" \"-l\") ; Disabling logging
+  (shell-wrapper {:log false} \"ls\" \"-l\") ; Disabling logging
 
   Examples:
   1. Logs the output and errors by default:
@@ -94,17 +92,36 @@
   3. Disabling logging using the :log? key in the opts map:
   (shell-wrapper {:log false} \"ls\" \"-l\")"
   [& args]
-  (let [opts            (if (map? (first args)) (first args) {})
-        cmd             (if (map? (first args)) (rest args) args)
-        log?            (get opts :log true)
-        result          (apply shell
-                               (assoc opts :out :string :err :string)
-                               cmd)]
+  (let [opts   (if (map? (first args)) (first args) {})
+        cmd    (if (map? (first args)) (rest args) args)
+        log?   (get opts :log true)
+        result (apply shell
+                      (merge opts
+                             {:continue true
+                              :out      :string
+                              :err      :string})
+                      cmd)]
     (when log?
-      (log-str "cmd: " (clojure.string/join " " (:cmd result)))
+      (log-str "cmd: " (str/join " " (:cmd result)))
       (some-> (:out result) not-empty (log-str "out: "))
       (some-> (:err result) not-empty (log-str "error: ")))
     result))
+
+(defn ^:deprecated sh-wrapper
+  "DEPRECATED: Use [[triangulum.utils/shell-wrapper]] instead.
+  Takes a directory, an environment, a verbosity flag, and bash commands.
+  Executes the commands using the given path and environment, then returns
+  the output (errors by default)."
+  [dir env verbose & commands]
+  (reduce (fn [acc cmd]
+            (let [{:keys [out err]} (shell-wrapper
+                                     {:dir       dir
+                                      :extra-env env
+                                      :log       false}
+                                     cmd)]
+              (str acc (when verbose out) err)))
+          ""
+          commands))
 
 ;; Response building
 

@@ -28,7 +28,7 @@ PrivateTmp=true
 WantedBy=multi-user.target
 "))
 
-(defn- enable-systemd [{:keys [repo http https dir prodcution]}]
+(defn- enable-systemd [{:keys [repo http https dir production]}]
   (let [service-name (str "cljweb-" repo)
         full-dir     (-> dir
                          (io/file)
@@ -47,7 +47,7 @@ WantedBy=multi-user.target
         (spit unit-file
               (format unit-file-template
                       repo-dir
-                      (if prodcution ":production" "")
+                      (if production ":production" "")
                       (if http (str "-p " http) "")
                       (if https (str "-P " https) "")))
         (shell-wrapper shell-opts
