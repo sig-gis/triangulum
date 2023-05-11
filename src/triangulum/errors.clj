@@ -7,7 +7,7 @@
   (throw (ex-info message {:causes [message]})))
 
 (defn try-catch-throw
-  "Runs an function if it throws, catches the exception and logs it and then throws an exception with augmented input message"
+  "Runs an function if it throws, catches the exception and logs it and then throws an exception with augmented input message."
   [try-fn message]
   (try (try-fn)
        (catch Exception e
@@ -16,6 +16,6 @@
            (throw (ex-info message {:causes causes}))))))
 
 (defmacro nil-on-error
-  "Catches exception and returns nil if its body throws an exception"
+  "Catches exception and returns nil if its body throws an exception."
   [& body]
   `(try ~@body (catch Exception e# nil)))

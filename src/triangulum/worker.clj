@@ -19,6 +19,7 @@
 ;; Actions
 ;;===============================================
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defn- start-worker [name start]
   (try
     (let [start-fn (resolve-foreign-symbol start)]
@@ -28,7 +29,17 @@
                name ": " (ex-message e))
       e)))
 
-(defmulti start-workers! (fn [workers] (if (map? workers) :nested :namespaced)))
+#_{:clj-kondo/ignore [:shadowed-var]}
+(defmulti start-workers!
+  "Starts a set of workers based on the provided configuration.
+  The workers parameter can be either a map (for nested workers) or a vector (for namespaced workers).
+  For nested workers, the map keys are worker names and values are maps with :start (a symbol representing the start function) and :stop keys. The start function is called to start the worker.
+  For namespaced workers, the vector elements are maps with ::name (the worker name), ::start (a symbol representing the start function), and ::stop keys. The start function is called to start each worker.
+  Arguments:
+   workers - a map or vector representing the workers to be started.
+  "
+  (fn [workers] (if (map? workers) :nested :namespaced)))
+
 
 (defmethod start-workers! :nested [worker-map]
   (reset! workers
@@ -38,7 +49,7 @@
                      worker-map
                      worker-map)))
 
-
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defmethod start-workers! :namespaced [worker-vec]
   (reset! workers
           (reduce (fn [acc {::keys [name start]}]
@@ -47,6 +58,7 @@
                   worker-vec
                   worker-vec)))
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defn- stop-worker! [name stop value]
   (when (and stop (not (instance? Exception value)))
     (try
@@ -55,12 +67,17 @@
       (catch Exception e
         (log-str "Error stopping worker " name ": " (ex-message e))))))
 
-(defmulti stop-workers! (fn [] (if (map? @workers) :nested :namespaced)))
+(defmulti stop-workers!
+  "Stops a set of currently running workers.
+  The workers to stop are determined based on the current state of the `workers` atom. If the `workers` atom contains a map, it's assumed to be holding nested workers. If it contains a vector, it's assumed to be holding namespaced workers.
+  The stop function is called with the value to stop each worker."
+  (fn [] (if (map? @workers) :nested :namespaced)))
 
 (defmethod stop-workers! :nested []
   (doseq [[worker-name {:keys [stop value]}] @workers]
     (stop-worker! worker-name stop value)))
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defmethod stop-workers! :namespaced []
   (doseq [{::keys [name stop value]} @workers]
     (stop-worker! name stop value)))

@@ -8,6 +8,7 @@
 
 (s/def ::response-type #{:json :edn :transit})
 
+#_{:clj-kondo/ignore [:deprecated-var]}
 (defn data-response
   "Creates a response object.
    Body is required. Status, type, and session are optional.
@@ -20,26 +21,26 @@
                          (assoc params :type (get-config :server :response-type)))))
 
 (defn json-response
-  "Creates a json response type"
+  "Creates a json response type."
   [body & [params]]
   (data-response body (assoc params :type :json)))
 
 (defn edn-response
-  "Creates an edn response type"
+  "Creates an edn response type."
   [body & [params]]
   (data-response body (assoc params :type :edn)))
 
 (defn transit-response
-  "Creates a transit response type"
+  "Creates a transit response type."
   [body & [params]]
   (data-response body (assoc params :type :transit)))
 
 (defn no-cross-traffic?
-  "Checks for cross traffic"
+  "Checks for cross traffic."
   [{:strs [referer host]}]
   (and referer host (str/includes? referer host)))
 
 (defn forbidden-response
-  "Returns a forbidden response"
+  "Returns a forbidden response."
   [_]
   (data-response "Forbidden" {:status 403}))

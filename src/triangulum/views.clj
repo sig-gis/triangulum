@@ -46,7 +46,7 @@
     (str "/cljs/" app)))
 
 (defn find-manifest
-  "Returns the manifest.json"
+  "Returns the manifest.json."
   []
   (if (= "dev" (get-config :server :mode))
     (loop [resp    (nil-on-error
@@ -69,7 +69,7 @@
         (json/read-str))))
 
 (defn cljs-project?
-  "Check if current project is a ClojureScript project"
+  "Check if current project is a ClojureScript project."
   []
   (get-config :app :cljs-init))
 
@@ -93,7 +93,7 @@
        :css-files css-asset-files})))
 
 (defn head
-  "Produces the head tag of the index page"
+  "Produces the head tag of the index page."
   [{:keys [bundle-js-files bundle-css-files lang]}]
   (let [{:keys [title description keywords extra-head-tags gtag-id static-css-files static-js-files]} (get-config :app)]
     [:head
@@ -135,7 +135,7 @@
         [:script {:type "module" :src "http://localhost:5173/@vite/client"}]))]))
 
 (defn uri->page
-  "Returns the JavaScript file home page"
+  "Returns the JavaScript file home page."
   [uri]
   (->> (str/split uri #"/")
        (remove str/blank?)
@@ -143,7 +143,7 @@
        ((fnil kebab->camel "home"))))
 
 (defn client-init
-  "Returns the script tag necessary to for the browser to load the app"
+  "Returns the script tag necessary to for the browser to load the app."
   [entry-file params session]
   (let [js-params  (-> params
                        (json/write-str))
@@ -213,7 +213,7 @@
                      11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
 
 (defn get-response-params
-  "Prepares the necessary dynamic assets and values needed to render the page"
+  "Prepares the necessary dynamic assets and values needed to render the page."
   [uri request]
   (let [page          (uri->page uri)
         asset-files   (find-bundle-asset-files page)
@@ -249,14 +249,14 @@
                                (:session request))])})))
 
 (defn not-found-page
-  "Produces a not found response"
+  "Produces a not found response."
   [request]
   (-> request
       ((render-page "/page-not-found"))
       (assoc :status 404)))
 
 (defn body->transit
-  "Produces a transit response body"
+  "Produces a transit response body."
   [body]
   (let [out    (ByteArrayOutputStream. 4096)
         writer (transit/writer out :json)]

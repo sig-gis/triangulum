@@ -1,13 +1,13 @@
 (ns triangulum.utils-test
-  (:require [clojure.test :refer [is deftest testing]]
-            [triangulum.utils :refer [data-response
-                                      end-with
-                                      format-str
-                                      kebab->snake
-                                      filterm
-                                      parse-as-sh-cmd
-                                      mapm
-                                      find-missing-keys]]))
+  (:require [clojure.test        :refer [is deftest testing]]
+            [triangulum.response :refer [data-response]]
+            [triangulum.utils    :refer [end-with
+                                         format-str
+                                         kebab->snake
+                                         filterm
+                                         parse-as-sh-cmd
+                                         mapm
+                                         find-missing-keys]]))
 
 (deftest end-with-test
   (testing "Appends end-value when string doesn't end with end-value."

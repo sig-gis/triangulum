@@ -12,12 +12,12 @@
 (s/def ::port ::config/port)
 
 (defn get-base-url
-  "Gets the homepage url"
+  "Gets the homepage url."
   []
   (:base-url (get-config :mail)))
 
 (defn email?
-  "Checks if string is email"
+  "Checks if string is email."
   [string]
   (let [pattern #"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"]
     (and (string? string) (re-matches pattern string))))
@@ -34,7 +34,7 @@
                :content body}]}))
 
 (defn send-mail
-  "Sends email (text or html) to given addresses"
+  "Sends email (text or html) to given addresses."
   [to-addresses cc-addresses bcc-addresses subject body content-type]
   (let [mime                    {:text "text/plain"
                                  :html "text/html"}

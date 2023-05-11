@@ -9,7 +9,7 @@
             [triangulum.cli      :refer [get-cli-options]]
             [triangulum.config   :as config :refer [get-config]]
             [triangulum.handler  :refer [create-handler-stack]]
-            [triangulum.logging  :refer [log-str set-log-path!]]
+            [triangulum.logging  :refer [set-log-path!]]
             [triangulum.notify   :refer [available? ready!]]
             [triangulum.utils    :refer [resolve-foreign-symbol]]
             [triangulum.worker   :refer [start-workers! stop-workers!]]))
@@ -93,7 +93,7 @@
         (when (available?) (ready!))))))
 
 (defn stop-server!
-  "Stops server with workers jobs"
+  "Stops server with workers jobs."
   []
   (set-log-path! "")
   (when @server
@@ -116,7 +116,7 @@
   (System/exit 0))
 
 (defn stop-running-server!
-  "Sends stop-server! call to the nrepl server"
+  "Sends stop-server! call to the nrepl server."
   [{:keys [nrepl-bind nrepl-port]}]
   (send-to-nrepl-server! "(do (require '[triangulum.server :as server]) (server/stop-server!))"
                          (cond-> {}
@@ -124,7 +124,7 @@
                            nrepl-port (assoc :port nrepl-port))))
 
 (defn reload-running-server!
-  "Reloads the server namespace and its dependencies"
+  "Reloads the server namespace and its dependencies."
   [{:keys [nrepl-bind nrepl-port]}]
   (send-to-nrepl-server! "(require 'triangulum.server :reload-all)"
                          (cond-> {}
@@ -161,7 +161,7 @@
    :reload {:description "Reloads namespaces into a running server."}})
 
 (defn -main
-  "Server entry main function"
+  "Server entry main function."
   [& args]
   (if-let [{:keys [action options]} (get-cli-options args
                                                      cli-options

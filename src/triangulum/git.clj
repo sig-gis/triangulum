@@ -13,7 +13,7 @@
 ;; Constants
 
 (def tags-url
-  "Gets repo tags url from config.edn"
+  "Gets repo tags url from config.edn."
   (get-config :app :tags-url))
 
 ;; Cache
@@ -39,7 +39,7 @@
 ;; Public Fns
 
 (defn current-version
-  "Return current latest tag version from the configured tags url of repo"
+  "Return current latest tag version from the configured tags url of repo."
   []
   (cond
     (nil? tags-url)         nil

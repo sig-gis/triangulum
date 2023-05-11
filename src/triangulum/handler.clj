@@ -54,7 +54,7 @@
       (handler request))))
 
 (defn wrap-request-logging
-  "Wrapper that logs the incoming requests"
+  "Wrapper that logs the incoming requests."
   [handler]
   (fn [request]
     (let [{:keys [uri request-method params]} request
@@ -63,7 +63,7 @@
       (handler request))))
 
 (defn wrap-response-logging
-  "Wrapper that logs served responses"
+  "Wrapper that logs served responses."
   [handler]
   (fn [request]
     (let [{:keys [status headers body] :as response} (handler request)
@@ -84,7 +84,7 @@
       response)))
 
 (defn wrap-exceptions
-  "Wrapper to manage exception handling, logging it and responding with 500 in case of an exception"
+  "Wrapper to manage exception handling, logging it and responding with 500 in case of an exception."
   [handler]
   (fn [request]
     (try
@@ -96,7 +96,7 @@
           (data-response cause {:status (or status 500)}))))))
 
 (defn parse-query-string
-  "Parses query strings and returns a params map"
+  "Parses query strings and returns a params map."
   [query-string]
   (let [keyvals (-> (url-decode query-string)
                     (str/split #"&"))]
@@ -108,7 +108,7 @@
             keyvals)))
 
 (defn wrap-edn-params
-  "Wrapper that parses request query strings and puts in :params request map"
+  "Wrapper that parses request query strings and puts in :params request map."
   [handler]
   (fn [{:keys [content-type request-method query-string body params] :as request}]
     (if (= content-type "application/edn")
@@ -126,7 +126,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn optional-middleware
-  "Conditionally apply a middleware"
+  "Conditionally apply a middleware."
   [handler mw use?]
   (if use?
     (mw handler)
@@ -164,6 +164,7 @@
       (optional-middleware wrap-reload reload?)))
 
 (def development-app
+  "Handler function for development (figwheel)."
   (create-handler-stack
    (fn [request]
      (let [user-handler (-> (get-config :server :handler)
