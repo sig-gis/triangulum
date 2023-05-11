@@ -1,7 +1,6 @@
 (ns triangulum.utils
   (:require [babashka.process   :refer [shell]]
             [clojure.data.json  :as json]
-            [clojure.java.shell :as sh]
             [clojure.set        :as set]
             [clojure.string     :as str]
             [cognitect.transit  :as transit]
