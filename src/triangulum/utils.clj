@@ -1,11 +1,11 @@
 (ns triangulum.utils
+  (:import java.io.ByteArrayOutputStream)
   (:require [babashka.process   :refer [shell]]
             [clojure.data.json  :as json]
             [clojure.set        :as set]
             [clojure.string     :as str]
             [cognitect.transit  :as transit]
-            [triangulum.logging :refer [log-str]])
-  (:import java.io.ByteArrayOutputStream))
+            [triangulum.logging :refer [log-str]]))
 
 ;;; Text parsing
 
