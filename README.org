@@ -281,15 +281,15 @@ To make organizing an application's configurations simpler, create a
 
 #+begin_src clojure
   ;; config.edn
-  {:database {:host     "localhost"
-              :port     5432
-              :dbname   "dbname"
-              :user     "user"
-              :password "super-secret-password"}
-   :mail     {:host "smtp.gmail.com"
-              :user "test@example.com"
-              :pass "3492734923742"
-              :port 587}
+  {:database {:host           "localhost"
+              :port           5432
+              :dbname         "dbname"
+              :user           "user"
+              :password       "super-secret-password"}
+   :mail     {:host           "smtp.gmail.com"
+              :user           "test@example.com"
+              :pass           "3492734923742"
+              :port           587}
    :server   {:host           "smtp.gmail.com"
               :user           ""
               :pass           ""

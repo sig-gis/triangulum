@@ -1,4 +1,4 @@
-{:paths ["src" "resources"]
+{:paths ["src/clj" "src/cljs" "resources"]
 
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
         sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
