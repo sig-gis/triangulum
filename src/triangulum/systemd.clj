@@ -28,7 +28,7 @@ PrivateTmp=true
 WantedBy=multi-user.target
 "))
 
-(defn- enable-systemd [{:keys [repo http https dir production]}]
+(defn- enable-systemd [{:keys [repo http https dir extra-aliases]}]
   (let [service-name (str "cljweb-" repo)
         full-dir     (-> dir
                          (io/file)
@@ -46,7 +46,7 @@ WantedBy=multi-user.target
         (spit unit-file
               (format unit-file-template
                       repo-dir
-                      (if production ":production" "")
+                      (or extra-aliases "")
                       (if http (str "-p " http) "")
                       (if https (str "-P " https) "")))
         (shell-wrapper shell-opts user-systemctl "daemon-reload")
@@ -63,15 +63,14 @@ WantedBy=multi-user.target
   (shell-wrapper shell-opts user-systemctl (name command) (str "cljweb-" repo) "--all"))
 
 (def ^:private cli-options
-  {:all        ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
-   :dir        ["-d" "--dir DIR" "Optional path to repo directory when enabling the service. Will default to the current directory."
-                :default "./"]
-   :production ["-t" "--production" "Setup server to run with :production flag."
-                :default false]
-   :http       ["-p" "--http HTTP" "Optional http port to run the server."]
-   :https      ["-P" "--https HTTPS" "Optional https port to run the server."]
-   :repo       ["-r" "--repo REPO" "Repository folder that contains deps.edn.  This will be used to name the service"]
-   :user       ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."]})
+  {:all           ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
+   :dir           ["-d" "--dir DIR" "Optional path to repo directory when enabling the service. Will default to the current directory."
+                   :default "./"]
+   :extra-aliases ["-A" "--extra-aliases" "Setup server to run with extra aliases from deps.edn."]
+   :http          ["-p" "--http HTTP" "Optional http port to run the server."]
+   :https         ["-P" "--https HTTPS" "Optional https port to run the server."]
+   :repo          ["-r" "--repo REPO" "Repository folder that contains deps.edn.  This will be used to name the service"]
+   :user          ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."]})
 
 (def ^:private cli-actions
   {:disable {:description "Disable systemd service."
