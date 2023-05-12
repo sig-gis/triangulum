@@ -226,7 +226,7 @@
      :lang             lang}))
 
 (defn render-page
-  "Returns the page's html"
+  "Returns the page's html."
   [uri]
   (fn [request]
     (let [response-params (when (= "prod" (get-config :server :mode))
