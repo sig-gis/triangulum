@@ -5,12 +5,12 @@
             [triangulum.logging :refer [log-str]]
             [triangulum.utils   :refer [end-with remove-end shell-wrapper]]))
 
-(def ^:private user-home (System/getProperty "user.home"))
-(def ^:private xdg-runtime-dir (str "/run/user/" (-> (shell-wrapper {:log false} "id -u") :out str/split-lines first)))
-(def ^:private shell-opts {:dir       "/"
-                           :extra-env {"XDG_RUNTIME_DIR" xdg-runtime-dir}})
-(def ^:private user-systemctl    "systemctl --user ")
-(def ^:private user-systemd-path (str user-home "/.config/systemd/user/multi-user.target.wants/"))
+(def ^:private user-home          (System/getProperty "user.home"))
+(def ^:private xdg-runtime-dir    (str "/run/user/" (-> (shell-wrapper {:log false} "id -u") :out str/split-lines first)))
+(def ^:private shell-opts         {:dir       "/"
+                                   :extra-env {"XDG_RUNTIME_DIR" xdg-runtime-dir}})
+(def ^:private user-systemctl     "systemctl --user ")
+(def ^:private user-systemd-path  (str user-home "/.config/systemd/user/multi-user.target.wants/"))
 (def ^:private unit-file-template (str/trim "
 [Unit]
 Description=A service to launch a server written in clojure

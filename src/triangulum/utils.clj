@@ -124,14 +124,14 @@
   Takes a directory, an environment, a verbosity flag, and bash commands.
   Executes the commands using the given path and environment, then returns
   the output (errors by default)."
-  [dir env verbose & commands]
+  [dir env verbose? & commands]
   (reduce (fn [acc cmd]
             (let [{:keys [out err]} (shell-wrapper
                                      {:dir       dir
                                       :extra-env env
                                       :log       false}
                                      cmd)]
-              (str acc (when verbose out) err)))
+              (str acc (when verbose? out) err)))
           ""
           commands))
 
