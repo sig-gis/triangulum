@@ -4,7 +4,7 @@
             [clojure.set        :as set]
             [clojure.string     :as str]
             [cognitect.transit  :as transit]
-            [triangulum.logging :refer [log-str]])
+            [triangulum.logging :refer [log]])
   (:import java.io.ByteArrayOutputStream))
 
 ;;; Text parsing
@@ -111,11 +111,12 @@
                              {:continue true
                               :out      :string
                               :err      :string})
-                      cmd)]
+                      cmd)
+        log-fn #(log % :truncate? false)]
     (when log?
-      (log-str "cmd: " (str/join " " (:cmd result)))
-      (some-> (:out result) not-empty (log-str "out: "))
-      (some-> (:err result) not-empty (log-str "error: ")))
+      (log (str "cmd: " (str/join " " (:cmd result))))
+      (some->> (:out result) (not-empty) (str "out: ") (log-fn))
+      (some->> (:err result) (not-empty) (str "error: ") (log-fn)))
     result))
 
 (defn ^:deprecated sh-wrapper
