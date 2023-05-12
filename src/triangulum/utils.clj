@@ -86,12 +86,12 @@
 (defn shell-wrapper
   "A wrapper around babashka.process/shell that logs the output and errors.
   Accepts an optional opts map as the first argument, followed by the command and its arguments.
-  The :log key in the opts map can be used to control logging (default is true).
+  The :log? key in the opts map can be used to control logging (default is true).
 
   Usage:
   (shell-wrapper {} \"ls\" \"-l\") ; With an opts map
   (shell-wrapper \"ls\" \"-l\") ; Without an opts map
-  (shell-wrapper {:log false} \"ls\" \"-l\") ; Disabling logging
+  (shell-wrapper {:log? false} \"ls\" \"-l\") ; Disabling logging
 
   Examples:
   1. Logs the output and errors by default:
@@ -101,11 +101,11 @@
   (shell-wrapper \"ls\" \"-l\")
 
   3. Disabling logging using the :log? key in the opts map:
-  (shell-wrapper {:log false} \"ls\" \"-l\")"
+  (shell-wrapper {:log? false} \"ls\" \"-l\")"
   [& args]
   (let [opts   (if (map? (first args)) (first args) {})
         cmd    (if (map? (first args)) (rest args) args)
-        log?   (get opts :log true)
+        log?   (get opts :log? true)
         result (apply shell
                       (merge opts
                              {:continue true
@@ -129,7 +129,7 @@
             (let [{:keys [out err]} (shell-wrapper
                                      {:dir       dir
                                       :extra-env env
-                                      :log       false}
+                                      :log?      false}
                                      cmd)]
               (str acc (when verbose? out) err)))
           ""
@@ -142,7 +142,7 @@
   [dir env command]
   (-> (shell-wrapper {:dir dir
                       :extra-env env
-                      :log false}
+                      :log? false}
                      command)
       (select-keys [:exit :out :err])))
 

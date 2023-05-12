@@ -533,7 +533,7 @@ Removes a specified string from the end of another string, if it is there.
 ***** Shell Commands
 ****** shell-wrapper
 
-A wrapper around ~babashka.process/shell~ that logs the output and errors. Accepts an optional opts map as the first argument, followed by the command and its arguments. The ~:log~ key in the opts map can be used to control logging (default is true).
+A wrapper around ~babashka.process/shell~ that logs the output and errors. Accepts an optional opts map as the first argument, followed by the command and its arguments. The ~:log?~ key in the opts map can be used to control logging (default is true).
 
 ****** DEPRECATED: sh-wrapper
 
