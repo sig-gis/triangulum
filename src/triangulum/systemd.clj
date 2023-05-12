@@ -3,7 +3,6 @@
   (:require [clojure.java.io    :as io]
             [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.logging :refer [log-str]]
             [triangulum.utils   :refer [end-with remove-end shell-wrapper]]))
 
 (def ^:private user-home          (System/getProperty "user.home"))
@@ -44,7 +43,6 @@ WantedBy=multi-user.target
     (if (.exists (io/file repo-dir "deps.edn"))
       (do
         (io/make-parents unit-file)
-        (log-str "unit-file" unit-file)
         (spit unit-file
               (format unit-file-template
                       repo-dir
