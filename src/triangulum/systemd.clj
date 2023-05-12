@@ -1,4 +1,5 @@
 (ns triangulum.systemd
+  (:import com.sun.security.auth.module.UnixSystem)
   (:require [clojure.java.io    :as io]
             [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
@@ -6,7 +7,7 @@
             [triangulum.utils   :refer [end-with remove-end shell-wrapper]]))
 
 (def ^:private user-home          (System/getProperty "user.home"))
-(def ^:private xdg-runtime-dir    (str "/run/user/" (-> (shell-wrapper {:log false} "id -u") :out str/split-lines first)))
+(def ^:private xdg-runtime-dir    (str "/run/user/" (.getUid (UnixSystem.))))
 (def ^:private shell-opts         {:dir       "/"
                                    :extra-env {"XDG_RUNTIME_DIR" xdg-runtime-dir}})
 (def ^:private user-systemctl     "systemctl --user ")
