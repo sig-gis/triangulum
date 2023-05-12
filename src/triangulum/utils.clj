@@ -114,7 +114,7 @@
                       cmd)
         log-fn #(log % :truncate? false)]
     (when log?
-      (log (str "cmd: " (str/join " " (:cmd result))))
+      (log-fn (str "cmd: " (str/join " " (:cmd result))))
       (some->> (:out result) (not-empty) (str "out: ") (log-fn))
       (some->> (:err result) (not-empty) (str "error: ") (log-fn)))
     result))
