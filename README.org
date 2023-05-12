@@ -11,29 +11,33 @@ A Clojure library that provides:
 1. Add the library's coordinates to the ~:deps~ map in your project's
    ~deps.edn~ file:
 
-#+begin_src clojure
-sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
-                    :git/sha "REPLACE-WITH-CURRENT-SHA"}
-#+end_src
+   #+begin_src clojure
+   sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
+                       :git/sha "REPLACE-WITH-CURRENT-SHA"}
+   #+end_src
 
-If you want to pull Triangulum into a [[https://babashka.org][Babashka]] script, you can do so
-with ~babashka.deps~ as follows:
+   If you want to pull Triangulum into a [[https://babashka.org][Babashka]] script, you can do
+   so with ~babashka.deps~ as follows:
 
-#+begin_src clojure
-(require '[babashka.deps :refer [add-deps]])
+   #+begin_src clojure
+   (require '[babashka.deps :refer [add-deps]])
 
-(add-deps '{:deps {sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
-                                       :git/sha "REPLACE-WITH-CURRENT-SHA"}}})
-#+end_src
+   (add-deps '{:deps {sig-gis/triangulum {:git/url "https://github.com/sig-gis/triangulum"
+                                          :git/sha "REPLACE-WITH-CURRENT-SHA"}}})
+   #+end_src
 
 2. Define one or more aliases for Triangulum's utility scripts in the
    ~:aliases~ map in your project's ~deps.edn file~.
 
-NOTE: You can find examples of these aliases in the ~deps.example.edn~ file in the root directory of this repository.
+   NOTE: You can find examples of these aliases in the
+   ~deps.example.edn~ file in the root directory of this repository.
 
 3. Configure the Triangulum features you want to use in a ~config.edn~ file in the root directory of your repository.
 
-   Two syntaxes are provided for this file, one with nested keywords and one with namespaced keywords. You can see examples of the available features in ~config.nested-example.edn~ and ~config.namespaced-example.edn~ within this repository.
+   Two syntaxes are provided for this file, one with nested keywords
+   and one with namespaced keywords. You can see examples of the
+   available features in ~config.nested-example.edn~ and
+   ~config.namespaced-example.edn~ within this repository.
 
 ** Running Tests
 
@@ -52,82 +56,88 @@ file logging system, and worker functions for non-HTTP-related tasks.
 
 1. In config.edn:
 
-#+begin_src clojure
- :server   {:http-port         8080
-            :https-port        8443   ; Only if you also include the keystore fields below
-            :nrepl-port        5555   ; Must be paired with either :nrepl or :cider-repl below
-            :nrepl             false  ; For a vanilla nrepl
-            :cider-nrepl       true   ; If your editor supports CIDER middleware
-            :mode              "dev"  ; or prod
-            :log-dir           "logs" ; or "" for stdout
-            :handler           product-ns.routing/handler
-            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
-                                            :stop  product-ns.jobs/stop-scheduled-jobs!}}
-            :response-type     :json ; #{:json :edn :transit}
-            :session-key       "changeme12345678"
-            :bad-tokens        #{".php"} ; Reject URLs containing these strings
-            :keystore-file     "keystore.pkcs12" ; Contains your SSL certificate(s)
-            :keystore-type     "pkcs12"
-            :keystore-password "foobar"}
-#+end_src
+   #+begin_src clojure
+    :server   {:http-port         8080
+               :https-port        8443      ; Only if you also include the keystore fields below
+               :nrepl-bind        127.0.0.1 ; Must be paired with either :nrepl or :cider-repl below
+               :nrepl-port        5555      ; Must be paired with either :nrepl or :cider-repl below
+               :nrepl             false     ; For a vanilla nrepl
+               :cider-nrepl       true      ; If your editor supports CIDER middleware
+               :mode              "dev"     ; or prod
+               :log-dir           "logs"    ; or "" for stdout
+               :handler           product-ns.routing/handler
+               :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
+                                               :stop  product-ns.jobs/stop-scheduled-jobs!}}
+               :response-type     :json ; #{:json :edn :transit}
+               :session-key       "changeme12345678"
+               :bad-tokens        #{".php"} ; Reject URLs containing these strings
+               :keystore-file     "keystore.pkcs12" ; Contains your SSL certificate(s)
+               :keystore-type     "pkcs12"
+               :keystore-password "foobar"}
+   #+end_src
 
 2. At the command line:
 
-Start the server:
+   Start the server:
 
-#+begin_src sh
-clojure -M:server start
-#+end_src
+   #+begin_src sh
+   clojure -M:server start
+   #+end_src
 
-Stop the server (requires ~:nrepl~ or ~:cider-nrepl~):
+   Stop the server (requires ~:nrepl~ or ~:cider-nrepl~):
 
-#+begin_src sh
-clojure -M:server stop
-#+end_src
+   #+begin_src sh
+   clojure -M:server stop
+   #+end_src
 
-Reload your namespaces into the running JVM (requires ~:nrepl~ or ~:cider-nrepl~):
+   Reload your namespaces into the running JVM (requires ~:nrepl~ or ~:cider-nrepl~):
 
-#+begin_src sh
-clojure -M:server reload
-#+end_src
+   #+begin_src sh
+   clojure -M:server reload
+   #+end_src
 
-NOTES:
-- To use ~:https-port~, you must also specify ~:keystore-file~, ~:keystore-type~, and ~:keystore-password~.
-- You may not use both ~:nrepl~ and ~:cider-nrepl~ at the same time.
-- The ~:start~ functions for all ~:workers~ will be run before the web server is started.
-- The ~:stop~ functions for all ~:workers~ will be run after the web server is stopped.
-- Before starting the server, you must set ~:handler~ to a namespace-qualified symbol bound to a Ring handler function.
-- If you set ~:mode~ to ~"dev"~, then the ~wrap-reload~ middleware will be added to your handler function. This will automatically reload all of your namespaces into the running JVM on each HTTP request.
+   NOTES:
+   - To use ~:https-port~, you must also specify ~:keystore-file~, ~:keystore-type~, and ~:keystore-password~.
+   - You may not use both ~:nrepl~ and ~:cider-nrepl~ at the same time.
+   - The ~:start~ functions for all ~:workers~ will be run before the web server is started.
+   - The ~:stop~ functions for all ~:workers~ will be run after the web server is stopped. They will receive the outputs of the ~:start~ functions.
+   - Before starting the server, you must set ~:handler~ to a namespace-qualified symbol bound to a Ring handler function.
+   - If you set ~:mode~ to "dev", then the ~wrap-reload~ middleware will be added to your handler function. This will automatically reload all of your namespaces into the running JVM on each HTTP request.
 
 *** triangulum.handler
 
-The ~triangulum.handler~ namespace provides core request handling and middleware composition for Triangulum applications. It sets up a Ring handler stack that includes various middlewares, such as request/response logging, exception handling, and request parameter parsing. Optional middlewares like wrap-ssl-redirect and wrap-reload can be applied based on configuration.
+The ~triangulum.handler~ namespace provides core request handling and
+middleware composition for Triangulum applications. It sets up a Ring
+handler stack that includes various middlewares, such as
+request/response logging, exception handling, and request parameter
+parsing. Optional middlewares like ~wrap-ssl-redirect~ and
+~wrap-reload~ can be applied based on your ~config.edn~ settings.
 
 **** Usage
 
-If you need to provide a symbol that is bound to a handler function
-to figwheel-main, you can use ~triangulum.handler/development-app~ to
+If you need to provide a symbol that is bound to a handler function to
+~figwheel-main~, you can use ~triangulum.handler/development-app~ to
 load in your project's handler function from ~config.edn~ with the
-~wrap-reload~ middleware added.
+standard Triangulum middlewares added.
 
 **** Functions
 *** triangulum.views
 
-This namespace provides functions for rendering pages and handling resources in Triangulum. It defines functions for reading asset files, generating HTML, and handling various types of responses.
+This namespace provides functions for rendering pages and handling
+resources in Triangulum. It defines functions for reading asset files,
+generating HTML, and handling various types of responses.
 
 **** Usage
 
 1. Require the namespace in your project.
-2. Use 'render-page' to generate the HTML for a specific page.
-3. Use 'not-found-page' to generate a 404 Not Found response.
+2. Use ~render-page~ to generate a handler that will return an HTML response with a standard template for React/Reagent web apps.
 
 **** Example
 #+BEGIN_SRC clojure
 (ns my-app.views
-  (:require [triangulum.views :refer [render-page not-found-page]]))
+  (:require [triangulum.views :refer [render-page]]))
 
-(def my-page (render-page "/my-page"))
-(def not-found (not-found-page))
+(def my-page-handler (render-page "/my-page"))
 #+END_SRC
 
 **** Functions
@@ -138,14 +148,6 @@ This namespace provides functions for rendering pages and handling resources in 
 
   Example usage:
   (def my-page (render-page "/my-page"))
-
-***** not-found-page
-  [request]
-
-  Produces a 404 Not Found response for the given request.
-
-  Example usage:
-  (def not-found (not-found-page))
 
 **** Caveat
 
@@ -418,14 +420,19 @@ application's services are started:
 
 And then run:
 #+begin_src sh
-clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-d REPO DIRECTORY] [-A EXTRA ALIASES]
+clojure -M:systemd enable -r $REPO -u $USER [-p $HTTP_PORT] [-P $HTTPS_PORT] [-d $REPO_DIRECTORY] [-A $EXTRA_ALIASES]
 #+end_src
 
 This will install a file named ~cljweb-<repo>.service~ into the
-~~/.config/systemd/user/~ directory, reload the ~systemctl~ daemon, and enable
-your service. By default, the current directory will be used in the
-service as the working directory. The server will always be started using ~clojure -M:server start~ unless the ~--extra-aliases~ option is passed; in that case, it will run with ~clojure -M${EXTRA_ALIASES}:server start~. To supply an alternative, you can use ~-d~.
-This will look for a Clojure project in that directory.
+~~/.config/systemd/user/~ directory, reload the ~systemctl~ daemon,
+and enable your service. By default, the current directory will be
+used in the service as the working directory. To supply an
+alternative, you can use ~-d~. This will look for a Clojure project in
+that directory.
+
+The server will always be started using ~clojure -M:server start~
+unless the ~--extra-aliases~ option is passed. In that case, it will
+run with ~clojure -M${EXTRA_ALIASES}:server start~.
 
 To enable your user services to start on system reboot, you will need to run:
 #+begin_src sh
