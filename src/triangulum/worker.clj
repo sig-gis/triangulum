@@ -36,8 +36,7 @@
   For nested workers, the map keys are worker names and values are maps with :start (a symbol representing the start function) and :stop keys. The start function is called to start the worker.
   For namespaced workers, the vector elements are maps with ::name (the worker name), ::start (a symbol representing the start function), and ::stop keys. The start function is called to start each worker.
   Arguments:
-   workers - a map or vector representing the workers to be started.
-  "
+   workers - a map or vector representing the workers to be started."
   (fn [workers] (if (map? workers) :nested :namespaced)))
 
 
