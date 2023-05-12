@@ -34,7 +34,21 @@
                :content body}]}))
 
 (defn send-mail
-  "Sends email (text or html) to given addresses."
+  "Sends an email with a given subject and body to specified recipients.
+
+  This function uses the `send-postal` internal function to send the email.
+  It logs any errors that occur during sending.
+
+  Arguments:
+  to-addresses   - a collection of email addresses to which the email will be sent
+  cc-addresses   - a collection of email addresses to which the email will be carbon copied
+  bcc-addresses  - a collection of email addresses to which the email will be blind carbon copied
+  subject        - a string representing the subject of the email
+  body           - a string representing the body of the email
+  content-type   - a keyword indicating the content type of the email, either :text for 'text/plain' or :html for 'text/html'
+
+  Returns:
+  Nothing. This function is designed for side-effects (i.e., it sends an email and potentially logs errors)."
   [to-addresses cc-addresses bcc-addresses subject body content-type]
   (let [mime                    {:text "text/plain"
                                  :html "text/html"}

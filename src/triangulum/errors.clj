@@ -2,12 +2,12 @@
   (:require [triangulum.logging :refer [log]]))
 
 (defn init-throw
-  "Throws an error message"
+  "Throws an error message."
   [message]
   (throw (ex-info message {:causes [message]})))
 
 (defn try-catch-throw
-  "Runs an function if it throws, catches the exception and logs it and then throws an exception with augmented input message."
+  "Runs a function and, in case it throws an exception, catches and logs the exception, then rethrows it with an enhanced input message."
   [try-fn message]
   (try (try-fn)
        (catch Exception e

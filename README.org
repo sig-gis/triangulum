@@ -424,7 +424,7 @@ clojure -M:systemd enable -r <REPO> -u <USER> [-p HTTP PORT] [-P HTTPS PORT] [-d
 This will install a file named ~cljweb-<repo>.service~ into the
 ~~/.config/systemd/user/~ directory, reload the ~systemctl~ daemon, and enable
 your service. By default, the current directory will be used in the
-service as the working directory. The server will always be started using clojure -M:server start unless the --production flag is passed; in that case, it will run with clojure -M:production:server start. To supply an alternative, you can use -d.
+service as the working directory. The server will always be started using ~clojure -M:server start~ unless the ~--production~ flag is passed; in that case, it will run with ~clojure -M:production:server start~. To supply an alternative, you can use ~-d~.
 This will look for a Clojure project in that directory.
 
 To enable your user services to start on system reboot, you will need to run:
@@ -731,6 +731,31 @@ be the field names.
 (insert-rows! table-name rows-vector fields-map)
 (update-rows! table-name rows-vector column-to-update fields-map)
 #+end_src
+
+*** Triangulum.worker
+
+The ~triangulum.worker~ namespace is responsible for the management of worker lifecycle within the ~:server~ context, specifically those defined under the ~:workers~ key. This namespace furnishes functions to initiate and terminate workers, maintaining their current state within an atom.
+
+**** Functions
+
+***** start-workers!
+
+Starts a set of workers based on the provided configuration. The workers parameter can be either a map (for nested workers) or a vector (for namespaced workers).
+
+For nested workers, the map keys are worker names and values are maps with :start (a symbol representing the start function) and :stop keys. The start function is called to start the worker.
+
+For namespaced workers, the vector elements are maps with ::name (the worker name), ::start (a symbol representing the start function), and ::stop keys. The start function is called to start each worker.
+
+Arguments:
+  - workers: a map or vector representing the workers to be started.
+
+***** stop-workers!
+
+Stops a set of currently running workers. The workers to stop are determined based on the current state of the `workers` atom. If the `workers` atom contains a map, it's assumed to be holding nested workers. If it contains a vector, it's assumed to be holding namespaced workers.
+
+The stop function is called with the value to stop each worker.
+
+There are no arguments for this function.
 
 ** License
 

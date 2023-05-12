@@ -1,11 +1,11 @@
 (ns triangulum.utils
+  (:import java.io.ByteArrayOutputStream)
   (:require [babashka.process   :refer [shell]]
             [clojure.data.json  :as json]
             [clojure.set        :as set]
             [clojure.string     :as str]
             [cognitect.transit  :as transit]
-            [triangulum.logging :refer [log]])
-  (:import java.io.ByteArrayOutputStream))
+            [triangulum.logging :refer [log-str]]))
 
 ;;; Text parsing
 
@@ -212,7 +212,7 @@
 ;; Equality checking
 
 (defn find-missing-keys
-  "Returnss true if m1's keys are a subset of m2's keys, and that any nested maps
+  "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
    also maintain the same property.
 
    Example:
