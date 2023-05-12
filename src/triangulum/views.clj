@@ -35,7 +35,7 @@
 (s/def ::cljs-init         ::config/namespaced-symbol)
 (s/def ::client-keys       map?)
 
-(defn find-cljs-app-js
+(defn- find-cljs-app-js
   "Returns the relative path of the compiled ClojureScript app.js file."
   []
   (as-> (slurp "target/public/cljs/manifest.edn") app
@@ -45,7 +45,7 @@
     (last app)
     (str "/cljs/" app)))
 
-(defn find-manifest
+(defn- find-manifest
   "Returns the manifest.json."
   []
   (if (= "dev" (get-config :server :mode))
@@ -68,12 +68,12 @@
     (-> (slurp "dist/public/manifest.json")
         (json/read-str))))
 
-(defn cljs-project?
+(defn- cljs-project?
   "Check if current project is a ClojureScript project."
   []
   (get-config :app :cljs-init))
 
-(defn find-bundle-asset-files
+(defn- find-bundle-asset-files
   "Returns a map of JS and CSS asset paths for React/Vite JS projects. Return nil
   for CLJS projects."
   [page]
@@ -92,7 +92,7 @@
       {:js-files  (conj js-asset-files js-entrypoint-file)
        :css-files css-asset-files})))
 
-(defn head
+(defn- head
   "Produces the head tag of the index page."
   [{:keys [bundle-js-files bundle-css-files lang]}]
   (let [{:keys [title description keywords extra-head-tags gtag-id static-css-files static-js-files]} (get-config :app)]
@@ -134,7 +134,7 @@
                     "window.__vite_plugin_react_preamble_installed__ = true;"])]
         [:script {:type "module" :src "http://localhost:5173/@vite/client"}]))]))
 
-(defn uri->page
+(defn- uri->page
   "Returns the JavaScript file home page."
   [uri]
   (->> (str/split uri #"/")
@@ -142,7 +142,7 @@
        (first)
        ((fnil kebab->camel "home"))))
 
-(defn client-init
+(defn- client-init
   "Returns the script tag necessary to for the browser to load the app."
   [entry-file params session]
   (let [js-params  (-> params
@@ -212,7 +212,7 @@
          [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
                      11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])))
 
-(defn get-response-params
+(defn- get-response-params
   "Prepares the necessary dynamic assets and values needed to render the page."
   [uri request]
   (let [page          (uri->page uri)
