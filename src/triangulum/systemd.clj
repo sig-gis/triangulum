@@ -9,7 +9,7 @@
 (def ^:private xdg-runtime-dir    (str "/run/user/" (.getUid (UnixSystem.))))
 (def ^:private shell-opts         {:dir       "/"
                                    :extra-env {"XDG_RUNTIME_DIR" xdg-runtime-dir}})
-(def ^:private user-systemctl     "systemctl --user ")
+(def ^:private user-systemctl     "systemctl --user")
 (def ^:private user-systemd-path  (str user-home "/.config/systemd/user/multi-user.target.wants/"))
 (def ^:private unit-file-template (str/trim "
 [Unit]
@@ -49,20 +49,18 @@ WantedBy=multi-user.target
                       (if production ":production" "")
                       (if http (str "-p " http) "")
                       (if https (str "-P " https) "")))
-        (shell-wrapper shell-opts
-                       (str user-systemctl "daemon-reload")
-                       (str user-systemctl "enable " service-name)))
+        (shell-wrapper shell-opts user-systemctl "daemon-reload")
+        (shell-wrapper shell-opts user-systemctl "enable" service-name))
       (println "The directory generated" repo-dir "does not contain a deps.edn file."))))
 
 (defn- disable-systemd [repo]
   (let [service-name (str "cljweb-" repo)]
-    (shell-wrapper shell-opts
-                   (str user-systemctl "disable " service-name)
-                   (str user-systemctl "daemon-reload"))
+    (shell-wrapper shell-opts user-systemctl "disable" service-name)
+    (shell-wrapper shell-opts user-systemctl "daemon-reload")
     (io/delete-file (io/file user-systemd-path (str service-name ".service")) true)))
 
 (defn- systemctl [repo command]
-  (shell-wrapper shell-opts (str user-systemctl (name command) " cljweb-" repo " --all")))
+  (shell-wrapper shell-opts user-systemctl (name command) (str "cljweb-" repo) "--all"))
 
 (def ^:private cli-options
   {:all        ["-a" "--all" "Starts, stops, or restarts all cljweb services when specified with the corresponding action."]
