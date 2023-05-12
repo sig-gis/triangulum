@@ -1,14 +1,14 @@
 (ns triangulum.utils-test
-  (:require [clojure.test        :refer [is deftest testing]]
-            [triangulum.utils    :refer [end-with
-                                         #_{:clj-kondo/ignore [:deprecated-var]}
-                                         data-response
-                                         format-str
-                                         kebab->snake
-                                         filterm
-                                         parse-as-sh-cmd
-                                         mapm
-                                         find-missing-keys]]))
+  (:require [clojure.test     :refer [is deftest testing]]
+            [triangulum.utils :refer [end-with
+                                      #_{:clj-kondo/ignore [:deprecated-var]}
+                                      data-response
+                                      format-str
+                                      kebab->snake
+                                      filterm
+                                      parse-as-sh-cmd
+                                      mapm
+                                      find-missing-keys]]))
 
 (deftest end-with-test
   (testing "Appends end-value when string doesn't end with end-value."
