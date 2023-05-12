@@ -211,7 +211,7 @@
 ;; Equality checking
 
 (defn find-missing-keys
-  "Returnss true if m1's keys are a subset of m2's keys, and that any nested maps
+  "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
    also maintain the same property.
 
    Example:
