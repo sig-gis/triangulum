@@ -502,7 +502,7 @@ You can set ~:response-type~ to configure the ~data-response~ function's default
 
 *** triangulum.utils
 
-The triangulum.utils namespace provides a collection of utility functions for various purposes, such as text parsing, shell command execution, response building, and operations on maps and namespaces.
+The ~triangulum.utils~ namespace provides a collection of utility functions for various purposes, such as text parsing, shell command execution, response building, and operations on maps and namespaces.
 
 **** Functions
 ***** Text Parsing
@@ -520,7 +520,7 @@ Formats a string with placeholders (e.g., "%s") replaced by the provided argumen
 
 ****** parse-as-sh-cmd
 
-Splits a string into an array for use with clojure.java.shell/sh.
+Splits a string into an array for use with ~clojure.java.shell/sh~.
 
 ****** end-with
 
@@ -533,7 +533,11 @@ Removes a specified string from the end of another string, if it is there.
 ***** Shell Commands
 ****** shell-wrapper
 
-A wrapper around babashka.process/shell that logs the output and errors. Accepts an optional opts map as the first argument, followed by the command and its arguments. The ~:log~ key in the opts map can be used to control logging (default is true).
+A wrapper around ~babashka.process/shell~ that logs the output and errors. Accepts an optional opts map as the first argument, followed by the command and its arguments. The ~:log~ key in the opts map can be used to control logging (default is true).
+
+****** DEPRECATED: sh-wrapper
+
+Runs a set of bash commands in a specified directory and environment. Parses the output, creating an array as described in ~parse-as-sh-cmd~.
 
 ***** Response Building
 ****** DEPRECATED: data-response
@@ -629,7 +633,7 @@ Checks if the socket at the specified host and port is open.
 
 ****** send-to-server!
 
-Attempts to send a socket message. Returns :success if successful.
+Attempts to send a socket message. Returns ~:success~ if successful.
 
 *****  Server Socket Functions
 ****** stop-socket-server!
