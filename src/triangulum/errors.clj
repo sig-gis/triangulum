@@ -2,7 +2,7 @@
   (:require [triangulum.logging :refer [log]]))
 
 (defn init-throw
-  "Throws an error message"
+  "Throws an error message."
   [message]
   (throw (ex-info message {:causes [message]})))
 
