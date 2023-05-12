@@ -753,7 +753,7 @@ The stop function is called with the value to stop each worker.
 
 There are no arguments for this function.
 
-**** License
+** License
 
 Copyright © 2021-2023 Spatial Informatics Group, LLC.
 
