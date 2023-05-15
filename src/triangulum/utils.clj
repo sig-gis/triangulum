@@ -5,7 +5,7 @@
             [clojure.set        :as set]
             [clojure.string     :as str]
             [cognitect.transit  :as transit]
-            [triangulum.logging :refer [log-str]]))
+            [triangulum.logging :refer [log]]))
 
 ;;; Text parsing
 
