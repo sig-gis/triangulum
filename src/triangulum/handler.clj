@@ -33,6 +33,11 @@
 (s/def ::session-key (s/and ::config/string #(= 16 (count %))))
 (s/def ::bad-tokens  (s/coll-of ::config/string :kind set? :min-count 0))
 
+;; state
+
+;; FIXME: Make this into a reloadable component
+(defonce ^:private session-cookie-store (atom nil))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,11 +52,12 @@
   "Wrapper that checks if the request url contains a bad token from the
   provided set and returns a forbidden-response if so; otherwise,
   passes the request to the provided handler."
-  [handler bad-tokens]
+  [handler]
   (fn [{:keys [uri] :as request}]
-    (if (some #(case-insensitive-substring? uri %) bad-tokens)
-      (forbidden-response request)
-      (handler request))))
+    (let [bad-tokens (get-config :server :bad-tokens)]
+      (if (some #(case-insensitive-substring? uri %) bad-tokens)
+        (forbidden-response request)
+        (handler request)))))
 
 (defn wrap-request-logging
   "Wrapper that logs the incoming requests."
@@ -121,6 +127,28 @@
         (handler (assoc request :params (merge params get-params post-params))))
       (handler request))))
 
+(defn string-to-bytes
+  "Converts a string into a byte array."
+  [^String s]
+  (.getBytes s))
+
+(defn get-cookie-store
+  "Computes a new `ring.middleware.session.cookie/cookie-store` object
+  on the first call and caches it for use in all future calls."
+  []
+  (or @session-cookie-store
+      (reset! session-cookie-store
+              (cookie-store {:key (-> (get-config :server :session-key)
+                                      (string-to-bytes))}))))
+
+(defn wrap-wrap-session
+  "Wrapper around `ring.middleware.session/wrap-session` that defers
+  looking up the cookie store until a request has been made."
+  [handler]
+  (fn [request]
+    (let [wrapped-handler (wrap-session handler {:store (get-cookie-store)})]
+      (wrapped-handler request))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handler Stack
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -132,14 +160,12 @@
     (mw handler)
     handler))
 
-(defn- string-to-bytes [^String s] (.getBytes s))
-
 (defn create-handler-stack
   "Create the Ring handler stack."
   [routing-handler ssl? reload?]
   (-> routing-handler
       (optional-middleware wrap-ssl-redirect ssl?)
-      (wrap-bad-uri (get-config :server :bad-tokens))
+      wrap-bad-uri
       wrap-request-logging
       wrap-keyword-params
       wrap-json-params
@@ -147,9 +173,7 @@
       wrap-nested-params
       wrap-multipart-params
       wrap-params
-      (wrap-session {:store
-                     (cookie-store {:key
-                                    (string-to-bytes (get-config :server :session-key))})})
+      wrap-wrap-session ; used to prevent running `get-config` at file load time
       wrap-absolute-redirects
       (wrap-resource "public")
       wrap-content-type
