@@ -150,6 +150,7 @@
              (not (namespaced-key? k)))
         (->> config
              (filter #(= (get-mapped-key-ns (key %)) k))
+             (map (fn [[k v]] [(-> k (name) (keyword)) v]))
              (into {}))
 
         :else
