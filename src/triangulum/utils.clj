@@ -244,5 +244,7 @@
 
 ;;; File operations
 
-(defn delete-recursively [dir]
+(defn delete-recursively
+  "Recursively delete all files and directories under the given directory."
+  [dir]
   (run! io/delete-file (reverse (file-seq (io/file dir)))))
