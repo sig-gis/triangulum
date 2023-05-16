@@ -2,5 +2,4 @@
             :port     "INVALID"
             :dbname   "dbname"
             :user     "user"
-            :password "testing-password"}
- :mode     "testing"}
+            :password "testing-password"}}

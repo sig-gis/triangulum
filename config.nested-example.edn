@@ -1,45 +1,31 @@
-;; This is an example config file for testing.
-{:database {:host              "localhost"
-            :port              5432
-            :dbname            "dbname"
-            :user              "user"
-            :password          "testing-password"
-            :admin-pass        "postgres-password"
-            :file              "db-backup.custom"
-            :dev-data          false
-            :verbose           true}
-
- :mail     {:host              "smtp.gmail.com"
-            :user              ""
-            :pass              ""
-            :tls               true
-            :port              587
-            :base-url          "https://my.domain/"}
-
- :https    {:email             "support@sig-gis.com"
-            :domain            "app.sig-gis.com"
-            :path              "/etc/letsencrypt"
-            :cert-only         false
-            :webroot           "./resources/public"}
-
- :server   {:http-port         8080
+{:server   {;; server
+            :http-port         8080
             :https-port        8443
-            :nrepl-port        5555
             :nrepl             false
+            :nrepl-port        5555
+            :nprel-bind        "127.0.0.1"
             :cider-nrepl       true
             :mode              "dev"
             :log-dir           "logs"
             :handler           product-ns.routing/handler
-            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
-                                            :stop  product-ns.jobs/stop-scheduled-jobs!}}
-            :response-type     :json ; :edn or :transit
-            :session-key       "changeme12345678"
-            :bad-tokens        #{".php"}
             :keystore-file     "keystore.pkcs12"
             :keystore-type     "pkcs12"
-            :keystore-password "foobar"}
+            :keystore-password "foobar"
 
- :app      {:title             {:en "Product name in English"
+            ;; handler
+            :session-key       "changeme12345678" ; must be 16 characters
+            :bad-tokens        #{".php"}
+
+            ;; workers
+            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
+                                            :stop  product-ns.jobs/stop-scheduled-jobs!}}
+
+            ;; response
+            :response-type     :json ; :edn or :transit
+            }
+
+ :app      {;; views
+            :title             {:en "Product name in English"
                                 :es "Product name in Spanish"}
             :description       {:en "Description of the product in English"
                                 :es "Description of the product in Spanish"}
@@ -55,9 +41,42 @@
             :js-init           "/src/js/main.jsx"     ; for Javascript projects
             :cljs-init         product-ns.client.init ; for ClojureScript projects
             :client-keys       {:mapbox-token "token123"}
+
+            ;; git
             :tags-url          "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"}
 
- :my-keys  {:ee-account        "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
+
+
+ :database {;; database
+            :host              "localhost"
+            :port              5432
+            :dbname            "app-name"
+            :user              "app-name"
+            :password          "app-name"
+
+            ;; build-db
+            :admin-pass        "postgres-password"
+            :file              "db-backup.custom"
+            :dev-data          false
+            :verbose           true}
+
+ :mail     {;; email
+            :host              "smtp.gmail.com"
+            :user              ""
+            :pass              ""
+            :tls               true
+            :port              587
+            :base-url          "https://my.domain/"}
+
+ :https    {;; https
+            :email             "support@sig-gis.com"
+            :domain            "app.sig-gis.com"
+            :path              "/etc/letsencrypt"
+            :cert-only         false
+            :webroot           "./resources/public"}
+
+ :my-keys  {;; product-ns
+            :ee-account        "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
             :ee-key-path       "gee-auth-key.json"
             :mapbox-token      "pk..."
             :mapquest-key      "GF..."

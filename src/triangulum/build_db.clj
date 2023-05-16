@@ -2,11 +2,19 @@
   (:import java.io.File)
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
+            [clojure.spec.alpha :as s]
             [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.config  :refer [get-config]]
+            [triangulum.config  :as config :refer [get-config]]
             [triangulum.migrate :refer [migrate!]]
             [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
+
+;; spec
+
+(s/def ::admin-pass ::config/string)
+(s/def ::dev-data   boolean?)
+(s/def ::file       ::config/string)
+(s/def ::verbose    boolean?)
 
 (def ^:private path-env (System/getenv "PATH"))
 

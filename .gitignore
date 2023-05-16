@@ -3,9 +3,11 @@
 .rebel_readline_history
 .clj-kondo/*
 !.clj-kondo/config.edn
+.lsp
 
 pom.xml
 target/
 .rebel_readline_history
 config.edn
 tmp/
+.calva/output-window/output.calva-repl

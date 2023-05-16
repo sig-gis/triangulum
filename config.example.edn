@@ -1,7 +1,0 @@
-;; This is an example config file for testing.
-{:database {:host     "localhost"
-            :port     5432
-            :dbname   "dbname"
-            :user     "user"
-            :password "testing-password"}
- :mode     "testing"}

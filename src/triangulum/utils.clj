@@ -1,26 +1,39 @@
 (ns triangulum.utils
   (:import java.io.ByteArrayOutputStream)
-  (:require [cognitect.transit :as transit]
-            [clojure.java.io   :as io]
-            [clojure.set       :as set]
-            [clojure.string    :as str]
-            [clojure.data.json :as json]))
-
-(defmacro nil-on-error
-  "Uses try to catch and return nil on error"
-  [& body]
-  (let [_ (gensym)]
-    `(try ~@body (catch Exception ~_ nil))))
+  (:require [babashka.process   :refer [shell]]
+            [clojure.data.json  :as json]
+            [clojure.set        :as set]
+            [clojure.string     :as str]
+            [cognitect.transit  :as transit]
+            [triangulum.logging :refer [log]]))
 
 ;;; Text parsing
 
 (defn kebab->snake
-  "kebab-str -> snake_str"
+  "Converts kebab-str to snake_str."
   [kebab-str]
   (str/replace kebab-str "-" "_"))
 
+(defn kebab->camel
+  "Converts kebab-string to camelString."
+  [kebab-string]
+  (let [words (-> kebab-string
+                  (str/lower-case)
+                  (str/split #"-"))]
+    (->> (map str/capitalize (rest words))
+         (cons (first words))
+         (str/join ""))))
+
+(defn camel->kebab
+  "Converts camelString to kebab-string."
+  [camel-string]
+  (as-> camel-string text
+    (str/split text #"(?<=[a-z])(?=[A-Z])")
+    (map str/lower-case text)
+    (str/join "-" text)))
+
 (defn format-str
-  "Use any char after % for format. All % are converted to %s (string)"
+  "Use any char after % for format. All % are converted to %s (string)."
   [f-str & args]
   (apply format (str/replace f-str #"(%[^ ])" "%s") args))
 
@@ -41,12 +54,15 @@
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+                    (str/blank?)
                     (conj acc)))
         (recur (->> char-seq (drop-while #(not= \` %)))
                (->> char-seq
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
+
+
                     (#(str/split % #" "))
                     (remove str/blank?)
                     (into acc)))))))
@@ -65,6 +81,71 @@
     (subs s 0 (- (count s) (count end)))
     s))
 
+;;; Shell commands
+
+(defn shell-wrapper
+  "A wrapper around babashka.process/shell that logs the output and errors.
+  Accepts an optional opts map as the first argument, followed by the command and its arguments.
+  The :log? key in the opts map can be used to control logging (default is true).
+
+  Usage:
+  (shell-wrapper {} \"ls\" \"-l\") ; With an opts map
+  (shell-wrapper \"ls\" \"-l\") ; Without an opts map
+  (shell-wrapper {:log? false} \"ls\" \"-l\") ; Disabling logging
+
+  Examples:
+  1. Logs the output and errors by default:
+  (shell-wrapper {} \"ls\" \"-l\")
+
+  2. Can be called without an opts map, assuming default values:
+  (shell-wrapper \"ls\" \"-l\")
+
+  3. Disabling logging using the :log? key in the opts map:
+  (shell-wrapper {:log? false} \"ls\" \"-l\")"
+  [& args]
+  (let [opts   (if (map? (first args)) (first args) {})
+        cmd    (if (map? (first args)) (rest args) args)
+        log?   (get opts :log? true)
+        result (apply shell
+                      (merge opts
+                             {:continue true
+                              :out      :string
+                              :err      :string})
+                      cmd)
+        log-fn #(log % :truncate? false)]
+    (when log?
+      (log-fn (str "cmd: " (str/join " " (:cmd result))))
+      (some->> (:out result) (not-empty) (str "out: ") (log-fn))
+      (some->> (:err result) (not-empty) (str "error: ") (log-fn)))
+    result))
+
+(defn ^:deprecated sh-wrapper
+  "DEPRECATED: Use [[triangulum.utils/shell-wrapper]] instead.
+  Takes a directory, an environment, a verbosity flag, and bash commands.
+  Executes the commands using the given path and environment, then returns
+  the output (errors by default)."
+  [dir env verbose? & commands]
+  (reduce (fn [acc cmd]
+            (let [{:keys [out err]} (shell-wrapper
+                                     {:dir       dir
+                                      :extra-env env
+                                      :log?      false}
+                                     cmd)]
+              (str acc (when verbose? out) err)))
+          ""
+          commands))
+
+(defn sh-exec-with
+  "Provides a path (`dir`) and environment (`env`) to one bash `command`
+   and executes it. Returns a map in the following format:
+   `{:exit 0 :out 'Output message\n' :err ''}`"
+  [dir env command]
+  (-> (shell-wrapper {:dir dir
+                      :extra-env env
+                      :log? false}
+                     command)
+      (select-keys [:exit :out :err])))
+
 ;;; Response building
 
 (defn- clj->transit
@@ -76,16 +157,17 @@
     (.toString out)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
-(defn data-response
-  "Create a response object.
+(defn ^:deprecated data-response
+  "DEPRECATED: Use [[triangulum.response/data-response]] instead.
+   Create a response object.
    Body is required. Status, type, and session are optional.
    When a type keyword is passed, the body is converted to that type,
-   otherwise the body and type are passed through."
+   otherwise the body is converted to edn."
   ([body]
    (data-response body {}))
   ([body {:keys [status type session]
           :or   {status 200
-                 type :edn}
+                 type   :edn}
           :as   params}]
    (merge (when (contains? params :session) {:session session})
           {:status  status
@@ -122,7 +204,12 @@
            (transient {})
            coll)))
 
-;;; Equality checking
+(defn reverse-map
+  "Reverses the key-value pairs in a given map."
+  [m]
+  (zipmap (vals m) (keys m)))
+
+;; Equality checking
 
 (defn find-missing-keys
   "Returns true if m1's keys are a subset of m2's keys, and that any nested maps
@@ -144,6 +231,15 @@
 
     :else
     #{}))
+
+;; Namespace operations
+
+(defn resolve-foreign-symbol
+  "Given a namespace-qualified symbol, attempt to require its namespace
+  and resolve the symbol within that namespace to a value."
+  [sym]
+  (require (symbol (namespace sym)))
+  (resolve sym))
 
 ;;; File operations
 

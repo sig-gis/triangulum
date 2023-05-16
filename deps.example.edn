@@ -1,0 +1,12 @@
+{:paths ["src/clj" "src/cljs" "resources"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
+                             :git/sha "REPLACE-WITH-CURRENT-SHA"}}
+
+ :aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}
+           :config   {:main-opts ["-m" "triangulum.config"]}
+           :deploy   {:main-opts ["-m" "triangulum.deploy"]}
+           :https    {:main-opts ["-m" "triangulum.https"]}
+           :server   {:main-opts ["-m" "triangulum.server"]}
+           :systemd  {:main-opts ["-m" "triangulum.systemd"]}}}

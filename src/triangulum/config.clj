@@ -1,79 +1,96 @@
 (ns triangulum.config
-  (:require [clojure.java.io    :as io]
-            [clojure.edn        :as edn]
-            [clojure.spec.alpha :as s]
-            [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [find-missing-keys]]
-            [clojure.string :as str]))
+  (:require [clojure.edn                       :as edn]
+            [clojure.java.io                   :as io]
+            [clojure.spec.alpha                :as s]
+            [clojure.string                    :as str]
+            [triangulum.cli                    :refer [get-cli-options]]
+            [triangulum.config-nested-spec     :as config-nested]
+            [triangulum.config-namespaced-spec :as config-namespaced]
+            [triangulum.errors                 :refer [nil-on-error init-throw]]
+            [triangulum.utils                  :refer [reverse-map]]))
 
-;;; Specs
+;;; spec
+
 ;; Base spec
-(s/def ::port   (s/and nat-int? #(< % 0x10000)))
-(s/def ::string (s/and string? #(not (re-matches #"<.*>" %))))
+(s/def ::port              (s/and nat-int? #(< % 0x10000)))
+(s/def ::string            (s/and string? #(not (re-matches #"<.*>" %))))
+(s/def ::email             (s/and string? #(re-matches #"(?i)^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$" %)))
+(s/def ::namespaced-symbol (s/and symbol? #(namespace %)))
+(s/def ::url               (s/and string? #(re-matches #"^https?://.+" %)))
+(s/def ::static-file-path  (s/and string? #(re-matches #"/[^:*?\"<>|]*" %)))
+(s/def ::path              (s/and string? #(re-matches #"[./][^:*?\"<>|]*" %)))
+(s/def ::hostname          (s/and string? #(re-matches #"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" %)))
 
-;; Values
-(s/def ::dbname     ::string)
-(s/def ::domain     ::string)
-(s/def ::email      ::string) ; TODO, make an email base spec
-(s/def ::host       ::string)
-(s/def ::http-port  ::port)
-(s/def ::https-port ::port)
-(s/def ::mode       (s/and ::string #{"prod" "dev"}))
-(s/def ::log-dir    ::string)
-(s/def ::password   ::string)
-(s/def ::pass       ::string)
-(s/def ::user       ::string)
-
-;; Sections
-(s/def ::database (s/keys :req-un [::dbname ::user ::password]
-                          :opt-un [::host ::port]))
-(s/def ::https    (s/keys :req-un [::domain ::email]))
-(s/def ::mail     (s/keys :req-un [::host ::user ::pass]
-                          :opt-un [::port]))
-(s/def ::server   (s/keys :opt-un [::mode ::http-port ::https-port ::log-dir]))
 
 ;; Config file
-(s/def ::config (s/keys :opt-un [::database ::https ::server ::mail]))
+
+(s/def ::nested-config (s/keys :opt-un [::config-nested/server
+                                        ::config-nested/app
+                                        ::config-nested/database
+                                        ::config-nested/mail
+                                        ::config-nested/https]))
+
+(s/def ::namespaced-config (s/merge ::config-namespaced/server
+                                    ::config-namespaced/app
+                                    ::config-namespaced/database
+                                    ::config-namespaced/mail
+                                    ::config-namespaced/https))
 
 ;;; Private vars
 
-(def ^:private ^:dynamic *default-file* "config.default.edn")
-
 (def ^:private config-file  (atom "config.edn"))
 (def ^:private config-cache (atom nil))
+(def ^:private ns->un-mapping
+  "Converts namespaces into their equivalent unnamespaced keys."
+  {:views  :app
+   :email  :mail
+   :worker :server})
+(def ^:private un->ns-mapping
+  "Convers unnamespaced keys into their equivalent namespaces."
+  (reverse-map ns->un-mapping))
 
 ;;; Helper Fns
 
 (defn- wrap-throw [& strs]
   (-> (apply str strs)
-      (ex-info {})
-      (throw)))
+      (init-throw)))
+
+(defn- namespaced-key?
+  "Returns true if the given key has a namespace, otherwise false."
+  [k]
+  (some? (namespace k)))
 
 (defn- read-config [file]
   (if (.exists (io/file file))
-    (let [example-config (-> (slurp *default-file*) (edn/read-string))
-          config         (-> (slurp file) (edn/read-string))
-          missing-keys   (find-missing-keys example-config config)]
-      (cond
-        (seq missing-keys)
-        (wrap-throw "Error: The following keys from config.default.edn are missing from:"
-                    file
-                    "\n"
-                    (str/join "', '" missing-keys))
+    (if-let [config (nil-on-error (edn/read-string (slurp file)))]
+      (let [valid-nested-config?     (s/valid? ::nested-config config)
+            valid-namespaced-config? (s/valid? ::namespaced-config config)]
+        (cond (or valid-nested-config?
+                  valid-namespaced-config?)
+              config
 
-        (not (s/valid? ::config config))
-        (do (println "Error: Invalid config file:" file)
-            (s/explain ::config config)
-            (flush)
-            (wrap-throw ""))
+              (every? namespaced-key? (keys config))
+              (wrap-throw "Error: Config file " file " failed spec check:\n" (s/explain-str ::namespaced-config config))
 
-        :else
-        config))
-    (wrap-throw "Error: Cannot find file" file)))
+              :else
+              (wrap-throw "Error: Config file " file " failed spec check:\n" (s/explain-str ::nested-config config))))
+      (wrap-throw "Error: Config file " file " does not contain valid EDN."))
+    (wrap-throw "Error: Cannot find config file " file ".")))
 
 (defn- cache-config []
   (or @config-cache
       (reset! config-cache (read-config @config-file))))
+
+(defn- get-mapped-key-ns
+  "Given a namespaced key, returns the corresponding unnamespaced key."
+  [ns-key]
+  (let [new-ns (-> ns-key
+                   namespace
+                   (str/split #"\.")
+                   second
+                   keyword)]
+    (get ns->un-mapping new-ns new-ns)))
+
 
 ;;; Public Fns
 
@@ -85,6 +102,30 @@
    (reset! config-file new-config-file)
    (reset! config-cache (read-config @config-file))))
 
+(defn namespaced-config?
+  "Returns true if the given configuration map is namespaced, otherwise false."
+  [config]
+  (s/valid? ::namespaced-config config))
+
+(defn nested-config?
+  "Returns true if the given configuration map is unnamespaced nested, otherwise false."
+  [config]
+  (s/valid? ::nested-config config))
+
+(defn split-ns-key
+  "Given a namespaced key, returns a vector of unnamespaced keys."
+  [ns-key]
+  [(get-mapped-key-ns ns-key) (-> ns-key (name) (keyword))])
+
+(defn join-un-key
+  "Given a sequence of unnamespaced keys, returns a single namespaced key."
+  ([key-path] (join-un-key key-path {:prefix "triangulum"}))
+  ([key-path {:keys [prefix]}]
+   (let [[n k] key-path
+         n (get un->ns-mapping n n)]
+     (keyword (str prefix "." (name n)) (name k)))))
+
+;; Retrieves a configuration value for the given key(s).
 (defn get-config
   "Retrieves the key `k` from the config file.
    Can also be called with the keys leading to a config.
@@ -92,14 +133,41 @@
    ```clojure
    (get-config :mail) -> {:host \"google.com\" :port 543}
    (get-config :mail :host) -> \"google.com\"
+   (get-config :triangulum.email/host) -> \"google.com\"
+   (get-config :triangulum.views/title :en) -> \"english\"
    ```"
   [& all-keys]
-  (get-in (cache-config) all-keys))
+  (let [config (cache-config)
+        k (first all-keys)]
+    (cond
+      (= (count all-keys) 1)
+      (cond
+        (and (nested-config? config)
+             (namespaced-key? k))
+        (get-in config (split-ns-key k))
+
+        (and (namespaced-config? config)
+             (not (namespaced-key? k)))
+        (->> config
+             (filter #(= (get-mapped-key-ns (key %)) k))
+             (map (fn [[k v]] [(-> k (name) (keyword)) v]))
+             (into {}))
+
+        :else
+        (get config k))
+
+      (and (= (count all-keys) 2)
+           (namespaced-config? config)
+           (not (namespaced-key? k)))
+      (get config (join-un-key all-keys))
+
+      :else
+      (get-in config all-keys))))
 
 (defn valid-config?
   "Validates `file` as a configuration file."
-  [{:keys [file] :or {file @config-file}}]
-  (map? (read-config file)))
+  [{:keys [file]}]
+  (map? (read-config (or file @config-file))))
 
 (def ^:private cli-options
   {:file ["-f" "--file FILE" "Configuration file to validate."]})
