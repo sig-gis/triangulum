@@ -1,6 +1,6 @@
 (ns triangulum.migrate-test
-  (:require [clojure.test         :refer [is deftest testing use-fixtures]]
-            [clojure.java.io      :as io]
+  (:require [clojure.java.io      :as io]
+            [clojure.test         :refer [is deftest testing use-fixtures]]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
             [triangulum.security  :refer [hash-digest]]
@@ -45,16 +45,23 @@
 
 (def ^:private create-db ["CREATE ROLE tri_test WITH LOGIN CREATEDB PASSWORD 'tri_test';"
                           "CREATE DATABASE tri_test WITH OWNER tri_test;"])
-(def ^:private drop-db   ["DROP DATABASE IF EXISTS tri_test;" "DROP ROLE IF EXISTS tri_test"])
+(def ^:private drop-db   ["DROP DATABASE IF EXISTS tri_test;"
+                          "DROP ROLE IF EXISTS tri_test;"])
 
 (defn- setup-test-db [f]
-  (when-let [con (get-admin-conn)]
-    (doseq [q (concat drop-db create-db)]
-      (jdbc/execute-one! con [q])))
+  (when-let [conn (get-admin-conn)]
+    (try
+      (doseq [q (concat drop-db create-db)]
+        (jdbc/execute-one! conn [q]))
+      (finally
+        (.close conn))))
   (f)
-  (when-let [con (get-admin-conn)]
-    (doseq [q drop-db]
-      (jdbc/execute-one! con [q]))))
+  (when-let [conn (get-admin-conn)]
+    (try
+      (doseq [q drop-db]
+        (jdbc/execute-one! conn [q]))
+      (finally
+        (.close conn)))))
 
 (use-fixtures :once setup-test-db set-migrations-dir)
 
@@ -66,15 +73,15 @@
     (migrate! tri-test tri-test tri-test verbose?)
 
     ; Assert
-    (with-open [con (get-tri-test-conn)]
-      (is (some? (jdbc/execute-one! con ["SELECT * FROM pg_catalog.pg_tables
+    (with-open [conn (get-tri-test-conn)]
+      (is (some? (jdbc/execute-one! conn ["SELECT * FROM pg_catalog.pg_tables
                                          WHERE schemaname = 'tri'
                                          AND tablename = 'migrations';"])))))
 
   (testing "Completed migration is stored in the 'tri.migrations' table"
     ; Arrange
     (let [filename "01-create-users-table.sql"
-          contents "CREATE TABLE users (id SERIAL PRIMARY KEY, username VARCHAR, password VARCHAR);"]
+          contents "CREATE TABLE users (id SERIAL PRIMARY KEY, username varchar, password varchar);"]
 
       (io/make-parents (str m/*migrations-dir* filename))
       (spit (str m/*migrations-dir* filename) contents)
@@ -83,8 +90,8 @@
       (migrate! tri-test tri-test tri-test verbose?)
 
       ; Assert
-      (with-open [con (get-tri-test-conn)]
-        (let [migrations (get-migrations con)]
+      (with-open [conn (get-tri-test-conn)]
+        (let [migrations (get-migrations conn)]
           (is (pos? (count migrations)))
           (is (= (-> migrations first :filename) filename))
           (is (= (-> migrations first :hash) (hash-digest contents)))))))
@@ -95,14 +102,14 @@
           "ALTER TABLE users ADD COLUMN city VARCHAR;")
 
     ; Act
-    (doseq [_ (range 0 5)]
+    (dotimes [_ 5]
       (migrate! tri-test tri-test tri-test verbose?))
 
     ; Assert
-    (with-open [con (get-tri-test-conn)]
-      (let [migrations (get-migrations con)]
+    (with-open [conn (get-tri-test-conn)]
+      (let [migrations (get-migrations conn)]
         (is (= (count migrations) 2)))
-      (let [columns (jdbc/execute! con ["SELECT column_name FROM information_schema.columns
+      (let [columns (jdbc/execute! conn ["SELECT column_name FROM information_schema.columns
                                         WHERE table_schema = 'public'
                                         AND table_name = 'users'"])]
         (is (= (count columns) 4)))))
@@ -113,15 +120,15 @@
           "ALTER TABLE users ADD state;")
 
     (spit (str m/*migrations-dir* "04-add-table-pets.sql")
-          "CREATE TABLE pets ( id SERIAL PRIMARY KEY, pet_name VARCHAR);")
+          "CREATE TABLE pets (id SERIAL PRIMARY KEY, pet_name varchar);")
 
     ; Act
     (is (thrown? Exception (migrate! tri-test tri-test tri-test verbose?)))
 
     ; Assert
-    (with-open [con (get-tri-test-conn)]
-      (let [migrations (get-migrations con)
-            columns    (jdbc/execute! con ["SELECT column_name FROM information_schema.columns
+    (with-open [conn (get-tri-test-conn)]
+      (let [migrations (get-migrations conn)
+            columns    (jdbc/execute! conn ["SELECT column_name FROM information_schema.columns
                                            WHERE table_schema = 'public'
                                            AND table_name = 'users'"])]
         (is (= (count migrations) 2))

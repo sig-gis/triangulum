@@ -1,6 +1,6 @@
 (ns triangulum.security-test
-  (:require [clojure.test        :refer [is deftest testing use-fixtures]]
-            [clojure.java.io     :as io]
+  (:require [clojure.java.io     :as io]
+            [clojure.test        :refer [is deftest testing use-fixtures]]
             [triangulum.security :refer [hash-digest hash-file]]
             [triangulum.utils    :refer [delete-recursively]]))
 

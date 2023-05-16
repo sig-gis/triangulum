@@ -1,5 +1,5 @@
 (ns triangulum.build-db
-  (:import [java.io File])
+  (:import java.io.File)
   (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.string     :as str]
@@ -160,16 +160,16 @@
    :verbose    ["-v" "--verbose"             "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
-  {:backup        {:description "Create a .dump backup file using pg_dump."
-                   :requires    [:dbname :file]}
-   :build-all     {:description "Build / rebuild the entire data base."
-                   :requires    [:dbname]}
-   :functions     {:description "Build / rebuild all functions."
-                   :requires    [:dbname]}
-   :restore       {:description "Restore a database from a .dump file created by pg_dump."
-                   :requires    [:file]}
-   :migrate       {:description "Applies the migration files under `src/sql/changes` in chronological order."
-                   :requires    [:dbname :user :password]}})
+  {:backup    {:description "Create a .dump backup file using pg_dump."
+               :requires    [:dbname :file]}
+   :build-all {:description "Build / rebuild the entire data base."
+               :requires    [:dbname]}
+   :functions {:description "Build / rebuild all functions."
+               :requires    [:dbname]}
+   :restore   {:description "Restore a database from a .dump file created by pg_dump."
+               :requires    [:file]}
+   :migrate   {:description "Applies the migration files under `src/sql/changes` in chronological order."
+               :requires    [:dbname :user :password]}})
 
 (defn -main
   "A set of tools for building and maintaining the project database with Postgres."

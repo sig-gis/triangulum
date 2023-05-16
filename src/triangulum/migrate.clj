@@ -1,10 +1,12 @@
 (ns triangulum.migrate
+  (:import java.io.File)
   (:require [clojure.java.io      :as io]
             [clojure.set          :refer [difference]]
             [clojure.string       :as str]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
-            [triangulum.security  :refer [hash-file]]))
+            [triangulum.security  :refer [hash-file]]
+            [triangulum.utils :refer [nil-on-error]]))
 
 ;;; Constants
 
@@ -23,20 +25,20 @@
                         :reWriteBatchedInserts true}))
 
 (defn- get-migrations-dir []
-  (io/make-parents *migrations-dir*)
+  (io/make-parents *migrations-dir* "dummy.txt")
   *migrations-dir*)
 
 (defn- get-migration-files []
   (->> (get-migrations-dir)
        (io/file)
        (file-seq)
-       (filter #(.isFile %))
+       (filter #(.isFile ^File %))
        (map #(.getName %))
        (filter #(str/ends-with? % ".sql"))
        (sort)))
 
 (defn- file-changed? [filename prev-file-hash]
-  (not (= prev-file-hash (hash-file (migration-path filename)))))
+  (nil-on-error (not= prev-file-hash (hash-file (migration-path filename)))))
 
 (defn- get-completed-changes [db-conn]
   (let [completed     (jdbc/execute! db-conn ["SELECT filename, hash
@@ -57,14 +59,14 @@
                           (hash-file (migration-path filename))]))
 
 (defn- migration-error [e file-name new-changes]
-  (str (format "Error: Did not complete migration %s and all migrations after:\n" file-name)
-       (str/join "\n- " (drop-while #((comp not pos?) (.compareTo % file-name)) new-changes))
+  (str (format "Error: Did not complete migration %s and all migrations after:\n-" file-name)
+       (str/join "\n-" (rest (drop-while #(not= file-name %) new-changes)))
        "\n\n"
        e))
 
 (defn- apply-migration! [db-conn filename verbose?]
   (when verbose? (println "Migrating change:" filename))
-  (let [migration (slurp (io/file *migrations-dir* filename))]
+  (let [migration (slurp (migration-path filename))]
     (when verbose? (println migration))
     (jdbc/with-transaction [tx db-conn]
       (jdbc/execute! tx [migration]))))
@@ -78,10 +80,10 @@
         (jdbc/execute! tx ["CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"])
         (jdbc/execute! tx ["CREATE SCHEMA IF NOT EXISTS tri;"])
         (jdbc/execute! tx ["CREATE TABLE IF NOT EXISTS tri.migrations (
-                           migration_id uuid      PRIMARY KEY DEFAULT uuid_generate_v4 (),
-                           filename     VARCHAR   NOT NULL,
-                           hash         VARCHAR   NOT NULL,
-                           created_date TIMESTAMP DEFAULT now());"])))))
+                           migration_id uuid      PRIMARY KEY DEFAULT uuid_generate_v4(),
+                           filename     varchar   NOT NULL,
+                           hash         varchar   NOT NULL,
+                           created_date timestamp DEFAULT now());"])))))
 
 ;;; Public fns
 
@@ -112,9 +114,10 @@
       (when verbose? (println (format "Found %s new change files." (count new-changes))))
 
       (doseq [file new-changes]
-        (let [result (apply-migration! db-conn file verbose?)]
-          (if (:error result)
-            (throw (Exception. (migration-error (:error result) file new-changes)))
-            (set-completed! db-conn file)))))
+        (try
+          (apply-migration! db-conn file verbose?)
+          (set-completed! db-conn file)
+          (catch Exception e
+            (throw (Exception. (migration-error (.getMessage e) file new-changes)))))))
 
     (when verbose? (println "Completed migrations."))))

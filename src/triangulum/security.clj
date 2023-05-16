@@ -1,6 +1,5 @@
 (ns triangulum.security
-  (:require [clojure.java.io :as io])
-  (:import [java.security MessageDigest]))
+  (:import java.security.MessageDigest))
 
 ;; https://gist.github.com/kisom/1698245
 (defn hash-digest
@@ -8,12 +7,12 @@
   ([input] (hash-digest input "SHA-256"))
   ([input hash-algo]
    (let [md (doto (MessageDigest/getInstance hash-algo)
-              (.update (.getBytes input)))]
+              (.update (.getBytes ^String input)))]
      (apply str (map #(format "%02x" (bit-and % 0xff)) (.digest md))))))
 
 (defn hash-file
   "Returns the sha256 digest of a file."
   [filename]
-  (-> (io/file filename)
+  (-> filename
       (slurp)
       (hash-digest)))

@@ -147,13 +147,5 @@
 
 ;;; File operations
 
-(defn delete-recursively
-  "Recursively deletes all files in `dir`.
-  [Reference](https://gist.github.com/edw/5128978)"
-  [dir]
-  (let [func (fn [func f]
-               (when (.isDirectory f)
-                 (doseq [f2 (.listFiles f)]
-                   (func func f2)))
-               (io/delete-file f))]
-    (func func (io/file dir))))
+(defn delete-recursively [dir]
+  (run! io/delete-file (reverse (file-seq (io/file dir)))))
