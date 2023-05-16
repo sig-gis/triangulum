@@ -5,8 +5,8 @@
             [clojure.string       :as str]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
-            [triangulum.security  :refer [hash-file]]
-            [triangulum.utils :refer [nil-on-error]]))
+            [triangulum.errors    :refer [nil-on-error]]
+            [triangulum.security  :refer [hash-file]]))
 
 ;;; Constants
 
