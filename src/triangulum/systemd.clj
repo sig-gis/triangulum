@@ -69,14 +69,13 @@ WantedBy=multi-user.target
    :extra-aliases ["-A" "--extra-aliases" "Setup server to run with extra aliases from deps.edn."]
    :http          ["-p" "--http HTTP" "Optional http port to run the server."]
    :https         ["-P" "--https HTTPS" "Optional https port to run the server."]
-   :repo          ["-r" "--repo REPO" "Repository folder that contains deps.edn.  This will be used to name the service"]
-   :user          ["-u" "--user USER" "The user account under which the service runs. An unprivileged user is recommended for security reasons."]})
+   :repo          ["-r" "--repo REPO" "Repository folder that contains deps.edn.  This will be used to name the service"]})
 
 (def ^:private cli-actions
   {:disable {:description "Disable systemd service."
              :requires    [:repo]}
    :enable  {:description "Enable systemd service. The service will be created if it doesn't exist."
-             :requires    [:repo :user]}
+             :requires    [:repo]}
    :restart {:description "Restart systemd service."
              :requires    [:repo]}
    :start   {:description "Start systemd service."

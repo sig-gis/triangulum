@@ -33,7 +33,7 @@
        (io/file)
        (file-seq)
        (filter #(.isFile ^File %))
-       (map #(.getName %))
+       (map #(.getName ^File %))
        (filter #(str/ends-with? % ".sql"))
        (sort)))
 
@@ -59,8 +59,8 @@
                           (hash-file (migration-path filename))]))
 
 (defn- migration-error [e file-name new-changes]
-  (str (format "Error: Did not complete migration %s and all migrations after:\n-" file-name)
-       (str/join "\n-" (rest (drop-while #(not= file-name %) new-changes)))
+  (str (format "Error: Did not complete migration %s and all migrations after:\n- " file-name)
+       (str/join "\n- " (rest (drop-while #(not= file-name %) new-changes)))
        "\n\n"
        e))
 

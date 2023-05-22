@@ -420,7 +420,7 @@ application's services are started:
 
 And then run:
 #+begin_src sh
-clojure -M:systemd enable -r $REPO -u $USER [-p $HTTP_PORT] [-P $HTTPS_PORT] [-d $REPO_DIRECTORY] [-A $EXTRA_ALIASES]
+clojure -M:systemd enable -r $REPO [-p $HTTP_PORT] [-P $HTTPS_PORT] [-d $REPO_DIRECTORY] [-A $EXTRA_ALIASES]
 #+end_src
 
 This will install a file named ~cljweb-<repo>.service~ into the

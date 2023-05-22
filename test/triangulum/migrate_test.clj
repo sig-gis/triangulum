@@ -74,14 +74,15 @@
 
     ; Assert
     (with-open [conn (get-tri-test-conn)]
-      (is (some? (jdbc/execute-one! conn ["SELECT * FROM pg_catalog.pg_tables
-                                         WHERE schemaname = 'tri'
-                                         AND tablename = 'migrations';"])))))
+      (is (some? (jdbc/execute-one! conn ["SELECT *
+                                           FROM pg_catalog.pg_tables
+                                           WHERE schemaname = 'tri'
+                                             AND tablename = 'migrations';"])))))
 
   (testing "Completed migration is stored in the 'tri.migrations' table"
     ; Arrange
     (let [filename "01-create-users-table.sql"
-          contents "CREATE TABLE users (id SERIAL PRIMARY KEY, username varchar, password varchar);"]
+          contents "CREATE TABLE users (id serial PRIMARY KEY, username varchar, password varchar);"]
 
       (io/make-parents (str m/*migrations-dir* filename))
       (spit (str m/*migrations-dir* filename) contents)
@@ -99,7 +100,7 @@
   (testing "Migrations are not run more than once."
     ; Arrange
     (spit (str m/*migrations-dir* "02-add-column-city-users.sql")
-          "ALTER TABLE users ADD COLUMN city VARCHAR;")
+          "ALTER TABLE users ADD COLUMN city varchar;")
 
     ; Act
     (dotimes [_ 5]
@@ -109,9 +110,10 @@
     (with-open [conn (get-tri-test-conn)]
       (let [migrations (get-migrations conn)]
         (is (= (count migrations) 2)))
-      (let [columns (jdbc/execute! conn ["SELECT column_name FROM information_schema.columns
-                                        WHERE table_schema = 'public'
-                                        AND table_name = 'users'"])]
+      (let [columns (jdbc/execute! conn ["SELECT column_name
+                                          FROM information_schema.columns
+                                          WHERE table_schema = 'public'
+                                            AND table_name = 'users'"])]
         (is (= (count columns) 4)))))
 
   (testing "Migrations do not continue once an error has been reached."
@@ -120,7 +122,7 @@
           "ALTER TABLE users ADD state;")
 
     (spit (str m/*migrations-dir* "04-add-table-pets.sql")
-          "CREATE TABLE pets (id SERIAL PRIMARY KEY, pet_name varchar);")
+          "CREATE TABLE pets (id serial PRIMARY KEY, pet_name varchar);")
 
     ; Act
     (is (thrown? Exception (migrate! tri-test tri-test tri-test verbose?)))
@@ -128,15 +130,16 @@
     ; Assert
     (with-open [conn (get-tri-test-conn)]
       (let [migrations (get-migrations conn)
-            columns    (jdbc/execute! conn ["SELECT column_name FROM information_schema.columns
-                                           WHERE table_schema = 'public'
-                                           AND table_name = 'users'"])]
+            columns    (jdbc/execute! conn ["SELECT column_name
+                                             FROM information_schema.columns
+                                             WHERE table_schema = 'public'
+                                               AND table_name = 'users'"])]
         (is (= (count migrations) 2))
         (is (= (count columns) 4)))))
 
   (testing "Errors out when a migration is modified."
     ; Arrange
-    (spit (str m/*migrations-dir* "01-create-users-table.sql") "CREATE TABLE users (id SERIAL PRIMARY KEY);")
+    (spit (str m/*migrations-dir* "01-create-users-table.sql") "CREATE TABLE users (id serial PRIMARY KEY);")
 
     ; Act/Assert
     (is (thrown? Exception (migrate! tri-test tri-test tri-test false)))))
