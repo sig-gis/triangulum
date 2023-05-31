@@ -6,8 +6,7 @@
             [triangulum.cli                    :refer [get-cli-options]]
             [triangulum.config-nested-spec     :as config-nested]
             [triangulum.config-namespaced-spec :as config-namespaced]
-            [triangulum.errors                 :refer [nil-on-error init-throw]]
-            [triangulum.utils                  :refer [reverse-map]]))
+            [triangulum.errors                 :refer [nil-on-error init-throw]]))
 
 ;;; Declarations
 
