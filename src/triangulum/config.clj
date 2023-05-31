@@ -9,6 +9,10 @@
             [triangulum.errors                 :refer [nil-on-error init-throw]]
             [triangulum.utils                  :refer [reverse-map]]))
 
+;;; Declarations
+
+(declare namespaced-key?)
+
 ;;; spec
 
 ;; Base spec
@@ -21,14 +25,15 @@
 (s/def ::path              (s/and string? #(re-matches #"[./][^:*?\"<>|]*" %)))
 (s/def ::hostname          (s/and string? #(re-matches #"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" %)))
 
-
 ;; Config file
 
-(s/def ::nested-config (s/keys :opt-un [::config-nested/server
-                                        ::config-nested/app
-                                        ::config-nested/database
-                                        ::config-nested/mail
-                                        ::config-nested/https]))
+(s/def ::nested-config (s/and
+                        #(not-any? namespaced-key? (keys %))
+                        (s/keys :opt-un [::config-nested/server
+                                         ::config-nested/app
+                                         ::config-nested/database
+                                         ::config-nested/mail
+                                         ::config-nested/https])))
 
 (s/def ::namespaced-config (s/merge ::config-namespaced/server
                                     ::config-namespaced/app
@@ -40,14 +45,16 @@
 
 (def ^:private config-file  (atom "config.edn"))
 (def ^:private config-cache (atom nil))
+
 (def ^:private ns->un-mapping
   "Converts namespaces into their equivalent unnamespaced keys."
-  {:views  :app
-   :email  :mail
-   :worker :server})
-(def ^:private un->ns-mapping
-  "Convers unnamespaced keys into their equivalent namespaces."
-  (reverse-map ns->un-mapping))
+  {:views    :app
+   :git      :app
+   :build-db :database
+   :email    :mail
+   :handler  :server
+   :response :server
+   :worker   :server})
 
 ;;; Helper Fns
 
@@ -89,8 +96,7 @@
                    (str/split #"\.")
                    second
                    keyword)]
-    (get ns->un-mapping new-ns new-ns)))
-
+    (ns->un-mapping new-ns new-ns)))
 
 ;;; Public Fns
 
@@ -115,15 +121,7 @@
 (defn split-ns-key
   "Given a namespaced key, returns a vector of unnamespaced keys."
   [ns-key]
-  [(get-mapped-key-ns ns-key) (-> ns-key (name) (keyword))])
-
-(defn join-un-key
-  "Given a sequence of unnamespaced keys, returns a single namespaced key."
-  ([key-path] (join-un-key key-path {:prefix "triangulum"}))
-  ([key-path {:keys [prefix]}]
-   (let [[n k] key-path
-         n (get un->ns-mapping n n)]
-     (keyword (str prefix "." (name n)) (name k)))))
+  [(get-mapped-key-ns ns-key) (-> ns-key name keyword)])
 
 ;; Retrieves a configuration value for the given key(s).
 (defn get-config
@@ -137,29 +135,22 @@
    (get-config :triangulum.views/title :en) -> \"english\"
    ```"
   [& all-keys]
-  (let [config (cache-config)
-        k (first all-keys)]
+  (let [config   (cache-config)
+        [k & ks] all-keys]
     (cond
-      (= (count all-keys) 1)
-      (cond
-        (and (nested-config? config)
-             (namespaced-key? k))
-        (get-in config (split-ns-key k))
+      (and (nested-config? config)
+           (namespaced-key? k))
+      (get-in config (concat (split-ns-key k) ks))
 
-        (and (namespaced-config? config)
-             (not (namespaced-key? k)))
-        (->> config
-             (filter #(= (get-mapped-key-ns (key %)) k))
-             (map (fn [[k v]] [(-> k (name) (keyword)) v]))
-             (into {}))
-
-        :else
-        (get config k))
-
-      (and (= (count all-keys) 2)
-           (namespaced-config? config)
+      (and (namespaced-config? config)
            (not (namespaced-key? k)))
-      (get config (join-un-key all-keys))
+      (let [aggregated-map (->> config
+                                (filter #(= k (get-mapped-key-ns (key %))))
+                                (map (fn [[k v]] [(-> k (name) (keyword)) v]))
+                                (into {}))]
+        (if (seq ks)
+          (get-in aggregated-map ks)
+          aggregated-map))
 
       :else
       (get-in config all-keys))))
