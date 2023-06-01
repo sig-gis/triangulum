@@ -18,7 +18,7 @@
 
 (s/def ::http-port         ::config/port)
 (s/def ::https-port        ::config/port)
-(s/def ::nrepl-port        ::config/string)
+(s/def ::nrepl-port        ::config/port)
 (s/def ::nrepl-bind        ::config/string)
 (s/def ::nrepl             boolean?)
 (s/def ::cider-nrepl       boolean?)
