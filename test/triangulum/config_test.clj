@@ -17,7 +17,7 @@
 
 (use-fixtures :each load-test-config)
 
-(deftest get-config-test
+(deftest ^:unit get-config-test
   (testing "Get config for single value."
     (is (map? (get-config :database))))
 

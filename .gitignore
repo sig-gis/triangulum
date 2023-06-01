@@ -9,4 +9,5 @@ pom.xml
 target/
 .rebel_readline_history
 config.edn
+tmp/
 .calva/output-window/output.calva-repl

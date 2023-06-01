@@ -2,6 +2,7 @@
   (:import java.io.ByteArrayOutputStream)
   (:require [babashka.process   :refer [shell]]
             [clojure.data.json  :as json]
+            [clojure.java.io    :as io]
             [clojure.set        :as set]
             [clojure.string     :as str]
             [cognitect.transit  :as transit]
@@ -182,7 +183,7 @@
                       :json    (json/write-str body)
                       body)})))
 
-;; Equivalent FP functions for maps
+;;; Equivalent FP functions for maps
 
 (defn mapm
   "Takes a map, applies f to each MapEntry, returns a map."
@@ -240,3 +241,10 @@
   [sym]
   (require (symbol (namespace sym)))
   (resolve sym))
+
+;;; File operations
+
+(defn delete-recursively
+  "Recursively delete all files and directories under the given directory."
+  [dir]
+  (run! io/delete-file (reverse (file-seq (io/file dir)))))
