@@ -1,5 +1,6 @@
 (ns triangulum.migrate
-  (:import java.io.File)
+  (:import java.io.File
+           java.sql.Connection)
   (:require [clojure.java.io      :as io]
             [clojure.set          :refer [difference]]
             [clojure.string       :as str]
@@ -47,8 +48,9 @@
                                      {:builder-fn as-unqualified-lower-maps})
         files-changed (filter #(file-changed? (:filename %) (:hash %)) completed)]
     (if (seq files-changed)
-      (throw (Exception. (format "Error: Migrations have been modified: %s"
-                                 (str/join ", " (map :filename files-changed)))))
+      (throw (ex-info (format "Error: Migrations have been modified: %s"
+                              (str/join ", " (map :filename files-changed)))
+                      {:files-changed files-changed}))
       (map :filename completed))))
 
 (defn- set-completed! [db-conn filename]
@@ -105,7 +107,7 @@
   [database user user-pass verbose?]
   (when verbose? (println "Applying changes..."))
 
-  (with-open [db-conn (get-conn database user user-pass)]
+  (with-open [^Connection db-conn (get-conn database user user-pass)]
     (setup-migrations-table! db-conn)
     (let [all-files   (get-migration-files)
           completed   (get-completed-changes db-conn)
@@ -118,6 +120,8 @@
           (apply-migration! db-conn file verbose?)
           (set-completed! db-conn file)
           (catch Exception e
-            (throw (Exception. (migration-error (.getMessage e) file new-changes)))))))
+            (throw (ex-info (migration-error (.getMessage e) file new-changes)
+                            {:file        file
+                             :new-changes new-changes}))))))
 
     (when verbose? (println "Completed migrations."))))

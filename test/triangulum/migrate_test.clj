@@ -1,4 +1,5 @@
 (ns triangulum.migrate-test
+  (:import java.sql.Connection)
   (:require [clojure.java.io      :as io]
             [clojure.test         :refer [is deftest testing use-fixtures]]
             [next.jdbc            :as jdbc]
@@ -49,14 +50,14 @@
                           "DROP ROLE IF EXISTS tri_test;"])
 
 (defn- setup-test-db [f]
-  (when-let [conn (get-admin-conn)]
+  (when-let [^Connection conn (get-admin-conn)]
     (try
       (doseq [q (concat drop-db create-db)]
         (jdbc/execute-one! conn [q]))
       (finally
         (.close conn))))
   (f)
-  (when-let [conn (get-admin-conn)]
+  (when-let [^Connection conn (get-admin-conn)]
     (try
       (doseq [q drop-db]
         (jdbc/execute-one! conn [q]))
@@ -73,7 +74,7 @@
     (migrate! tri-test tri-test tri-test verbose?)
 
     ; Assert
-    (with-open [conn (get-tri-test-conn)]
+    (with-open [^Connection conn (get-tri-test-conn)]
       (is (some? (jdbc/execute-one! conn ["SELECT *
                                            FROM pg_catalog.pg_tables
                                            WHERE schemaname = 'tri'
@@ -91,7 +92,7 @@
       (migrate! tri-test tri-test tri-test verbose?)
 
       ; Assert
-      (with-open [conn (get-tri-test-conn)]
+      (with-open [^Connection conn (get-tri-test-conn)]
         (let [migrations (get-migrations conn)]
           (is (pos? (count migrations)))
           (is (= (-> migrations first :filename) filename))
@@ -107,7 +108,7 @@
       (migrate! tri-test tri-test tri-test verbose?))
 
     ; Assert
-    (with-open [conn (get-tri-test-conn)]
+    (with-open [^Connection conn (get-tri-test-conn)]
       (let [migrations (get-migrations conn)]
         (is (= (count migrations) 2)))
       (let [columns (jdbc/execute! conn ["SELECT column_name
@@ -128,7 +129,7 @@
     (is (thrown? Exception (migrate! tri-test tri-test tri-test verbose?)))
 
     ; Assert
-    (with-open [conn (get-tri-test-conn)]
+    (with-open [^Connection conn (get-tri-test-conn)]
       (let [migrations (get-migrations conn)
             columns    (jdbc/execute! conn ["SELECT column_name
                                              FROM information_schema.columns

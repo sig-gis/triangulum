@@ -6,7 +6,8 @@
 
 (defn- cleanup-tmp [f]
   (f)
-  (when (.exists (io/file "tmp")) (delete-recursively "tmp")))
+  (when (.exists (io/file "tmp"))
+    (delete-recursively "tmp")))
 
 (use-fixtures :each cleanup-tmp)
 
