@@ -120,7 +120,7 @@
 (defn split-ns-key
   "Given a namespaced key, returns a vector of unnamespaced keys."
   [ns-key]
-  [(get-mapped-key-ns ns-key) (-> ns-key name keyword)])
+  [(get-mapped-key-ns ns-key) (-> ns-key (name) (keyword))])
 
 ;; Retrieves a configuration value for the given key(s).
 (defn get-config
