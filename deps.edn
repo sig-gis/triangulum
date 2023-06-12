@@ -13,7 +13,7 @@
         org.postgresql/postgresql         {:mvn/version "42.6.0"}
         org.xerial/sqlite-jdbc            {:mvn/version "3.42.0.0"}
         com.github.seancorfield/next.jdbc {:mvn/version "1.3.874"}
-        seancorfield/depstar              {:mvn/version "2.0.216"}
+        com.github.seancorfield/depstar   {:mvn/version "2.1.303"}
         deps-deploy/deps-deploy           {:mvn/version "0.0.12"}
         ring/ring                         {:mvn/version "1.10.0"}
         ring/ring-headers                 {:mvn/version "0.3.0"}

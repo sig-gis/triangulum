@@ -4,6 +4,7 @@
 .clj-kondo/*
 !.clj-kondo/config.edn
 .lsp
+.idea
 
 pom.xml
 target/
