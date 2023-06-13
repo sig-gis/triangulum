@@ -1,5 +1,6 @@
 (ns triangulum.utils
-  (:import java.io.ByteArrayOutputStream)
+  (:import java.io.ByteArrayOutputStream
+           java.time.LocalDateTime)
   (:require [babashka.process   :refer [shell]]
             [clojure.data.json  :as json]
             [clojure.java.io    :as io]
@@ -248,3 +249,10 @@
   "Recursively delete all files and directories under the given directory."
   [dir]
   (run! io/delete-file (reverse (file-seq (io/file dir)))))
+
+;;; Miscellaneous
+
+(defn current-year
+  "Returns the current year as an integer."
+  []
+  (.getYear (LocalDateTime/now)))
