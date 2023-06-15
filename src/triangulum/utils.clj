@@ -56,15 +56,13 @@
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
-                    (str/blank?)
                     (conj acc)))
-        (recur (->> char-seq (drop-while #(not= \` %)))
+        (recur (->> char-seq
+                    (drop-while #(not= \` %)))
                (->> char-seq
                     (take-while #(not= \` %))
                     (apply str)
                     (str/trim)
-
-
                     (#(str/split % #" "))
                     (remove str/blank?)
                     (into acc)))))))
