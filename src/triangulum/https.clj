@@ -75,7 +75,7 @@
                  "\nclojure -M:https --package-cert -d " domain " -p " certbot-dir))
       (sh-wrapper "./"
                   {}
-                  (str "chmod +x " hook-path))
+                  (str "sudo chmod +x " hook-path))
       (package-certificate domain certbot-dir)
       (println "\n*** Initialization complete ***"
                "\nYou must now update the permissions for the key file with 'sudo chown -R user:group .key'"))))
