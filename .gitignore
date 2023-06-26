@@ -12,3 +12,4 @@ target/
 config.edn
 tmp/
 .calva/output-window/output.calva-repl
+*.iml
