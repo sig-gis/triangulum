@@ -144,7 +144,7 @@
   ([table rows id-key fields]
    (let [get-fields (apply juxt fields)]
      (doseq [sm-rows (pg-partition rows fields)]
-       (jdbc/execute-one! (jdbc/get-datasource (pg-db))
+       (jdbc/execute-one! (jdbc/get-datasource pg-db)
                           (for-update-multi! table fields id-key (map get-fields sm-rows))
                           {})))))
 
