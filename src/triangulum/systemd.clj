@@ -25,7 +25,7 @@ Restart=always
 PrivateTmp=true
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 "))
 
 (defn- enable-systemd [{:keys [repo http https dir extra-aliases]}]
