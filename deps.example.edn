@@ -4,9 +4,15 @@
         sig-gis/triangulum  {:git/url "https://github.com/sig-gis/triangulum"
                              :git/sha "REPLACE-WITH-CURRENT-SHA"}}
 
- :aliases {:build-db {:main-opts ["-m" "triangulum.build-db"]}
-           :config   {:main-opts ["-m" "triangulum.config"]}
-           :deploy   {:main-opts ["-m" "triangulum.deploy"]}
-           :https    {:main-opts ["-m" "triangulum.https"]}
-           :server   {:main-opts ["-m" "triangulum.server"]}
-           :systemd  {:main-opts ["-m" "triangulum.systemd"]}}}
+ :aliases {:build-db      {:main-opts ["-m" "triangulum.build-db"]}
+           :build-jar     {:exec-fn   triangulum.packaging/build-jar
+                           :exec-args {:lib-name sig-gis/triangulum}}
+           :build-uberjar {:exec-fn   triangulum.packaging/build-uberjar
+                           :exec-args {:app-name triangulum
+                                       :main-ns  triangulum.server}}
+           :config        {:main-opts ["-m" "triangulum.config"]}
+           :deploy-jar    {:exec-fn   triangulum.packaging/deploy-jar
+                           :exec-args {:lib-name sig-gis/triangulum}}
+           :https         {:main-opts ["-m" "triangulum.https"]}
+           :server        {:main-opts ["-m" "triangulum.server"]}
+           :systemd       {:main-opts ["-m" "triangulum.systemd"]}}}
