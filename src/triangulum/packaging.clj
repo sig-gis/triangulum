@@ -210,5 +210,5 @@
 
       :else
       (deploy {:installer      :remote
-               :sign-releases? true
+               :sign-releases? false
                :artifact       jar-file-name}))))
