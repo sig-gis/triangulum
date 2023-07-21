@@ -325,18 +325,6 @@ configuration keys as follows:
 
 See each section below for an example configuration if one is required for use.
 
-*** triangulum.deploy
-
-To build a JAR file from your repository and deploy it to clojars.org, run:
-
-#+begin_src sh
-env CLOJARS_USERNAME=$YOUR_USERNAME CLOJARS_PASSWORD=$YOUR_CLOJARS_TOKEN clojure -M:deploy $GROUP_ID $ARTIFACT_ID
-#+end_src
-
-NOTE: As of 2020-06-27, Clojars will no longer accept your Clojars
-password when deploying. You will have to use a token instead. Please
-read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][here]]
-
 *** triangulum.https
 **** Required Prerequisites
 - [[https://certbot.eff.org/][certbot]]
@@ -392,6 +380,36 @@ Create a shell script in ~/etc/letsencrypt/renewal-hooks/deploy~ and update perm
 #+begin_src sh
 sudo nano /etc/letsencrypt/renewal-hooks/deploy/custom.sh
 sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/custom.sh
+#+end_src
+
+*** triangulum.packaging
+
+To build a library JAR from your repository, run:
+
+#+begin_src sh
+clojure -X triangulum.packaging/build-jar :lib-name $GROUP_ID/$ARTIFACT_ID
+#+end_src
+
+To build an application UberJAR from your repository, run:
+
+#+begin_src sh
+clojure -X triangulum.packaging/build-uberjar :app-name $ARTIFACT_ID :main-ns $MAIN_NAMESPACE
+#+end_src
+
+To deploy a library JAR to https://clojars.org, run:
+
+#+begin_src sh
+env CLOJARS_USERNAME=$YOUR_USERNAME CLOJARS_PASSWORD=$YOUR_CLOJARS_TOKEN clojure -X triangulum.packaging/deploy-jar $GROUP_ID/$ARTIFACT_ID
+#+end_src
+
+NOTE: As of 2020-06-27, Clojars will no longer accept your Clojars
+password when deploying. You will have to use a token instead. Please
+read more about this [[https://github.com/clojars/clojars-web/wiki/Deploy-Tokens][here]]
+
+To clean up after yourself by deleting the build folder (~target~), run:
+
+#+begin_src sh
+clojure -X triangulum.packaging/clean
 #+end_src
 
 *** triangulum.systemd
