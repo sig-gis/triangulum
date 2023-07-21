@@ -12,8 +12,9 @@
 
 ;; Constants
 
-(def tags-url
+(defn get-tags-url
   "Gets repo tags url from config.edn."
+  []
   (get-config :app :tags-url))
 
 ;; Cache
@@ -24,7 +25,7 @@
 
 (defn- get-all-tags []
   (try
-    (let [{:keys [status body]} (client/get tags-url)]
+    (let [{:keys [status body]} (client/get (get-tags-url))]
       (when (= 200 status)
         (json/read-str body :key-fn keyword)))
     (catch Exception e (log-str e))))
@@ -42,7 +43,7 @@
   "Return current latest tag version from the configured tags url of repo."
   []
   (cond
-    (nil? tags-url)         nil
+    (nil? (get-tags-url))   nil
     (nil? @version)         nil
     (= @version :undefined) (reset! version (latest-prod-tag))
     :else                   @version))
