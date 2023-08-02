@@ -203,7 +203,7 @@
                                    port
                                    dbname
                                    (or user dbname)
-                                   (or password dbname)                     ; user-pass
+                                   (or password dbname) ; user-pass
                                    admin-pass
                                    dev-data
                                    verbose)
@@ -212,13 +212,13 @@
                                user
                                dbname
                                (or user dbname)
-                               (or password dbname)                     ; user-pass
+                               (or password dbname) ; user-pass
                                verbose)
       :backup (run-backup dbname file user admin-pass verbose)
       :restore (run-restore dbname user admin-pass file verbose)
-      :migrate (migrate! dbname ;; TODO we might need coider host and port here.
+      :migrate (migrate! dbname ; TODO we might need coider host and port here.
                          (or user dbname)
-                         (or password dbname)                       ; user-pass
+                         (or password dbname) ; user-pass
                          verbose)
       nil))
   (shutdown-agents))
