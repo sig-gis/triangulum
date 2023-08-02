@@ -1,20 +1,20 @@
 (ns triangulum.build-db
   (:import java.io.File)
-  (:require [clojure.java.io :as io]
+  (:require [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.spec.alpha :as s]
-            [clojure.string :as str]
-            [triangulum.cli :refer [get-cli-options]]
-            [triangulum.config :as config :refer [get-config]]
+            [clojure.string     :as str]
+            [triangulum.cli     :refer [get-cli-options]]
+            [triangulum.config  :as config :refer [get-config]]
             [triangulum.migrate :refer [migrate!]]
-            [triangulum.utils :refer [parse-as-sh-cmd format-str]]))
+            [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
 
 ;; spec
 
 (s/def ::admin-pass ::config/string)
-(s/def ::dev-data boolean?)
-(s/def ::file ::config/string)
-(s/def ::verbose boolean?)
+(s/def ::dev-data   boolean?)
+(s/def ::file       ::config/string)
+(s/def ::verbose    boolean?)
 
 (def ^:private path-env (System/getenv "PATH"))
 
@@ -27,8 +27,8 @@
       (reduce (fn [acc cmd]
                 (let [{:keys [out err]} (apply sh/sh (parse-as-sh-cmd cmd))]
                   (str acc (when verbose out) err)))
-        ""
-        commands))))
+              ""
+              commands))))
 
 ;; Namespace file sorting functions
 
@@ -36,33 +36,33 @@
   (let [file (io/file dir-name)]
     (if (.exists file)
       (filter (fn [^File f] (str/ends-with? (.getName f) ".sql"))
-        (file-seq file))
+              (file-seq file))
       (do (println "Warning:" dir-name "is not found.")
-        []))))
+          []))))
 
 (defn- extract-toplevel-sql-comments [file]
   (->> (io/reader file)
-    (line-seq)
-    (take-while #(str/starts-with? % "-- "))))
+       (line-seq)
+       (take-while #(str/starts-with? % "-- "))))
 
 (defn- parse-sql-comments [comments]
   (reduce (fn [acc cur]
             (let [[k v] (-> cur
-                          (subs 3)
-                          (str/lower-case)
-                          (str/split #":"))]
+                            (subs 3)
+                            (str/lower-case)
+                            (str/split #":"))]
               (assoc acc (keyword (str/trim k)) (str/trim v))))
-    {}
-    (filter #(str/includes? % ":") comments)))
+          {}
+          (filter #(str/includes? % ":") comments)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn- params-to-dep-tree [file-params]
   (reduce (fn [dep-tree {:keys [namespace requires]}]
             (assoc dep-tree
-              namespace
-              (set (when requires (remove str/blank? (str/split requires #"[, ]"))))))
-    {}
-    file-params))
+                   namespace
+                   (set (when requires (remove str/blank? (str/split requires #"[, ]"))))))
+          {}
+          file-params))
 
 ;; TODO, with more namespaces, which don't have a linear dependency
 ;;       the sort method used doesn't end up comparing all values with each other.
@@ -70,15 +70,15 @@
 ;;       a breadth first tree walk.
 (defn- requires? [[_ deps1] [ns2 deps2]]
   (or (contains? deps1 ns2)
-    (> (count deps1) (count deps2))))
+      (> (count deps1) (count deps2))))
 
 (defn- topo-sort-namespaces [dep-tree]
   (map first
-    (sort (fn [file1 file2]
-            (cond (requires? file1 file2) 1
-              (requires? file2 file1) -1
-              :else 0))
-      dep-tree)))
+       (sort (fn [file1 file2]
+             (cond (requires? file1 file2) 1
+                   (requires? file2 file1) -1
+                   :else 0))
+             dep-tree)))
 
 (defn- warn-namespace [parsed file]
   (when-not (:namespace parsed)
@@ -88,10 +88,10 @@
 (defn- topo-sort-files-by-namespace [dir-name]
   (let [sql-files   (get-sql-files dir-name)
         file-params (map #(-> %
-                            (extract-toplevel-sql-comments)
-                            (parse-sql-comments)
-                            (warn-namespace %))
-                      sql-files)
+                              (extract-toplevel-sql-comments)
+                              (parse-sql-comments)
+                              (warn-namespace %))
+                         sql-files)
         ns-to-files (zipmap (map :namespace file-params)
                       (map (fn [^File f] (.getPath f)) sql-files))
         dep-tree    (params-to-dep-tree file-params)
@@ -109,9 +109,9 @@
   (let [folder (sql-type folders)]
     (println (str "Loading " folder "..."))
     (->> (map #(format-str "psql -h %h -p %p -U %u -d %d -f %f" host port user database %)
-           (topo-sort-files-by-namespace folder))
-      (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
-      (println))))
+              (topo-sort-files-by-namespace folder))
+         (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
+         (println))))
 
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
@@ -121,10 +121,10 @@
                  {:PGPASSWORD admin-pass}
                  verbose
                  (format-str "psql -h %h -p %p --set=database=%d -U %u -f create_db.sql"
-                   host
-                   port
-                   database
-                   user))
+                             host
+                             port
+                             database
+                             user))
             (println))
         (load-folder :tables host port database user user-pass verbose)
         (load-folder :functions host port database user user-pass verbose)
@@ -147,9 +147,9 @@
     {:PGPASSWORD admin-pass}
     verbose
     (format-str "pg_dump -U %u -d %d --format=custom --compress=4 --file=%f"
-      user
-      database
-      file)))
+                 user
+                 database
+                 file)))
 
 (defn- run-restore [database user admin-pass file verbose]
   ;; TODO check database against 'pg_restore --list file'
@@ -159,9 +159,9 @@
       {:PGPASSWORD admin-pass}
       verbose
       (format-str "pg_restore -U %u -d %d --clean --if-exists --create --jobs=12 %f"
-        database
-        user
-        file))
+                  database
+                  user
+                  file))
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
@@ -199,27 +199,26 @@
                                    (get-config :database))
         {:keys [host port dbname dev-data file password admin-pass user verbose]} options]
     (case action
-      :build-all (build-everything
-                   host
-                   port
-                   dbname
-                   (or user dbname)
-                   (or password dbname)                     ; user-pass
-                   admin-pass
-                   dev-data
-                   verbose)
+      :build-all (build-everything host
+                                   port
+                                   dbname
+                                   (or user dbname)
+                                   (or password dbname)                     ; user-pass
+                                   admin-pass
+                                   dev-data
+                                   verbose)
       :functions (load-folder :functions
-                   host
-                   user
-                   dbname
-                   (or user dbname)
-                   (or password dbname)                     ; user-pass
-                   verbose)
+                               host
+                               user
+                               dbname
+                               (or user dbname)
+                               (or password dbname)                     ; user-pass
+                               verbose)
       :backup (run-backup dbname file user admin-pass verbose)
       :restore (run-restore dbname user admin-pass file verbose)
       :migrate (migrate! dbname ;; TODO we might need coider host and port here.
-                 (or user dbname)
-                 (or password dbname)                       ; user-pass
-                 verbose)
+                         (or user dbname)
+                         (or password dbname)                       ; user-pass
+                         verbose)
       nil))
   (shutdown-agents))
