@@ -216,7 +216,7 @@
                                verbose)
       :backup (run-backup dbname file user admin-pass verbose)
       :restore (run-restore dbname user admin-pass file verbose)
-      :migrate (migrate! dbname ; TODO we might need coider host and port here.
+      :migrate (migrate! dbname ; TODO we might need consider host and port here.
                          (or user dbname)
                          (or password dbname) ; user-pass
                          verbose)
