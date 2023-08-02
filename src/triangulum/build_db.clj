@@ -77,7 +77,7 @@
        (sort (fn [file1 file2]
              (cond (requires? file1 file2) 1
                    (requires? file2 file1) -1
-                   :else 0))
+                   :else                   0))
              dep-tree)))
 
 (defn- warn-namespace [parsed file]
@@ -93,7 +93,7 @@
                               (warn-namespace %))
                          sql-files)
         ns-to-files (zipmap (map :namespace file-params)
-                      (map (fn [^File f] (.getPath f)) sql-files))
+                            (map (fn [^File f] (.getPath f)) sql-files))
         dep-tree    (params-to-dep-tree file-params)
         sorted-ns   (topo-sort-namespaces dep-tree)]
     (map ns-to-files sorted-ns)))
@@ -165,17 +165,17 @@
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
-  {:host       ["-h" "--host host" "Database host."
+  {:host       ["-h"  "--host host"           "Database host."
                 :default "localhost"]
-   :port       ["-o" "--port port" "Database port."
+   :port       ["-o" "--port port"           "Database port."
                 :default 5432]
-   :dbname     ["-d" "--dbname DB" "Database name."]
-   :dev-data   ["-x" "--dev-data" "Load dev data."]
-   :file       ["-f" "--file FILE" "File used for backup and restore."]
-   :admin-pass ["-a" "--admin-pass PASSWORD" "Admin password for the postgres account."]
-   :user       ["-u" "--user USER" "User for the database. Defaults to the same as the database name."]
-   :password   ["-p" "--password PASSWORD" "Password for the database. Defaults to the same as the database name."]
-   :verbose    ["-v" "--verbose" "Print verbose PostgreSQL output."]})
+   :dbname     ["-d"  "--dbname DB"           "Database name."]
+   :dev-data   ["-x"  "--dev-data"            "Load dev data."]
+   :file       ["-f"  "--file FILE"           "File used for backup and restore."]
+   :admin-pass ["-a"  "--admin-pass PASSWORD" "Admin password for the postgres account."]
+   :user       ["-u"  "--user USER"           "User for the database. Defaults to the same as the database name."]
+   :password   ["-p"  "--password PASSWORD"   "Password for the database. Defaults to the same as the database name."]
+   :verbose    ["-v"  "--verbose"             "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
   {:backup    {:description "Create a .dump backup file using pg_dump."
