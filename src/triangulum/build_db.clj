@@ -75,9 +75,9 @@
 (defn- topo-sort-namespaces [dep-tree]
   (map first
        (sort (fn [file1 file2]
-               (cond (requires? file1 file2) 1
+               (cond (requires? file1 file2)  1
                      (requires? file2 file1) -1
-                     :else                   0))
+                     :else                    0))
              dep-tree)))
 
 (defn- warn-namespace [parsed file]
