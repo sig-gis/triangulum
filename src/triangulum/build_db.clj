@@ -143,9 +143,9 @@
 (defn- run-backup [database file admin-pass verbose]
   (println "Backing up database...")
   (sh-wrapper "./"
-    {:PGPASSWORD admin-pass}
-    verbose
-    (format-str "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
+              {:PGPASSWORD admin-pass}
+              verbose
+              (format-str "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
                 database
                 file)))
 
@@ -156,7 +156,8 @@
     (sh-wrapper "./"
                 {:PGPASSWORD admin-pass}
                 verbose
-                (str "pg_restore -U postgres -d postgres --clean --if-exists --create --jobs=12 " file))
+                (str "pg_restore -U postgres -d postgres --clean --if-exists --create --jobs=12 "
+                     file))
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
