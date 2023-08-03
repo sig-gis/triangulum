@@ -121,14 +121,14 @@
                            {:PGPASSWORD admin-pass}
                            verbose
                            (format-str "psql -h %h -p %p --set=database=%d -U postgres -f create_db.sql"
-                             host
-                             port
-                             database))
+                                       host
+                                       port
+                                       database))
                (println))
-        (load-folder :tables host port database user user-pass verbose)
-        (load-folder :functions host port database user user-pass verbose)
-        (load-folder :defaults host port database user user-pass verbose)
-        (when dev-data?
+          (load-folder :tables host port database user user-pass verbose)
+          (load-folder :functions host port database user user-pass verbose)
+          (load-folder :defaults host port database user user-pass verbose)
+          (when dev-data?
           (load-folder :dev host port database user user-pass verbose)))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
