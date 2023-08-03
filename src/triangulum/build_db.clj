@@ -146,8 +146,8 @@
               {:PGPASSWORD admin-pass}
               verbose
               (format-str "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
-                database
-                file)))
+                          database
+                          file)))
 
 (defn- run-restore [file admin-pass verbose]
   ;; TODO check database against 'pg_restore --list file'
