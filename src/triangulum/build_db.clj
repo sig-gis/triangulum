@@ -118,14 +118,13 @@
   (let [file (io/file "./src/sql/create_db.sql")]
     (if (.exists file)
       (do (->> (sh-wrapper "./src/sql"
-                 {:PGPASSWORD admin-pass}
-                 verbose
-                 (format-str "psql -h %h -p %p --set=database=%d -U %u -f create_db.sql"
+                           {:PGPASSWORD admin-pass}
+                           verbose
+                           (format-str "psql -h %h -p %p --set=database=%d -U postgres -f create_db.sql"
                              host
                              port
-                             database
-                             user))
-            (println))
+                             database))
+               (println))
         (load-folder :tables host port database user user-pass verbose)
         (load-folder :functions host port database user user-pass verbose)
         (load-folder :defaults host port database user user-pass verbose)
@@ -141,41 +140,37 @@
       (.read is array 0 5)
       (String. array))))
 
-(defn- run-backup [database file user admin-pass verbose]
+(defn- run-backup [database file admin-pass verbose]
   (println "Backing up database...")
   (sh-wrapper "./"
     {:PGPASSWORD admin-pass}
     verbose
-    (format-str "pg_dump -U %u -d %d --format=custom --compress=4 --file=%f"
-                 user
-                 database
-                 file)))
+    (format-str "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
+                database
+                file)))
 
-(defn- run-restore [database user admin-pass file verbose]
+(defn- run-restore [file admin-pass verbose]
   ;; TODO check database against 'pg_restore --list file'
   (println "Restoring database...")
   (if (= "PGDMP" (read-file-tag file))
     (sh-wrapper "./"
-      {:PGPASSWORD admin-pass}
-      verbose
-      (format-str "pg_restore -U %u -d %d --clean --if-exists --create --jobs=12 %f"
-                  database
-                  user
-                  file))
+                {:PGPASSWORD admin-pass}
+                verbose
+                (str "pg_restore -U postgres -d postgres --clean --if-exists --create --jobs=12 " file))
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
-  {:host       ["-h"  "--host host"           "Database host."
+  {:host       ["-h"  "--host HOST"            "PostgreSQL server host."
                 :default "localhost"]
-   :port       ["-o" "--port port"           "Database port."
+   :port       ["-P"  "--port PORT"            "PostgreSQL server port."
                 :default 5432]
-   :dbname     ["-d"  "--dbname DB"           "Database name."]
-   :dev-data   ["-x"  "--dev-data"            "Load dev data."]
-   :file       ["-f"  "--file FILE"           "File used for backup and restore."]
-   :admin-pass ["-a"  "--admin-pass PASSWORD" "Admin password for the postgres account."]
-   :user       ["-u"  "--user USER"           "User for the database. Defaults to the same as the database name."]
-   :password   ["-p"  "--password PASSWORD"   "Password for the database. Defaults to the same as the database name."]
-   :verbose    ["-v"  "--verbose"             "Print verbose PostgreSQL output."]})
+   :dbname     ["-d"  "--dbname DB"            "Database name."]
+   :dev-data   ["-x"  "--dev-data"             "Load dev data."]
+   :file       ["-f"  "--file FILE"            "File used for backup and restore."]
+   :admin-pass ["-a"  "--admin-pass PASSWORD"  "Admin password for the postgres account."]
+   :user       ["-u"  "--user USER"            "User for the database. Defaults to the same as the database name."]
+   :password   ["-p"  "--password PASSWORD"    "Password for the database. Defaults to the same as the database name."]
+   :verbose    ["-v"  "--verbose"              "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
   {:backup    {:description "Create a .dump backup file using pg_dump."
@@ -193,10 +188,10 @@
   "A set of tools for building and maintaining the project database with Postgres."
   [& args]
   (let [{:keys [action options]} (get-cli-options args
-                                   cli-options
-                                   cli-actions
-                                   "build-db"
-                                   (get-config :database))
+                                                  cli-options
+                                                  cli-actions
+                                                  "build-db"
+                                                  (get-config :database))
         {:keys [host port dbname dev-data file password admin-pass user verbose]} options]
     (case action
       :build-all (build-everything host
@@ -209,16 +204,16 @@
                                    verbose)
       :functions (load-folder :functions
                                host
-                               user
+                               port
                                dbname
                                (or user dbname)
                                (or password dbname) ; user-pass
                                verbose)
-      :backup (run-backup dbname file user admin-pass verbose)
-      :restore (run-restore dbname user admin-pass file verbose)
-      :migrate (migrate! dbname ; TODO we might need consider host and port here.
-                         (or user dbname)
-                         (or password dbname) ; user-pass
-                         verbose)
+      :backup    (run-backup dbname file admin-pass verbose)
+      :restore   (run-restore file admin-pass verbose)
+      :migrate   (migrate! dbname ; TODO we might need consider host and port here.
+                           (or user dbname)
+                           (or password dbname) ; user-pass
+                           verbose)
       nil))
   (shutdown-agents))
