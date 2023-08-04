@@ -129,7 +129,7 @@
           (load-folder :functions host port database user user-pass verbose)
           (load-folder :defaults host port database user user-pass verbose)
           (when dev-data?
-          (load-folder :dev host port database user user-pass verbose)))
+            (load-folder :dev host port database user user-pass verbose)))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
 ;; Backup / restore functions
@@ -204,12 +204,12 @@
                                    dev-data
                                    verbose)
       :functions (load-folder :functions
-                               host
-                               port
-                               dbname
-                               (or user dbname)
-                               (or password dbname) ; user-pass
-                               verbose)
+                              host
+                              port
+                              dbname
+                              (or user dbname)
+                              (or password dbname) ; user-pass
+                              verbose)
       :backup    (run-backup dbname file admin-pass verbose)
       :restore   (run-restore file admin-pass verbose)
       :migrate   (migrate! dbname ; TODO we might need consider host and port here.
