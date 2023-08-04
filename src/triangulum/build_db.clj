@@ -105,29 +105,31 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
-(defn- load-folder [sql-type database user user-pass verbose]
+(defn- load-folder [sql-type host port database user user-pass verbose]
   (let [folder (sql-type folders)]
     (println (str "Loading " folder "..."))
-    (->> (map #(format-str "psql -h localhost -U %u -d %d -f %f" user database %)
+    (->> (map #(format-str "psql -h %h -p %p -U %u -d %d -f %f" host port user database %)
               (topo-sort-files-by-namespace folder))
          (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
          (println))))
 
-(defn- build-everything [database user user-pass admin-pass dev-data? verbose]
+(defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
   (let [file (io/file "./src/sql/create_db.sql")]
     (if (.exists file)
       (do (->> (sh-wrapper "./src/sql"
                            {:PGPASSWORD admin-pass}
                            verbose
-                           (format "psql -h localhost --set=database=%s -U postgres -f create_db.sql"
-                                   database))
+                           (format-str "psql -h %h -p %p --set=database=%d -U postgres -f create_db.sql"
+                                       host
+                                       port
+                                       database))
                (println))
-          (load-folder :tables    database user user-pass verbose)
-          (load-folder :functions database user user-pass verbose)
-          (load-folder :defaults  database user user-pass verbose)
+          (load-folder :tables host port database user user-pass verbose)
+          (load-folder :functions host port database user user-pass verbose)
+          (load-folder :defaults host port database user user-pass verbose)
           (when dev-data?
-            (load-folder :dev database user user-pass verbose)))
+            (load-folder :dev host port database user user-pass verbose)))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
 ;; Backup / restore functions
@@ -159,13 +161,17 @@
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
-  {:dbname     ["-d" "--dbname DB"           "Database name."]
-   :dev-data   ["-x" "--dev-data"            "Load dev data."]
-   :file       ["-f" "--file FILE"           "File used for backup and restore."]
-   :admin-pass ["-a" "--admin-pass PASSWORD" "Admin password for the postgres account."]
-   :user       ["-u" "--user USER"           "User for the database. Defaults to the same as the database name."]
-   :password   ["-p" "--password PASSWORD"   "Password for the database. Defaults to the same as the database name."]
-   :verbose    ["-v" "--verbose"             "Print verbose PostgreSQL output."]})
+  {:host       ["-h"  "--host HOST"            "PostgreSQL server host."
+                :default "localhost"]
+   :port       ["-P"  "--port PORT"            "PostgreSQL server port."
+                :default 5432]
+   :dbname     ["-d"  "--dbname DB"            "Database name."]
+   :dev-data   ["-x"  "--dev-data"             "Load dev data."]
+   :file       ["-f"  "--file FILE"            "File used for backup and restore."]
+   :admin-pass ["-a"  "--admin-pass PASSWORD"  "Admin password for the postgres account."]
+   :user       ["-u"  "--user USER"            "User for the database. Defaults to the same as the database name."]
+   :password   ["-p"  "--password PASSWORD"    "Password for the database. Defaults to the same as the database name."]
+   :verbose    ["-v"  "--verbose"              "Print verbose PostgreSQL output."]})
 
 (def ^:private cli-actions
   {:backup    {:description "Create a .dump backup file using pg_dump."
@@ -187,22 +193,26 @@
                                                   cli-actions
                                                   "build-db"
                                                   (get-config :database))
-        {:keys [dbname dev-data file password admin-pass user verbose]} options]
+        {:keys [host port dbname dev-data file password admin-pass user verbose]} options]
     (case action
-      :build-all (build-everything dbname
+      :build-all (build-everything host
+                                   port
+                                   dbname
                                    (or user dbname)
                                    (or password dbname) ; user-pass
                                    admin-pass
                                    dev-data
                                    verbose)
       :functions (load-folder :functions
+                              host
+                              port
                               dbname
                               (or user dbname)
                               (or password dbname) ; user-pass
                               verbose)
       :backup    (run-backup dbname file admin-pass verbose)
       :restore   (run-restore file admin-pass verbose)
-      :migrate   (migrate! dbname
+      :migrate   (migrate! dbname ; TODO we might need consider host and port here.
                            (or user dbname)
                            (or password dbname) ; user-pass
                            verbose)
