@@ -51,11 +51,10 @@
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defmethod start-workers! :namespaced [worker-vec]
   (reset! workers
-          (reduce (fn [acc {::keys [name start]}]
-                    (let [value (start-worker name start)]
-                      (assoc acc ::value value)))
-                  worker-vec
-                  worker-vec)))
+          (mapv (fn [{::keys [name start] :as worker}]
+                  (let [value (start-worker name start)]
+                    (assoc worker ::value value)))
+                worker-vec)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn- stop-worker! [name stop value]
