@@ -3,8 +3,12 @@
 
 (defn init-throw
   "Throws an error message."
-  [message]
-  (throw (ex-info message {:causes [message]})))
+  ([message]
+   (throw (ex-info message {})))
+  ([message data]
+   (throw (ex-info message data)))
+  ([message data cause]
+   (throw (ex-info message data cause))))
 
 (defn try-catch-throw
   "Runs a function and, in case it throws an exception, catches and logs the exception, then rethrows it with an enhanced input message."

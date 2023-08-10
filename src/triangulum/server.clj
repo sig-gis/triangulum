@@ -1,4 +1,5 @@
 (ns triangulum.server
+  (:gen-class)
   (:import org.eclipse.jetty.server.Server)
   (:require [cider.nrepl         :refer [cider-nrepl-handler]]
             [clojure.java.io     :as io]
@@ -173,4 +174,4 @@
       :stop   (stop-running-server! options)
       :reload (reload-running-server! options)
       nil)
-    (System/exit 1)))
+    (System/exit 0)))
