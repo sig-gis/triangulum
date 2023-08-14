@@ -64,7 +64,8 @@
   [handler]
   (fn [request]
     (let [{:keys [uri request-method params]} request
-          param-str                           (pr-str (dissoc params :password :passwordConfirmation))]
+          private-request-keys                (get-config :server :private-request-keys)
+          param-str                           (pr-str (apply (partial dissoc params) private-request-keys))]
       (log-str "Request(" (name request-method) "): \"" uri "\" " param-str)
       (handler request))))
 
@@ -73,17 +74,18 @@
   [handler]
   (fn [request]
     (let [{:keys [status headers body] :as response} (handler request)
-          content-type                               (headers "Content-Type")]
+          content-type                               (headers "Content-Type")
+          private-response-keys                      (get-config :server :private-response-keys)]
       (log-str "Response(" status "): "
                (cond
                  (instance? java.io.File body)
                  (str content-type " file")
 
                  (= content-type "application/edn")
-                 (binding [*print-length* 2] (print-str (edn/read-string body)))
+                 (binding [*print-length* 2] (print-str (apply (partial dissoc (edn/read-string body)) private-response-keys)))
 
                  (= content-type "application/json")
-                 (binding [*print-length* 2] (print-str (nil-on-error (json/read-str body))))
+                 (binding [*print-length* 2] (print-str (apply (partial dissoc (nil-on-error (json/read-str body))) private-response-keys)))
 
                  :else
                  (str content-type " response")))
