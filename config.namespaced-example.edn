@@ -13,8 +13,10 @@
  :triangulum.server/keystore-password "foobar"
 
  ;; handler (server)
- :triangulum.handler/session-key      "changeme12345678" ; must be 16 characters
- :triangulum.handler/bad-tokens       #{".php"}
+ :triangulum.handler/session-key           "changeme12345678" ; must be 16 characters
+ :triangulum.handler/bad-tokens            #{".php"}
+ :triangulum.handler/private-request-keys  #{:base64Image :plotFileBase64 :sampleFileBase64}
+ :triangulum.handler/private-response-keys #{}
 
  ;; workers (server)
  :triangulum.worker/workers           [{:triangulum.worker/name  "scheduler"
