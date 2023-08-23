@@ -11,12 +11,12 @@
             :keystore-file     "keystore.pkcs12"
             :keystore-type     "pkcs12"
             :keystore-password "foobar"
-            :private-request-keys  #{:base64Image :plotFileBase64 :sampleFileBase64}
-            :private-response-keys #{}
 
             ;; handler
             :session-key       "changeme12345678" ; must be 16 characters
             :bad-tokens        #{".php"}
+            :private-request-keys  #{:base64Image :plotFileBase64 :sampleFileBase64}
+            :private-response-keys #{}
 
             ;; workers
             :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!

@@ -32,6 +32,8 @@
 
 (s/def ::session-key (s/and ::config/string #(= 16 (count %))))
 (s/def ::bad-tokens  (s/coll-of ::config/string :kind set? :min-count 0))
+(s/def ::private-request-keys (s/coll-of keyword :kind set?))
+(s/def ::private-response-keys (s/coll-of keyword :kind set?))
 
 ;; state
 
@@ -64,8 +66,9 @@
   [handler]
   (fn [request]
     (let [{:keys [uri request-method params]} request
-          private-request-keys                (get-config :server :private-request-keys)
-          param-str                           (pr-str (apply (partial dissoc params) private-request-keys))]
+          private-request-keys                (or (get-config :server :private-request-keys)
+                                                  #{:password :passwordConfirmation})
+          param-str                           (pr-str (apply dissoc params private-request-keys))]
       (log-str "Request(" (name request-method) "): \"" uri "\" " param-str)
       (handler request))))
 
@@ -82,10 +85,10 @@
                  (str content-type " file")
 
                  (= content-type "application/edn")
-                 (binding [*print-length* 2] (print-str (apply (partial dissoc (edn/read-string body)) private-response-keys)))
+                 (binding [*print-length* 2] (print-str (apply dissoc (edn/read-string body) private-response-keys)))
 
                  (= content-type "application/json")
-                 (binding [*print-length* 2] (print-str (apply (partial dissoc (nil-on-error (json/read-str body))) private-response-keys)))
+                 (binding [*print-length* 2] (print-str (apply dissoc (nil-on-error (json/read-str body)) private-response-keys)))
 
                  :else
                  (str content-type " response")))
