@@ -17,6 +17,8 @@
                                 :triangulum.server/keystore-file
                                 :triangulum.server/keystore-type
                                 :triangulum.server/keystore-password
+                                :triangulum.handler/private-request-keys
+                                :triangulum.handler/private-response-keys
                                 :triangulum.handler/bad-tokens
                                 :triangulum.worker/workers]))
 

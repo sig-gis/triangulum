@@ -18,6 +18,8 @@
                                    :triangulum.server/keystore-type
                                    :triangulum.server/keystore-password
                                    :triangulum.handler/bad-tokens
+                                   :triangulum.handler/private-request-keys
+                                   :triangulum.handler/private-response-keys
                                    :triangulum.worker/workers]))
 
 (s/def ::app      (s/keys :opt-un [:triangulum.views/title
