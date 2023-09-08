@@ -27,7 +27,7 @@
                                   :body  (s/? any?)))
 (s/def ::extra-head-tags   (s/coll-of ::hiccup-element :kind vector?))
 (s/def ::gtag-id           (s/and ::config/string #(str/starts-with? % "G-")))
-(s/def ::static-file-paths (s/coll-of ::config/static-file-path :kind vector?))
+(s/def ::static-file-paths (s/coll-of ::config/url-or-file-path :kind vector?))
 (s/def ::static-css-files  ::static-file-paths)
 (s/def ::static-js-files   ::static-file-paths)
 (s/def ::get-user-lang     ::config/namespaced-symbol)
