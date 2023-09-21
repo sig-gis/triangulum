@@ -40,6 +40,28 @@
 ;; FIXME: Make this into a reloadable component
 (defonce ^:private session-cookie-store (atom nil))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Routing Handler
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn authenticated-routing-handler
+  "Routing Handler that delegates authentication & redirection
+   to handlers specified in your config.edn"
+  [{:keys [uri request-method params session headers] :as request}]
+  (let [redirect-handler  (resolve-foreign-symbol (get-config :triangulum.handler/redirect-handler))
+        not-found-handler (resolve-foreign-symbol (get-config :triangulum.handler/not-found-handler))
+        is-authenticated? (resolve-foreign-symbol (get-config :triangulum.handler/route-authenticator))
+        routes            (->> (get-config :triangulum.handler/routing-tables)
+                               (map resolve-foreign-symbol)
+                               (apply merge))
+        {:keys [auth-type auth-action handler] :as route} (get routes [request-method uri])]
+    (cond
+      (nil? route)                                                (not-found-handler request)
+      (or (nil? auth-type) (is-authenticated? request auth-type)) (handler request)
+      (= :redirect auth-action)                                   (redirect-handler request)
+      :else                                                       (forbidden-response request))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
