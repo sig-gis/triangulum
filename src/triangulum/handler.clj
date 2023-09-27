@@ -3,7 +3,6 @@
             [clojure.edn                        :as edn]
             [clojure.spec.alpha                 :as s]
             [clojure.string                     :as str]
-            [ring.util.codec                    :refer [url-decode]]
             [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
             [ring.middleware.content-type       :refer [wrap-content-type]]
             [ring.middleware.default-charset    :refer [wrap-default-charset]]
@@ -19,6 +18,7 @@
             [ring.middleware.session            :refer [wrap-session]]
             [ring.middleware.session.cookie     :refer [cookie-store]]
             [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
+            [ring.util.codec                    :refer [url-decode]]
             [ring.middleware.x-headers          :refer [wrap-content-type-options
                                                         wrap-frame-options
                                                         wrap-xss-protection]]
@@ -39,6 +39,28 @@
 
 ;; FIXME: Make this into a reloadable component
 (defonce ^:private session-cookie-store (atom nil))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Routing Handler
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn authenticated-routing-handler
+  "Routing Handler that delegates authentication & redirection
+   to handlers specified in your config.edn"
+  [{:keys [uri request-method] :as request}]
+  (let [redirect-handler  (resolve-foreign-symbol (get-config :triangulum.handler/redirect-handler))
+        not-found-handler (resolve-foreign-symbol (get-config :triangulum.handler/not-found-handler))
+        is-authenticated? (resolve-foreign-symbol (get-config :triangulum.handler/route-authenticator))
+        routes            (->> (get-config :triangulum.handler/routing-tables)
+                               (map resolve-foreign-symbol)
+                               (apply merge))
+        {:keys [auth-type auth-action handler] :as route} (get routes [request-method uri])]
+    (cond
+      (nil? route)                                                (not-found-handler request)
+      (or (nil? auth-type) (is-authenticated? request auth-type)) (handler request)
+      (= :redirect auth-action)                                   (redirect-handler request)
+      :else                                                       (forbidden-response request))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
