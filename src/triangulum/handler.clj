@@ -49,7 +49,7 @@
   "Routing Handler that delegates authentication & redirection
    to handlers specified in your config.edn"
   [{:keys [uri request-method] :as request}]
-  (let [redirect-handler  (resolvem-foreign-symbol (get-config :triangulum.handler/redirect-handler))
+  (let [redirect-handler  (resolve-foreign-symbol (get-config :triangulum.handler/redirect-handler))
         not-found-handler (resolve-foreign-symbol (get-config :triangulum.handler/not-found-handler))
         is-authenticated? (resolve-foreign-symbol (get-config :triangulum.handler/route-authenticator))
         routes            (->> (get-config :triangulum.handler/routing-tables)
