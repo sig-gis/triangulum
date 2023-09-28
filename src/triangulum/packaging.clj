@@ -113,6 +113,9 @@
   (let [version       (get-calendar-commit-version)
         jar-file-name (get-jar-file-name lib-name version)]
 
+    ;; Delete the jar-content folder
+    (b/delete {:path jar-content})
+
     ;; Copy static files to jar-content folder
     (b/copy-dir {:src-dirs   (concat src-dirs resource-dirs)
                  :target-dir jar-content})
@@ -160,6 +163,9 @@
 
   (let [version           (get-calendar-commit-version)
         uberjar-file-name (get-uberjar-file-name app-name version)]
+
+    ;; Delete the jar-content folder
+    (b/delete {:path jar-content})
 
     ;; Copy static files to jar-content folder
     (b/copy-dir {:src-dirs   (concat src-dirs resource-dirs)
