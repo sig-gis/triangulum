@@ -53,7 +53,7 @@
         not-found-handler (resolve-foreign-symbol (get-config :triangulum.handler/not-found-handler))
         is-authenticated? (resolve-foreign-symbol (get-config :triangulum.handler/route-authenticator))
         routes            (->> (get-config :triangulum.handler/routing-tables)
-                               (map resolve-foreign-symbol)
+                               (map (comp deref resolve-foreign-symbol))
                                (apply merge))
         {:keys [auth-type auth-action handler] :as route} (get routes [request-method uri])]
     (cond
