@@ -1,16 +1,20 @@
 {;; server (server)
- :triangulum.server/http-port         8080
- :triangulum.server/https-port        8443
- :triangulum.server/nrepl             false
- :triangulum.server/nrepl-port        5555
- :triangulum.server/nrepl-bind        "127.0.0.1"
- :triangulum.server/cider-nrepl       true
- :triangulum.server/mode              "dev"
- :triangulum.server/log-dir           "logs"
- :triangulum.server/handler           product-ns.routing/handler
- :triangulum.server/keystore-file     "keystore.pkcs12"
- :triangulum.server/keystore-type     "pkcs12"
- :triangulum.server/keystore-password "foobar"
+ :triangulum.server/http-port            8080
+ :triangulum.server/https-port           8443
+ :triangulum.server/nrepl                false
+ :triangulum.server/nrepl-port           5555
+ :triangulum.server/nrepl-bind           "127.0.0.1"
+ :triangulum.server/cider-nrepl          true
+ :triangulum.server/mode                 "dev"
+ :triangulum.server/log-dir              "logs"
+ :triangulum.server/handler              product-ns.routing/handler
+ :triangulum.handler/not-found-handler   product-ns.handlers/not-found-handler
+ :triangulum.handler/redirect-handler    product-ns.handlers/redirect-handler
+ :triangulum.handler/route-authenticator product-ns.handlers/route-authenticator
+ :triangulum.handler/routing-tables      [backend-libary-ns.routing/routes product-ns.routing/routes]
+ :triangulum.server/keystore-file        "keystore.pkcs12"
+ :triangulum.server/keystore-type        "pkcs12"
+ :triangulum.server/keystore-password    "foobar"
 
  ;; handler (server)
  :triangulum.handler/session-key           "changeme12345678" ; must be 16 characters

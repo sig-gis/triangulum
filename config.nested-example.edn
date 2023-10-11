@@ -8,6 +8,10 @@
             :mode                  "dev"
             :log-dir               "logs"
             :handler               product-ns.routing/handler
+            :not-found-handler     product-ns.handlers/not-found-handler
+            :redirect-handler      product-ns.handlers/redirect-handler
+            :route-authenticator   product-ns.handlers/route-authenticator
+            :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
             :keystore-file         "keystore.pkcs12"
             :keystore-type         "pkcs12"
             :keystore-password     "foobar"
