@@ -113,12 +113,67 @@ request/response logging, exception handling, and request parameter
 parsing. Optional middlewares like ~wrap-ssl-redirect~ and
 ~wrap-reload~ can be applied based on your ~config.edn~ settings.
 
+~triangulum.handler/authenticated-routing-handler~ is an optional generic Ring
+compliant routing handler that allows your project to provide custom authentication,
+redirection, and routing behavior based on your ~config.edn~ settings.
+
 **** Usage
 
 If you need to provide a symbol that is bound to a handler function to
 ~figwheel-main~, you can use ~triangulum.handler/development-app~ to
 load in your project's handler function from ~config.edn~ with the
 standard Triangulum middlewares added.
+
+If you choose to use ~triangulum.handler/authenticated-routing-handler~:
+
+1) Set ~:handler~ to ~triangulum.handler/authenticated-routing-handler~.
+
+#+begin_src clojure
+  ;; nested config
+  {:server {:handler triangulum.handler/authenticated-routing-handler}}
+
+  ;; namespaced config
+  {:triangulum.server/handler triangulum.handler/authenticated-routing-handler}
+#+end_src
+
+2) ~triangulum.handler/authenticated-routing-handler~ is designed to optionally
+   support being provided multiple route maps, so that you can  compose app
+   specific routes with generic routes provided by common libraries.
+
+   To configure which route maps are used, provide ~:routing-tables~ with a
+   vector of one or multiple route maps in your ~config.edn~
+
+#+begin_src clojure
+  ;; nested config
+  {:server {:routing-tables [common-libary-ns.routing/routes product-ns.routing/routes]}}
+
+  ;; namespaced config
+  {:triangulum.handler/routing-tables [common-libary-ns.routing/routes product-ns.routing/routes]}
+#+end_src
+
+Note that ~authenticated-routing-handler~ will merge this vector of route maps into
+one; this enables you to place route maps that provide specific implementations of
+routes to the right of common libraries that provide generic implentations as a way
+of overriding defaults.
+
+3)  ~triangulum.handler/authenticated-routing-handler~ will use any custom
+   implementation of these handlers that you specify in your ~config.edn~:
+    - ~:not-found-handler~ (args: ~request~), called when no corresponding route is found.
+    - ~:route-authenticator~ (args: ~request~, route ~:auth-type~), determines if client is authenticated
+    - ~:redirect-handler~ (args: ~request~), called when client is not authenticated
+
+#+begin_src clojure
+  ;; nested config
+  {:server {:not-found-handler   product-ns.handlers/not-found-handler
+            :redirect-handler    product-ns.handlers/redirect-handler
+            :route-authenticator product-ns.handlers/route-authenticator}}
+
+  ;; namespaced config
+  {:triangulum.handler/not-found-handler   product-ns.handlers/not-found-handler
+   :triangulum.handler/redirect-handler    product-ns.handlers/redirect-handler
+   :triangulum.handler/route-authenticator product-ns.handlers/route-authenticator}
+#+end_src
+
 
 **** Functions
 *** triangulum.views
