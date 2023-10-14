@@ -34,6 +34,10 @@
                                             :stop  product-ns.jobs/stop-scheduled-jobs!}}
             :response-type     :json ; :edn or :transit
             :session-key       "changeme12345678"
+            :not-found-handler     product-ns.handlers/not-found-handler
+            :redirect-handler      product-ns.handlers/redirect-handler
+            :route-authenticator   product-ns.handlers/route-authenticator
+            :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
             :bad-tokens        #{".php"}
             :keystore-file     "keystore.pkcs12"
             :keystore-type     "pkcs12"
