@@ -17,6 +17,10 @@
                                    :triangulum.server/keystore-file
                                    :triangulum.server/keystore-type
                                    :triangulum.server/keystore-password
+                                   :triangulum.handler/not-found-handler
+                                   :triangulum.handler/redirect-handler
+                                   :triangulum.handler/route-authenticator
+                                   :triangulum.handler/routing-tables
                                    :triangulum.handler/bad-tokens
                                    :triangulum.handler/private-request-keys
                                    :triangulum.handler/private-response-keys

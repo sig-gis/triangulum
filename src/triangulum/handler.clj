@@ -30,9 +30,13 @@
 
 ;; spec
 
-(s/def ::session-key (s/and ::config/string #(= 16 (count %))))
-(s/def ::bad-tokens  (s/coll-of ::config/string :kind set? :min-count 0))
-(s/def ::private-request-keys (s/coll-of keyword :kind set?))
+(s/def ::redirect-handler      ::config/namespaced-symbol)
+(s/def ::not-found-handler     ::config/namespaced-symbol)
+(s/def ::route-authenticator   ::config/namespaced-symbol)
+(s/def ::routing-tables        (s/coll-of ::config/namespaced-symbol))
+(s/def ::session-key           (s/and ::config/string #(= 16 (count %))))
+(s/def ::bad-tokens            (s/coll-of ::config/string :kind set? :min-count 0))
+(s/def ::private-request-keys  (s/coll-of keyword :kind set?))
 (s/def ::private-response-keys (s/coll-of keyword :kind set?))
 
 ;; state

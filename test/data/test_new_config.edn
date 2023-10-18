@@ -13,6 +13,10 @@
             :handler       product-ns.routing/handler
             :workers       {:scheduler-example {:start product-ns.jobs/start-scheduled-jobs!
                                                 :stop  product-ns.jobs/stop-scheduled-jobs!}}
+            :not-found-handler     product-ns.handlers/not-found-handler
+            :redirect-handler      product-ns.handlers/redirect-handler
+            :route-authenticator   product-ns.handlers/route-authenticator
+            :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
             :response-type :json ; :edn or :transit
             :bad-tokens    #{"php"}
             :session-key   "changeme12345678"}
