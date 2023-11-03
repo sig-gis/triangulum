@@ -25,7 +25,7 @@
 (s/def ::cider-nrepl       boolean?)
 (s/def ::mode              (s/and ::config/string #{"dev" "prod"}))
 (s/def ::log-dir           ::config/string)
-(s/def ::handler            ::config/namespaced-symbol)
+(s/def ::handler           ::config/namespaced-symbol)
 (s/def ::keystore-file     ::config/string)
 (s/def ::keystore-type     ::config/string)
 (s/def ::keystore-password ::config/string)
@@ -45,11 +45,13 @@
   "See README.org -> Web Framework -> triangulum.server for details."
   [{:keys [http-port https-port nrepl cider-nrepl nrepl-bind nrepl-port mode log-dir
            handler workers keystore-file keystore-type keystore-password]
-    :or {nrepl-bind        "127.0.0.1"
-         nrepl-port        5555
-         keystore-file     "./.key/keystore.pkcs12"
-         keystore-type     "pkcs12"
-         keystore-password "foobar"}}]
+    :or   {nrepl-bind        "127.0.0.1"
+           nrepl-port        5555
+           keystore-file     "./.key/keystore.pkcs12"
+           keystore-type     "pkcs12"
+           keystore-password "foobar"
+           log-dir           ""
+           mode              "prod"}}]
   (let [has-key?      (and keystore-file (.exists (io/file keystore-file)))
         ssl?          (and has-key? https-port)
         reload?       (= mode "dev")

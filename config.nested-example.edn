@@ -17,7 +17,6 @@
             :redirect-handler      product-ns.handlers/redirect-handler
             :route-authenticator   product-ns.handlers/route-authenticator
             :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
-            :session-key           "changeme12345678" ; must be 16 characters
             :bad-tokens            #{".php"}
             :private-request-keys  #{:base64Image :plotFileBase64 :sampleFileBase64}
             :private-response-keys #{}

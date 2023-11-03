@@ -118,7 +118,7 @@
        (include-js (find-cljs-app-js))
 
        ;; JS app/prod
-       (= "prod" (get-config :server :mode))
+       (not= "dev" (get-config :server :mode))
        (map (fn [f] [:script {:type "module" :src f}])
             (butlast bundle-js-files))
 
@@ -157,13 +157,13 @@
        (format "window.onload = function () { %s(%s, %s); };" (-> cljs-init name kebab->snake) js-params js-session)]
       ;; JS app
       [:script {:type "module"}
-       (if (= "prod" (get-config :server :mode))
+       (if (= "dev" (get-config :server :mode))
          (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
-                 entry-file
+                 (str "http://localhost:5173" (get-config :app :js-init))
                  js-params
                  js-session)
          (format "import { pageInit } from \"%s\"; window.onload = function () { pageInit(%s, %s); };"
-                 (str "http://localhost:5173" (get-config :app :js-init))
+                 entry-file
                  js-params
                  js-session))])))
 
@@ -229,7 +229,7 @@
   "Returns the page's html."
   [uri]
   (fn [request]
-    (let [response-params (when (= "prod" (get-config :server :mode))
+    (let [response-params (when (not= "dev" (get-config :server :mode))
                             (get-response-params uri request))]
       {:status  200
        :headers {"Content-Type" "text/html"}
