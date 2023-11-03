@@ -35,11 +35,13 @@
                                          ::config-nested/mail
                                          ::config-nested/https])))
 
-(s/def ::namespaced-config (s/merge ::config-namespaced/server
-                                    ::config-namespaced/app
-                                    ::config-namespaced/database
-                                    ::config-namespaced/mail
-                                    ::config-namespaced/https))
+(s/def ::namespaced-config (s/and
+                            #(some namespaced-key? (keys %))
+                            (s/merge ::config-namespaced/server
+                                     ::config-namespaced/app
+                                     ::config-namespaced/database
+                                     ::config-namespaced/mail
+                                     ::config-namespaced/https)))
 
 ;;; Private vars
 
