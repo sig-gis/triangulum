@@ -8,8 +8,8 @@
   (set (map namespace (keys m))))
 
 (defn- no-keys-of-ns?
-  [m ns]
-  (not (contains? (key-namespaces m) ns)))
+  [m ns-string]
+  (not (contains? (key-namespaces m) ns-string)))
 
 ;; New Format (namespaced)
 
