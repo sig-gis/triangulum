@@ -1,68 +1,67 @@
 ;; This is an example config file for testing.
-{:database {:host              "localhost"
-            :port              5432
-            :dbname            "dbname"
-            :user              "user"
-            :password          "testing-password"
-            :admin-pass        "postgres-password"
-            :file              "db-backup.custom"
-            :dev-data          false
-            :verbose           true}
+{:database {:host       "localhost"
+            :port       5432
+            :dbname     "dbname"
+            :user       "user"
+            :password   "testing-password"
+            :admin-pass "postgres-password"
+            :file       "db-backup.custom"
+            :dev-data   false
+            :verbose    true}
 
- :mail     {:host              "smtp.gmail.com"
-            :user              ""
-            :pass              ""
-            :tls               true
-            :port              587
-            :base-url          "https://my.domain/"}
+ :mail {:host     "smtp.gmail.com"
+        :user     ""
+        :pass     ""
+        :tls      true
+        :port     587
+        :base-url "https://my.domain/"}
 
- :https    {:email             "support@sig-gis.com"
-            :domain            "app.sig-gis.com"
-            :path              "/etc/letsencrypt"
-            :cert-only         false
-            :webroot           "./resources/public"}
+ :https {:email     "support@sig-gis.com"
+         :domain    "app.sig-gis.com"
+         :path      "/etc/letsencrypt"
+         :cert-only false
+         :webroot   "./resources/public"}
 
- :server   {:http-port         8080
-            :https-port        8443
-            :nrepl-port        5555
-            :nrepl             false
-            :cider-nrepl       true
-            :mode              "dev"
-            :log-dir           "logs"
-            :handler           product-ns.routing/handler
-            :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
+ :server {:http-port           8080
+          :https-port          8443
+          :nrepl-port          5555
+          :nrepl               false
+          :cider-nrepl         true
+          :mode                "dev"
+          :log-dir             "logs"
+          :handler             product-ns.routing/handler
+          :workers             {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
                                             :stop  product-ns.jobs/stop-scheduled-jobs!}}
-            :response-type     :json ; :edn or :transit
-            :session-key       "changeme12345678"
-            :not-found-handler     product-ns.handlers/not-found-handler
-            :redirect-handler      product-ns.handlers/redirect-handler
-            :route-authenticator   product-ns.handlers/route-authenticator
-            :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
-            :bad-tokens        #{".php"}
-            :keystore-file     "keystore.pkcs12"
-            :keystore-type     "pkcs12"
-            :keystore-password "foobar"}
+          :response-type       :json ; :edn or :transit
+          :not-found-handler   product-ns.handlers/not-found-handler
+          :redirect-handler    product-ns.handlers/redirect-handler
+          :route-authenticator product-ns.handlers/route-authenticator
+          :routing-tables      [common-libary-ns.routing/routes product-ns.routing/routes]
+          :bad-tokens          #{".php"}
+          :keystore-file       "keystore.pkcs12"
+          :keystore-type       "pkcs12"
+          :keystore-password   "foobar"}
 
- :app      {:title             {:en "Product name in English"
-                                :es "Product name in Spanish"}
-            :description       {:en "Description of the product in English"
-                                :es "Description of the product in Spanish"}
-            :keywords          {:en "english keywords, satellite imagery, collection, monitoring, fire"
-                                :es "spanish keywords, satellite imagery, collection, monitoring, fire"}
-            :extra-head-tags   [[:meta {:name "viewport" :content "width=device-width, user-scalable=no"}]
-                                [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
-                                [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]]
-            :gtag-id           "G-..."
-            :static-css-files  ["/css/my_global.css"]      ; in resources/public/
-            :static-js-files   ["/js/jquery-3.4.1.min.js"] ; in resources/public/
-            :get-user-lang     product-ns.api/get-user-lang
-            :js-init           "/src/js/main.jsx"     ; for Javascript projects
-            :cljs-init         product-ns.client.init ; for ClojureScript projects
-            :client-keys       {:mapbox-token "token123"}
-            :tags-url          "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"}
+ :app {:title            {:en "Product name in English"
+                          :es "Product name in Spanish"}
+       :description      {:en "Description of the product in English"
+                          :es "Description of the product in Spanish"}
+       :keywords         {:en "english keywords, satellite imagery, collection, monitoring, fire"
+                          :es "spanish keywords, satellite imagery, collection, monitoring, fire"}
+       :extra-head-tags  [[:meta {:name "viewport" :content "width=device-width, user-scalable=no"}]
+                          [:link {:rel "manifest" :href "/favicon/site.webmanifest"}]
+                          [:link {:rel "shortcut icon" :href "/favicon/favicon.ico"}]]
+       :gtag-id          "G-..."
+       :static-css-files ["/css/my_global.css"]      ; in resources/public/
+       :static-js-files  ["/js/jquery-3.4.1.min.js"] ; in resources/public/
+       :get-user-lang    product-ns.api/get-user-lang
+       :js-init          "/src/js/main.jsx"     ; for Javascript projects
+       :cljs-init        product-ns.client.init ; for ClojureScript projects
+       :client-keys      {:mapbox-token "token123"}
+       :tags-url         "https://gitlab.sig-gis.com/api/v4/projects/<PROJECT_ID>/repository/tags"}
 
- :my-keys  {:ee-account        "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
-            :ee-key-path       "gee-auth-key.json"
-            :mapbox-token      "pk..."
-            :mapquest-key      "GF..."
-            :nicfi-key         "e5..."}}
+ :my-keys {:ee-account   "product-ns@earth-engine-product-ns.iam.gserviceaccount.com"
+           :ee-key-path  "gee-auth-key.json"
+           :mapbox-token "pk..."
+           :mapquest-key "GF..."
+           :nicfi-key    "e5..."}}

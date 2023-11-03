@@ -34,16 +34,9 @@
 (s/def ::not-found-handler     ::config/namespaced-symbol)
 (s/def ::route-authenticator   ::config/namespaced-symbol)
 (s/def ::routing-tables        (s/coll-of ::config/namespaced-symbol))
-(s/def ::session-key           (s/and ::config/string #(= 16 (count %))))
 (s/def ::bad-tokens            (s/coll-of ::config/string :kind set? :min-count 0))
 (s/def ::private-request-keys  (s/coll-of keyword :kind set?))
 (s/def ::private-response-keys (s/coll-of keyword :kind set?))
-
-;; state
-
-;; FIXME: Make this into a reloadable component
-(defonce ^:private session-cookie-store (atom nil))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler
@@ -163,22 +156,20 @@
   [^String s]
   (.getBytes s))
 
-(defn get-cookie-store
-  "Computes a new `ring.middleware.session.cookie/cookie-store` object
-  on the first call and caches it for use in all future calls."
-  []
-  (or @session-cookie-store
-      (reset! session-cookie-store
-              (cookie-store {:key (-> (get-config :server :session-key)
-                                      (string-to-bytes))}))))
+(defn random-string
+  "Returns a random alphanumeric string of length n."
+  [n]
+  (let [char-seq (map char (concat (range 48 58) ; 0-9
+                                   (range 65 91) ; A-Z
+                                   (range 97 123) ; a-z
+                                   ))]
+    (apply str (take n (shuffle char-seq)))))
 
-(defn wrap-wrap-session
-  "Wrapper around `ring.middleware.session/wrap-session` that defers
-  looking up the cookie store until a request has been made."
-  [handler]
-  (fn [request]
-    (let [wrapped-handler (wrap-session handler {:store (get-cookie-store)})]
-      (wrapped-handler request))))
+(defn get-cookie-store
+  "Computes a new `ring.middleware.session.cookie/cookie-store` object."
+  []
+  (cookie-store {:key (-> (random-string 16)
+                          (string-to-bytes))}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handler Stack
@@ -204,7 +195,7 @@
       wrap-nested-params
       wrap-multipart-params
       wrap-params
-      wrap-wrap-session ; used to prevent running `get-config` at file load time
+      (wrap-session {:store (get-cookie-store)})
       wrap-absolute-redirects
       (wrap-resource "public")
       wrap-content-type

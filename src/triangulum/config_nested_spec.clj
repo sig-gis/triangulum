@@ -4,11 +4,7 @@
 ;; Old Format (un-namespaced)
 
 (s/def ::server   (s/keys :req-un [:triangulum.server/http-port
-                                   :triangulum.server/mode
-                                   :triangulum.server/log-dir
-                                   :triangulum.server/handler
-                                   :triangulum.handler/session-key
-                                   :triangulum.response/response-type]
+                                   :triangulum.server/handler]
                           :opt-un [:triangulum.server/https-port
                                    :triangulum.server/nrepl
                                    :triangulum.server/nrepl-port
@@ -17,6 +13,8 @@
                                    :triangulum.server/keystore-file
                                    :triangulum.server/keystore-type
                                    :triangulum.server/keystore-password
+                                   :triangulum.server/mode
+                                   :triangulum.server/log-dir
                                    :triangulum.handler/not-found-handler
                                    :triangulum.handler/redirect-handler
                                    :triangulum.handler/route-authenticator
@@ -24,7 +22,8 @@
                                    :triangulum.handler/bad-tokens
                                    :triangulum.handler/private-request-keys
                                    :triangulum.handler/private-response-keys
-                                   :triangulum.worker/workers]))
+                                   :triangulum.worker/workers
+                                   :triangulum.response/response-type]))
 
 (s/def ::app      (s/keys :opt-un [:triangulum.views/title
                                    :triangulum.views/description
