@@ -241,6 +241,14 @@
   (require (symbol (namespace sym)))
   (resolve sym))
 
+(defn clj-namespaced-symbol->js-module
+  "Given a namespace-qualified symbol, return its string representation as a JS module."
+  [sym]
+  (-> sym
+      (str)
+      (str/replace "/" ".")
+      (kebab->snake)))
+
 ;;; File operations
 
 (defn delete-recursively

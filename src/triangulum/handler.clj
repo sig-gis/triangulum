@@ -161,8 +161,8 @@
   [n]
   (let [char-seq (map char (concat (range 48 58) ; 0-9
                                    (range 65 91) ; A-Z
-                                   (range 97 123) ; a-z
-                                   ))]
+                                   (range 97 123)))] ; a-z
+
     (apply str (take n (shuffle char-seq)))))
 
 (defn get-cookie-store

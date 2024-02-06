@@ -43,7 +43,7 @@
        :static-js-files  ["/js/jquery-3.4.1.min.js"] ; in resources/public/
        :get-user-lang    product-ns.api/get-user-lang
        :js-init          "/src/js/main.jsx"     ; for Javascript projects
-       :cljs-init        product-ns.client.init ; for ClojureScript projects
+       :cljs-init        product-ns.client/init ; for ClojureScript projects
        :client-keys      {:mapbox-token "token123"}
 
        ;; git
