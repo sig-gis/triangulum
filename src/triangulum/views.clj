@@ -3,7 +3,7 @@
   (:require [clojure.data.json   :as json]
             [clojure.edn         :as edn]
             [clojure.java.io     :as io]
-            [clojure.spec.alpha :as s]
+            [clojure.spec.alpha  :as s]
             [clojure.string      :as str]
             [clj-http.client     :as client]
             [cognitect.transit   :as transit]
@@ -11,7 +11,7 @@
             [triangulum.config   :as config :refer [get-config]]
             [triangulum.git      :refer [current-version]]
             [triangulum.errors   :refer [nil-on-error]]
-            [triangulum.utils    :refer [resolve-foreign-symbol kebab->snake kebab->camel]]))
+            [triangulum.utils    :refer [resolve-foreign-symbol clj-namespaced-symbol->js-module kebab->camel]]))
 
 ;; spec
 
@@ -151,10 +151,11 @@
                        (assoc :versionDeployed (current-version))
                        (merge (get-config :app :client-keys))
                        (json/write-str))]
-    (if-let [cljs-init (get-config :app :cljs-init)]
+    (if-let [js-init-fn (-> (get-config :app :cljs-init)
+                            (clj-namespaced-symbol->js-module))]
       ;; CLJS app
       [:script {:type "text/javascript"}
-       (format "window.onload = function () { %s(%s, %s); };" (-> cljs-init name kebab->snake) js-params js-session)]
+       (format "window.onload = function () { %s(%s, %s); };" js-init-fn js-params js-session)]
       ;; JS app
       [:script {:type "module"}
        (if (= "dev" (get-config :server :mode))

@@ -44,7 +44,7 @@
  :triangulum.views/static-js-files  ["/js/jquery-3.4.1.min.js"] ; in resources/public/
  :triangulum.views/get-user-lang    product-ns.api/get-user-lang
  :triangulum.views/js-init          "/src/js/main.jsx"     ; for Javascript projects
- :triangulum.views/cljs-init        product-ns.client.init ; for ClojureScript projects
+ :triangulum.views/cljs-init        product-ns.client/init ; for ClojureScript projects
  :triangulum.views/client-keys      {:mapbox-token "token123"}
 
  ;; git (app)
