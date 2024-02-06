@@ -187,7 +187,7 @@
                                :padding         ".5rem"
                                :position        "fixed"
                                :top             "1rem"
-                               :z-index         "10000"}}
+                               :z-index         "10001"}}
    [:script {:type "text/javascript"}
     "setTimeout (function () {document.getElementById('flash-message').style.display='none'}, 10000);"]
    [:span {:style {:padding ".5rem .75rem .5rem .5rem"}} flash-message]
