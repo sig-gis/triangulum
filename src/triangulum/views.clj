@@ -168,6 +168,39 @@
                  js-params
                  js-session))])))
 
+(defn- flash-message-component [flash-message]
+  [:div#flash-message {:class "alert"
+                       :style {:align-items     "center"
+                               :background      "white"
+                               :border          "1.5px solid rgb(0, 0, 0)"
+                               :border-radius   "4px"
+                               :box-shadow      "1px 0 5px rgba(50, 50, 50, 0.3)"
+                               :display         "flex"
+                               :flex-direction  "row"
+                               :flex-wrap       "nowrap"
+                               :font-size       "1rem"
+                               :font-style      "italic"
+                               :font-weight     "bold"
+                               :justify-content "space-between"
+                               :left            "1rem"
+                               :max-width       "50%"
+                               :padding         ".5rem"
+                               :position        "fixed"
+                               :top             "1rem"
+                               :z-index         "10001"}}
+   [:script {:type "text/javascript"}
+    "setTimeout (function () {document.getElementById('flash-message').style.display='none'}, 10000);"]
+   [:span {:style {:padding ".5rem .75rem .5rem .5rem"}} flash-message]
+   [:span {:style {:border-radius "4px"
+                    :cursor       "pointer"
+                    :fill         "rgb(96, 65, 31)"
+                    :font-weight  "bold"
+                    :padding      ".25rem"}
+           :onClick "document.getElementById('flash-message').style.display='none'"}
+    [:svg {:width "24px" :height "24px" :viewBox "0 0 48 48"}
+     [:path {:d "M38 12.83l-2.83-2.83-11.17 11.17-11.17-11.17-2.83 2.83 11.17 11.17-11.17 11.17 2.83 2.83
+                 11.17-11.17 11.17 11.17 2.83-2.83-11.17-11.17z"}]]]])
+
 (defn- announcement-banner []
   (let [announcement (-> (slurp "announcement.txt")
                          (str/split #"\n"))]            ; TODO This will be moved to the front end for better UX.
@@ -186,7 +219,7 @@
                             :width            "100vw"
                             :z-index          "10000"}}
        [:script {:type "text/javascript"}
-        "setTimeout (function () {document.getElementById ('banner') .style.display='none'}, 10000);"]
+        "setTimeout (function () {document.getElementById('banner').style.display='none'}, 10000);"]
        (map (fn [line]
               [:p {:style {:font-size   "18px"
                            :font-weight "bold"
@@ -240,8 +273,7 @@
                   [:section
                    ;; TODO These will be moved to the front end for better UX.
                    (when-let [flash-message (get-in request [:params :flash_message])]
-                     ;; FIXME: We need to write class definition in css file and serve it by default
-                     [:p {:class "alert"} flash-message])
+                     (flash-message-component flash-message))
                    (when (.exists (io/as-file "announcement.txt"))
                      (announcement-banner))
                    [:div#app]]
