@@ -33,11 +33,15 @@
     :body    [{:type    (or content-type "text/plain")
                :content body}]}))
 
+(def ^:private mime-type
+  {:text "text/plain"
+   :html "text/html"})
+
 (defn send-mail
   "Sends an email with a given subject and body to specified recipients.
 
   This function uses the `send-postal` internal function to send the email.
-  It logs any errors that occur during sending.
+  It logs the success or failure of sending this email.
 
   Arguments:
   to-addresses   - a collection of email addresses to which the email will be sent
@@ -48,14 +52,16 @@
   content-type   - a keyword indicating the content type of the email, either :text for 'text/plain' or :html for 'text/html'
 
   Returns:
-  Nothing. This function is designed for side-effects (i.e., it sends an email and potentially logs errors)."
+  Result map returned by `send-postal`."
   [to-addresses cc-addresses bcc-addresses subject body content-type]
-  (let [mime                    {:text "text/plain"
-                                 :html "text/html"}
-        {:keys [message error]} (send-postal to-addresses
-                                             cc-addresses
-                                             bcc-addresses
-                                             subject
-                                             body
-                                             (content-type mime))]
-    (when-not (= :SUCCESS error) (log-str message))))
+  (log-str (format "Sending email to %s: %s" to-addresses subject))
+  (let [result (send-postal to-addresses
+                            cc-addresses
+                            bcc-addresses
+                            subject
+                            body
+                            (get mime-type content-type))]
+    (if (= :SUCCESS (result :error))
+      (log-str "Email sending succeeded.")
+      (log-str "Email sending failed with error: " (result :message)))
+    result))
