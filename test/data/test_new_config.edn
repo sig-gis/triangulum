@@ -18,8 +18,7 @@
             :route-authenticator   product-ns.handlers/route-authenticator
             :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
             :response-type :json ; :edn or :transit
-            :bad-tokens    #{"php"}
-            :session-key   "changeme12345678"}
+            :bad-tokens    #{"php"}}
  :mail     {:host           "smtp.gmail.com"
             :user           "test@example.com"
             :pass           "secret-mail-password"

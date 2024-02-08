@@ -69,7 +69,6 @@ file logging system, and worker functions for non-HTTP-related tasks.
                :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
                                                :stop  product-ns.jobs/stop-scheduled-jobs!}}
                :response-type     :json ; #{:json :edn :transit}
-               :session-key       "changeme12345678"
                :bad-tokens        #{".php"} ; Reject URLs containing these strings
                :keystore-file     "keystore.pkcs12" ; Contains your SSL certificate(s)
                :keystore-type     "pkcs12"
