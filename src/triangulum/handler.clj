@@ -67,16 +67,14 @@
   (fn [request]
     (log-str (str "> " before-name request))
     (log-str (str " wrap-debug: " handler))
-    (let [response (try (handler request)
-                        (catch Exception e
-                          (.printStackTrace e)
-                          (log-str e (.getStackTrace (Thread/currentThread)))
-                          {:headers []
-                           :status 500
-                           :body nil}))]
-      (log-str "< " before-name)
-      (log-str "  <" response)
-      response)))
+    (try
+      (let [response (handler request)]
+        (log-str "< " before-name)
+        (log-str "  <" response)
+        response)
+      (catch Exception e
+        (.printStackTrace e)
+        (log-str e (.getStackTrace (Thread/currentThread)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
