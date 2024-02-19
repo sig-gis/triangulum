@@ -1,32 +1,35 @@
 (ns triangulum.handler
-  (:require [clojure.data.json                  :as json]
-            [clojure.edn                        :as edn]
-            [clojure.spec.alpha                 :as s]
-            [clojure.string                     :as str]
-            [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
-            [ring.middleware.content-type       :refer [wrap-content-type]]
-            [ring.middleware.default-charset    :refer [wrap-default-charset]]
-            [ring.middleware.gzip               :refer [wrap-gzip]]
-            [ring.middleware.json               :refer [wrap-json-params]]
-            [ring.middleware.keyword-params     :refer [wrap-keyword-params]]
-            [ring.middleware.multipart-params   :refer [wrap-multipart-params]]
-            [ring.middleware.nested-params      :refer [wrap-nested-params]]
-            [ring.middleware.not-modified       :refer [wrap-not-modified]]
-            [ring.middleware.params             :refer [wrap-params]]
-            [ring.middleware.reload             :refer [wrap-reload]]
-            [ring.middleware.resource           :refer [wrap-resource]]
-            [ring.middleware.session            :refer [wrap-session]]
-            [ring.middleware.session.cookie     :refer [cookie-store]]
-            [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
-            [ring.util.codec                    :refer [url-decode]]
-            [ring.middleware.x-headers          :refer [wrap-content-type-options
-                                                        wrap-frame-options
-                                                        wrap-xss-protection]]
-            [triangulum.config                  :as config :refer [get-config]]
-            [triangulum.logging                 :refer [log-str]]
-            [triangulum.errors                  :refer [nil-on-error]]
-            [triangulum.utils                   :refer [resolve-foreign-symbol]]
-            [triangulum.response                :refer [forbidden-response data-response]]))
+  (:require
+   [clojure.data.json                  :as json]
+   [clojure.edn                        :as edn]
+   [clojure.pprint :refer [pprint]]
+   [clojure.spec.alpha                 :as s]
+   [clojure.string                     :as str]
+   [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
+   [ring.middleware.content-type       :refer [wrap-content-type]]
+   [ring.middleware.default-charset    :refer [wrap-default-charset]]
+   [ring.middleware.gzip               :refer [wrap-gzip]]
+   [ring.middleware.json               :refer [wrap-json-params]]
+   [ring.middleware.keyword-params     :refer [wrap-keyword-params]]
+   [ring.middleware.multipart-params   :refer [wrap-multipart-params]]
+   [ring.middleware.nested-params      :refer [wrap-nested-params]]
+   [ring.middleware.not-modified       :refer [wrap-not-modified]]
+   [ring.middleware.params             :refer [wrap-params]]
+   [ring.middleware.reload             :refer [wrap-reload]]
+   [ring.middleware.resource           :refer [wrap-resource]]
+   [ring.middleware.session            :refer [wrap-session]]
+   [ring.middleware.session.cookie     :refer [cookie-store]]
+   [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
+   [ring.middleware.x-headers          :refer [wrap-content-type-options
+                                               wrap-frame-options
+                                               wrap-xss-protection]]
+   [ring.util.codec                    :refer [url-decode]]
+   [triangulum.config                  :as config :refer [get-config]]
+   [triangulum.errors                  :refer [nil-on-error]]
+   [triangulum.logging                 :refer [log-str]]
+   [triangulum.response                :refer [data-response
+                                               forbidden-response]]
+   [triangulum.utils                   :refer [resolve-foreign-symbol]]))
 
 ;; spec
 
@@ -58,6 +61,17 @@
       (or (nil? auth-type) (is-authenticated? request auth-type)) (handler request)
       (= :redirect auth-action)                                   (redirect-handler request)
       :else                                                       (forbidden-response request))))
+
+(defn wrap-debug
+  [handler before-name]
+  (fn [request]
+    (log-str "> " before-name request)
+    (let [response (try (handler request)
+                        (catch Exception e
+                          (.printStackTrace e)
+                          (log-str e (.getStackTrace (Thread/currentThread)))))]
+      (log-str "< " before-name response)
+      response)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares
@@ -117,9 +131,11 @@
   "Wrapper to manage exception handling, logging it and responding with 500 in case of an exception."
   [handler]
   (fn [request]
+    (log-str {:debug "wrap-exceptions request" :data request})
     (try
       (handler request)
       (catch Exception e
+        (.printStackTrace e)
         (let [{:keys [data cause]} (Throwable->map e)
               status               (:status data)]
           (log-str "Error: " cause)
@@ -185,29 +201,53 @@
 (defn create-handler-stack
   "Create the Ring handler stack."
   [routing-handler ssl? reload?]
-  (-> routing-handler
-      (optional-middleware wrap-ssl-redirect ssl?)
-      wrap-bad-uri
-      wrap-request-logging
-      wrap-keyword-params
-      wrap-json-params
-      wrap-edn-params
-      wrap-nested-params
-      wrap-multipart-params
-      wrap-params
-      (wrap-session {:store (get-cookie-store)})
-      wrap-absolute-redirects
-      (wrap-resource "public")
-      wrap-content-type
-      (wrap-default-charset "utf-8")
-      wrap-not-modified
-      (wrap-xss-protection true {:mode :block})
-      (wrap-frame-options :sameorigin)
-      (wrap-content-type-options :nosniff)
-      wrap-response-logging
-      wrap-gzip
-      wrap-exceptions
-      (optional-middleware wrap-reload reload?)))
+  (->
+   routing-handler
+   (wrap-debug routing-handler)
+   (optional-middleware wrap-ssl-redirect ssl?)
+   (wrap-debug "ssl")
+   wrap-bad-uri
+   (wrap-debug wrap-bad-uri)
+   wrap-request-logging
+   (wrap-debug wrap-request-logging)
+   wrap-keyword-params
+   (wrap-debug wrap-keyword-params)
+   wrap-json-params
+   (wrap-debug wrap-json-params)
+   wrap-edn-params
+   (wrap-debug wrap-edn-params)
+   wrap-nested-params
+   (wrap-debug wrap-nested-params)
+   wrap-multipart-params
+   (wrap-debug wrap-multipart-params)
+   wrap-params
+   (wrap-debug wrap-params)
+   (wrap-session {:store (get-cookie-store)})
+   (wrap-debug "session")
+   wrap-absolute-redirects
+   (wrap-debug wrap-absolute-redirects)
+   (wrap-resource "public")
+   (wrap-debug "resource")
+   wrap-content-type
+   (wrap-debug wrap-content-type)
+   (wrap-default-charset "utf-8")
+   (wrap-debug "charset")
+   wrap-not-modified
+   (wrap-debug wrap-not-modified)
+   (wrap-xss-protection true {:mode :block})
+   (wrap-debug :xss)
+   (wrap-frame-options :sameorigin)
+   (wrap-debug :sameorigin)
+   (wrap-content-type-options :nosniff)
+   (wrap-debug :nosniff)
+   wrap-response-logging
+   (wrap-debug wrap-response-logging)
+   wrap-gzip
+   (wrap-debug wrap-gzip)
+   wrap-exceptions
+   (wrap-debug wrap-exceptions)
+   (optional-middleware wrap-reload reload?)
+   (wrap-debug wrap-reload)))
 
 (def development-app
   "Handler function for development (figwheel)."
