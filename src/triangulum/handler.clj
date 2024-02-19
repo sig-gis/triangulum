@@ -65,12 +65,17 @@
 (defn wrap-debug
   [handler before-name]
   (fn [request]
-    (log-str "> " before-name request)
+    (log-str (str "> " before-name request))
+    (log-str (str " wrap-debug: " handler))
     (let [response (try (handler request)
                         (catch Exception e
                           (.printStackTrace e)
-                          (log-str e (.getStackTrace (Thread/currentThread)))))]
-      (log-str "< " before-name response)
+                          (log-str e (.getStackTrace (Thread/currentThread)))
+                          {:headers []
+                           :status 500
+                           :body nil}))]
+      (log-str "< " before-name)
+      (log-str "  <" response)
       response)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -125,6 +130,7 @@
 
                  :else
                  (str content-type " response")))
+      (log-str (str "wut? " response))
       response)))
 
 (defn wrap-exceptions
