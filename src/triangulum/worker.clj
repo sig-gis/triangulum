@@ -1,7 +1,9 @@
 (ns triangulum.worker
-  (:require  [clojure.spec.alpha  :as s]
-             [triangulum.logging  :refer [log-str]]
-             [triangulum.utils    :refer [resolve-foreign-symbol]]))
+  (:require
+   [clojure.spec.alpha  :as s]
+   [clojure.stacktrace :as stacktrace]
+   [triangulum.logging  :refer [log-str]]
+   [triangulum.utils    :refer [resolve-foreign-symbol]]))
 
 ;;spec
 
@@ -27,6 +29,7 @@
     (catch Exception e
       (log-str "Error starting worker "
                name ": " (ex-message e))
+      (stacktrace/print-stack-trace e)
       e)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
@@ -38,7 +41,6 @@
   Arguments:
    workers - a map or vector representing the workers to be started."
   (fn [workers] (if (map? workers) :nested :namespaced)))
-
 
 (defmethod start-workers! :nested [worker-map]
   (reset! workers

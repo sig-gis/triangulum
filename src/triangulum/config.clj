@@ -45,7 +45,7 @@
 
 ;;; Private vars
 
-(def ^:private config-file  (atom "config.edn"))
+(def config-file (atom "config.edn"))
 (def ^:private config-cache (atom nil))
 
 (def ^:private ns->un-mapping
@@ -87,8 +87,9 @@
     (wrap-throw "Error: Cannot find config file " file ".")))
 
 (defn- cache-config []
-  (or @config-cache
-      (reset! config-cache (read-config @config-file))))
+  (or #_@config-cache
+      (reset! config-cache (read-config @config-file)))
+  (println @config-cache))
 
 (defn- get-mapped-key-ns
   "Given a namespaced key, returns the corresponding unnamespaced key."

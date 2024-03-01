@@ -103,7 +103,7 @@
     (.stop ^Server @server)
     (reset! server nil))
   (stop-workers!)
-  (System/exit 0))
+  #_(System/exit 0))
 
 (defn send-to-nrepl-server!
   "Sends form to the nrepl server"
@@ -176,4 +176,4 @@
       :stop   (stop-running-server! options)
       :reload (reload-running-server! options)
       nil)
-    (System/exit 0)))
+    #_(System/exit 0)))
