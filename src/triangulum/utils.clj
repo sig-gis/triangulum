@@ -238,6 +238,7 @@
   "Given a namespace-qualified symbol, attempt to require its namespace
   and resolve the symbol within that namespace to a value."
   [sym]
+  (println {:debug "resolve-foreign-symbol sym" :data sym})
   (require (symbol (namespace sym)))
   (resolve sym))
 

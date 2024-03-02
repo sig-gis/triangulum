@@ -89,7 +89,7 @@
 (defn- cache-config []
   (or #_@config-cache
       (reset! config-cache (read-config @config-file)))
-  (println @config-cache))
+  #_(println @config-cache))
 
 (defn- get-mapped-key-ns
   "Given a namespaced key, returns the corresponding unnamespaced key."
