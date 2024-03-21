@@ -51,6 +51,11 @@
         (str/replace "-" ".")
         (str "-" commit))))
 
+(defn print-calendar-commit-version
+  "Utility function for use with clojure -X."
+  [& _]
+  (print (get-calendar-commit-version)))
+
 (defn get-jar-file-name
   "Relative path to the generated JAR file."
   [lib-name version]
