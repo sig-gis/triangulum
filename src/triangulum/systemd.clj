@@ -49,6 +49,7 @@ WantedBy=default.target
                       (or extra-aliases "")
                       (if http (str "-p " http) "")
                       (if https (str "-P " https) "")))
+        (io/copy (io/file unit-file) (io/file (str "../" unit-file)))
         (shell-wrapper shell-opts user-systemctl "daemon-reload")
         (shell-wrapper shell-opts user-systemctl "enable" service-name))
       (println "The directory generated" repo-dir "does not contain a deps.edn file."))))
