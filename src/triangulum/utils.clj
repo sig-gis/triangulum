@@ -256,6 +256,14 @@
   [dir]
   (run! io/delete-file (reverse (file-seq (io/file dir)))))
 
+(defn path
+  "Takes variadic args and returns a path string. Args can be any type that can be coerced via `str`.
+
+  Example:
+  `(path (io/file \"my-dir\") \"file.csv\") ; => \"my-dir/file.csv\" (on Unix) "
+  [& args]
+  (str (apply io/file (map str args))))
+
 ;;; Miscellaneous
 
 (defn current-year
