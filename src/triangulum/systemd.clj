@@ -10,8 +10,8 @@
 (def ^:private shell-opts         {:dir       "/"
                                    :extra-env {"XDG_RUNTIME_DIR" xdg-runtime-dir}})
 (def ^:private user-systemctl          "systemctl --user")
-(def ^:private user-systemd-path       (path (fs/xdg-config-home) "systemd" "user"))
-(def ^:private unit-file-template      (str/trim "
+(def ^:private user-systemd-path  (path (fs/xdg-config-home) "systemd" "user"))
+(def ^:private unit-file-template (str/trim "
 [Unit]
 Description=A service to launch a server written in clojure
 After=network.target
