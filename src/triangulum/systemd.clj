@@ -29,7 +29,7 @@ Restart=always
 PrivateTmp=true
 
 [Install]
-WantedBy=default.target
+WantedBy=mulit-user.target.wants
 "))
 
 (defn fmt-service-file
