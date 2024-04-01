@@ -1,16 +1,20 @@
 (ns triangulum.systemd
-  (:import com.sun.security.auth.module.UnixSystem)
-  (:require [clojure.java.io    :as io]
+  (:require [babashka.fs        :as fs]
+            [clojure.java.io    :as io]
             [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [end-with remove-end shell-wrapper]]))
+            [triangulum.utils   :refer [end-with
+                                        format-with-dict
+                                        path
+                                        remove-end
+                                        shell-wrapper]])
+  (:import com.sun.security.auth.module.UnixSystem))
 
-(def ^:private user-home          (System/getProperty "user.home"))
 (def ^:private xdg-runtime-dir    (str "/run/user/" (.getUid (UnixSystem.))))
 (def ^:private shell-opts         {:dir       "/"
                                    :extra-env {"XDG_RUNTIME_DIR" xdg-runtime-dir}})
-(def ^:private user-systemctl     "systemctl --user")
-(def ^:private user-systemd-path  (str user-home "/.config/systemd/user/multi-user.target.wants/"))
+(def ^:private user-systemctl          "systemctl --user")
+(def ^:private user-systemd-path  (path (fs/xdg-config-home) "systemd" "user"))
 (def ^:private unit-file-template (str/trim "
 [Unit]
 Description=A service to launch a server written in clojure
@@ -18,37 +22,53 @@ After=network.target
 
 [Service]
 Type=notify
-WorkingDirectory=%s
-ExecStart=/usr/local/bin/clojure -M%s:server start %s %s
+WorkingDirectory={{repo-dir}}
+ExecStart=/usr/local/bin/clojure -M{{extra-aliases}}:server start {{start-args}}
 KillMode=process
 Restart=always
 PrivateTmp=true
 
 [Install]
-WantedBy=default.target
+WantedBy=mulit-user.target.wants
 "))
 
-(defn- enable-systemd [{:keys [repo http https dir extra-aliases]}]
+(defn fmt-service-file
+  "Formats `template` with the `config` dictionary.
+
+  `template` must use handlebar syntax (e.g. `{{name}}`) which matches the
+   keyword in `config`.
+
+  Currently `config` supports:
+  - `:repo-dir`      [string] - Directory to the repository
+                                (sets `WorkingDirectory`)
+  - `:extra-aliases` [string] - Additional aliases to run with startup (e.g. `:production`)
+  - `:http`          [number] - HTTP Port
+  - `:https`         [number] - HTTPS Port"
+  [template {:keys [http https] :as config}]
+  (let [http-port  (when http (str "-p " http))
+        https-port (when https (str "-P " https))
+        start-args (str/join " " (filter some? [http-port https-port]))
+        config     (merge (select-keys config [:repo-dir :extra-aliases])
+                          {:start-args start-args})]
+    (format-with-dict template config)))
+
+(defn- enable-systemd [{:keys [repo dir] :as config}]
   (let [service-name (str "cljweb-" repo)
         full-dir     (-> dir
-                         (io/file)
-                         (.getAbsolutePath)
+                         (fs/expand-home)
+                         (fs/absolutize)
                          (remove-end "."))
-        repo-dir     (if (= (.getName (io/file full-dir)) repo)
+        repo-dir     (if (= (fs/file-name full-dir) repo)
                        full-dir
                        (-> full-dir
                            (end-with "/")
                            (str repo)))
-        unit-file    (str user-systemd-path service-name ".service")]
-    (if (.exists (io/file repo-dir "deps.edn"))
+        service-file (str service-name ".service")
+        unit-file    (path user-systemd-path service-file)]
+    (if (fs/exists? (io/file repo-dir "deps.edn"))
       (do
-        (io/make-parents unit-file)
-        (spit unit-file
-              (format unit-file-template
-                      repo-dir
-                      (or extra-aliases "")
-                      (if http (str "-p " http) "")
-                      (if https (str "-P " https) "")))
+        (fs/create-dirs user-systemd-path)
+        (spit unit-file (fmt-service-file unit-file-template (merge config {:repo-dir repo-dir})))
         (shell-wrapper shell-opts user-systemctl "daemon-reload")
         (shell-wrapper shell-opts user-systemctl "enable" service-name))
       (println "The directory generated" repo-dir "does not contain a deps.edn file."))))
