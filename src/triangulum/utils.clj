@@ -11,6 +11,11 @@
 
 ;;; Text parsing
 
+(defn snake->kebab
+  "Converts snake_str to kebab-str."
+  [snake_str]
+  (str/replace snake_str "_" "-"))
+
 (defn kebab->snake
   "Converts kebab-str to snake_str."
   [kebab-str]
@@ -38,6 +43,21 @@
   "Use any char after % for format. All % are converted to %s (string)."
   [f-str & args]
   (apply format (str/replace f-str #"(%[^ ])" "%s") args))
+
+(defn format-with-dict
+  "Replaces `fmt-str` with values from `m`.
+
+   NOTE: `fmt-str` must use handlebars (`{{<keyword>}}`) wherever a term is to be replaced.
+
+   Example:
+   ```
+   (format-with-dict \"Hi {{name}}! The moon is {{n}} billion years old.\" {:name \"Bob\" :n 4.5}) ; => \"Hi Bob! The moon is 4.5 billion years old.\" 
+   ```"
+  [fmt-str m]
+  (let [handlebar #"\{\{([^\}]+)\}\}"
+        fmt-keys (re-seq handlebar fmt-str)
+        values   (map #(get m (-> % (second) (snake->kebab) (keyword)) "") fmt-keys)]
+    (apply format (str/replace fmt-str handlebar "%s") values)))
 
 (defn parse-as-sh-cmd
   "Split string into an array for use with clojure.java.shell/sh."

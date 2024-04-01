@@ -3,7 +3,11 @@
             [clojure.java.io    :as io]
             [clojure.string     :as str]
             [triangulum.cli     :refer [get-cli-options]]
-            [triangulum.utils   :refer [end-with path remove-end shell-wrapper]])
+            [triangulum.utils   :refer [end-with
+                                        format-with-dict
+                                        path
+                                        remove-end
+                                        shell-wrapper]])
   (:import com.sun.security.auth.module.UnixSystem))
 
 (def ^:private xdg-runtime-dir    (str "/run/user/" (.getUid (UnixSystem.))))
@@ -18,8 +22,8 @@ After=network.target
 
 [Service]
 Type=notify
-WorkingDirectory=%s
-ExecStart=/usr/local/bin/clojure -M%s:server start %s %s
+WorkingDirectory={{repo-dir}}
+ExecStart=/usr/local/bin/clojure -M{{extra-aliases}}:server start {{start-args}}
 KillMode=process
 Restart=always
 PrivateTmp=true
@@ -28,12 +32,25 @@ PrivateTmp=true
 WantedBy=default.target
 "))
 
-(defn fmt-service-file [{:keys [repo-dir http https extra-aliases]}]
-  (format unit-file-template
-          repo-dir
-          (or extra-aliases "")
-          (if http (str "-p " http) "")
-          (if https (str "-P " https) "")))
+(defn fmt-service-file
+  "Formats `template` with the `config` dictionary.
+
+  `template` must use handlebar syntax (e.g. `{{name}}`) which matches the
+   keyword in `config`.
+
+  Currently `config` supports:
+  - `:repo-dir`      [string] - Directory to the repository
+                                (sets `WorkingDirectory`)
+  - `:extra-aliases` [string] - Additional aliases to run with startup (e.g. `:production`)
+  - `:http`          [number] - HTTP Port
+  - `:https`         [number] - HTTPS Port"
+  [template {:keys [http https] :as config}]
+  (let [http-port  (when http (str "-p " http))
+        https-port (when https (str "-P " https))
+        start-args (str/join " " (filter some? [http-port https-port]))
+        config     (merge (select-keys config [:repo-dir :extra-aliases])
+                          {:start-args start-args})]
+    (format-with-dict template config)))
 
 (defn- enable-systemd [{:keys [repo dir] :as config}]
   (let [service-name (str "cljweb-" repo)
@@ -51,7 +68,7 @@ WantedBy=default.target
     (if (fs/exists? (io/file repo-dir "deps.edn"))
       (do
         (fs/create-dirs user-systemd-path)
-        (spit unit-file (fmt-service-file (merge config {:repo-dir repo-dir})))
+        (spit unit-file (fmt-service-file unit-file-template (merge config {:repo-dir repo-dir})))
         (shell-wrapper shell-opts user-systemctl "daemon-reload")
         (shell-wrapper shell-opts user-systemctl "enable" service-name))
       (println "The directory generated" repo-dir "does not contain a deps.edn file."))))
