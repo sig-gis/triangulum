@@ -11,7 +11,6 @@
                                    :extra-env {"XDG_RUNTIME_DIR" xdg-runtime-dir}})
 (def ^:private user-systemctl          "systemctl --user")
 (def ^:private user-systemd-path       (path (fs/xdg-config-home) "systemd" "user"))
-(def ^:private systemd-multi-user-path (path user-systemd-path "multi-user.target.wants"))
 (def ^:private unit-file-template      (str/trim "
 [Unit]
 Description=A service to launch a server written in clojure
@@ -52,9 +51,7 @@ WantedBy=default.target
     (if (fs/exists? (io/file repo-dir "deps.edn"))
       (do
         (fs/create-dirs user-systemd-path)
-        (fs/create-dirs systemd-multi-user-path)
         (spit unit-file (fmt-service-file (merge config {:repo-dir repo-dir})))
-        (fs/create-sym-link (path systemd-multi-user-path service-file) unit-file)
         (shell-wrapper shell-opts user-systemctl "daemon-reload")
         (shell-wrapper shell-opts user-systemctl "enable" service-name))
       (println "The directory generated" repo-dir "does not contain a deps.edn file."))))
