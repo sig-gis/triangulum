@@ -4,6 +4,7 @@
                                       #_{:clj-kondo/ignore [:deprecated-var]}
                                       data-response
                                       format-str
+                                      format-with-dict
                                       kebab->snake
                                       filterm
                                       parse-as-sh-cmd
@@ -81,3 +82,13 @@
     (is (= #{:d :e :f :g :i}
            (find-missing-keys {:a "b" :c {:d "e"} :e {:f "f" :g "g"} :h {:i "i"}}
                               {:a "g" :c {:y "z"} :h nil})))))
+
+(deftest ^:unit format-with-dict-test
+  (testing "nil"
+    (is (= "hi," (format-with-dict "hi,{{x}}" {:x nil}))))
+  (testing "absence"
+    (is (= "hi," (format-with-dict "hi,{{x}}" {}))))
+  (testing "presence"
+    (is (= "hi,false" (format-with-dict "hi,{{x}}" {:x false})))
+    (is (= "hi,42" (format-with-dict "hi,{{x}}" {:x 42})))
+    (is  (= "hi,nice" (format-with-dict "hi,{{x}}" {:x "nice"})))))

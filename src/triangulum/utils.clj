@@ -291,11 +291,3 @@
   "Returns the current year as an integer."
   []
   (.getYear (LocalDateTime/now)))
-
-(comment
-  (format-with-dict "hi {{x}} world" {:x nil})
-  (format-with-dict "hi {{x}} world" {})
-  (format-with-dict "hi {{x}} world" {:x false})
-  (format-with-dict "hi {{x}} world" {:x 42})
-  (format-with-dict "hi {{x}} world" {:x "nice"}))
-
