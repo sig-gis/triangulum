@@ -56,7 +56,8 @@
   [fmt-str m]
   (let [handlebar #"\{\{([^\}]+)\}\}"
         fmt-keys (re-seq handlebar fmt-str)
-        values   (map #(get m (-> % (second) (snake->kebab) (keyword)) "") fmt-keys)]
+        m (update-vals m (fnil identity ""))
+        values (map #(m (-> % (second) (snake->kebab) (keyword))) fmt-keys)]
     (apply format (str/replace fmt-str handlebar "%s") values)))
 
 (defn parse-as-sh-cmd
@@ -290,3 +291,10 @@
   "Returns the current year as an integer."
   []
   (.getYear (LocalDateTime/now)))
+
+(comment
+  (format-with-dict "hi {{x}} world" {:x nil})
+  (format-with-dict "hi {{x}} world" {:x false})
+  (format-with-dict "hi {{x}} world" {:x 42})
+  (format-with-dict "hi {{x}} world" {:x "nice"}))
+
