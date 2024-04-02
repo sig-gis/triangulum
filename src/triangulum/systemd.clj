@@ -57,6 +57,7 @@ WantedBy=mulit-user.target.wants
         full-dir     (-> dir
                          (fs/expand-home)
                          (fs/absolutize)
+                         (str)
                          (remove-end "."))
         repo-dir     (if (= (fs/file-name full-dir) repo)
                        full-dir

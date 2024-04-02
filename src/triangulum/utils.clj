@@ -55,8 +55,9 @@
    ```"
   [fmt-str m]
   (let [handlebar #"\{\{([^\}]+)\}\}"
-        fmt-keys (re-seq handlebar fmt-str)
-        values   (map #(get m (-> % (second) (snake->kebab) (keyword)) "") fmt-keys)]
+        fmt-keys  (re-seq handlebar fmt-str)
+        m         (update-vals m (fnil identity ""))
+        values    (map #(get m (-> % (second) (snake->kebab) (keyword)) "") fmt-keys)]
     (apply format (str/replace fmt-str handlebar "%s") values)))
 
 (defn parse-as-sh-cmd
