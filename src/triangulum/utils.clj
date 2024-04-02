@@ -57,7 +57,7 @@
   (let [handlebar #"\{\{([^\}]+)\}\}"
         fmt-keys  (re-seq handlebar fmt-str)
         m         (update-vals m (fnil identity ""))
-        values    (map #(m (-> % (second) (snake->kebab) (keyword))) fmt-keys)]
+        values    (map #(get m (-> % (second) (snake->kebab) (keyword)) "") fmt-keys)]
     (apply format (str/replace fmt-str handlebar "%s") values)))
 
 (defn parse-as-sh-cmd
@@ -294,6 +294,7 @@
 
 (comment
   (format-with-dict "hi {{x}} world" {:x nil})
+  (format-with-dict "hi {{x}} world" {})
   (format-with-dict "hi {{x}} world" {:x false})
   (format-with-dict "hi {{x}} world" {:x 42})
   (format-with-dict "hi {{x}} world" {:x "nice"}))
