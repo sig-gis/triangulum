@@ -1,0 +1,7 @@
+{:tasks
+ {docs {:doc        "Invoke quickdoc"
+        :extra-deps {io.github.borkdude/quickdoc {:git/sha "7c8bef54eda28367193ec433af01bb940114f012"}}
+        :task       (exec 'quickdoc.api/quickdoc)
+        :exec-args  {:git/branch   "main"
+                     :github/repo  "https://github.com/sig-gis/triangulum"
+                     :source-paths ["src"]}}}}

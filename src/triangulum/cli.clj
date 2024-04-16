@@ -1,4 +1,5 @@
 (ns triangulum.cli
+  "Provides a command-line interface (CLI) for Triangulum applications. It includes functions for parsing command-line options, displaying usage information, and checking for errors in the provided arguments."
   (:require [clojure.string    :as str]
             [clojure.tools.cli :refer [parse-opts]]
             [triangulum.utils  :refer [format-str]]))
@@ -85,7 +86,20 @@
           options))
 
 (defn get-cli-options
-  "Checks for a valid call from the CLI and returns the users options."
+  "Checks for a valid call from the CLI and returns the users options.
+
+   Takes the command-line arguments, a map of CLI options, a map of CLI actions,
+   an alias string, and an optional config map.
+
+   Example:
+   ```clojure
+   (def cli-options {...})
+
+   (def cli-actions {...})
+   (def alias-str \"...\")
+
+   (get-cli-options command-line-args cli-options cli-actions alias-str)
+   ```"
   [args cli-options cli-actions alias-str & [config]]
   (let [{:keys [options defaults]} (separate-options-defaults cli-options)
         {:keys [arguments errors options]} (->> options

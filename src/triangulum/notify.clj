@@ -1,4 +1,14 @@
 (ns triangulum.notify
+  "Provides functions to interact with systemd for process management and notifications.
+
+   Uses the SDNotify Java library to send notifications and check the availability of the
+   current process.
+
+   The functions in this namespace allow you to check if the process is managed by systemd,
+   send \"ready,\" \"reloading,\" and \"stopping\" messages, and send custom status messages.
+
+   These functions can be helpful when integrating your application with systemd for
+   better process supervision and management."
   (:import [info.faljse.SDNotify SDNotify]))
 
 ;; Notify

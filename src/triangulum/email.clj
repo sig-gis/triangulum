@@ -1,4 +1,11 @@
 (ns triangulum.email
+  "Provides some functionality for sending email from an SMTP
+   server. Given the configuration inside `:mail`:
+   - `:host`     - Hostname of the SMTP server.
+   - `:user`     - Email account to use via SMTP (and which emails will be addressed from)
+   - `:pass`     - Password to use via SMTP.
+   - `:port`     - Port to use for SMTP.
+   - `:base-url` - The host's host url, used when sending links in emails."
   (:require [clojure.spec.alpha :as s]
             [postal.core        :refer [send-message]]
             [triangulum.config  :as config :refer [get-config]]

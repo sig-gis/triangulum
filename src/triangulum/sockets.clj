@@ -1,4 +1,5 @@
 (ns triangulum.sockets
+  "Provides functionality for creating and managing client and server sockets. It includes functions for opening and checking socket connections, sending messages to the server, and starting/stopping socket servers with custom request handlers. This namespace enables communication between distributed systems and allows you to implement networked applications."
   (:import (java.io  BufferedReader)
            (java.net Socket ServerSocket))
   (:require [clojure.java.io   :as io]
