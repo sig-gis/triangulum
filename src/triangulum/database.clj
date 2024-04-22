@@ -13,8 +13,8 @@
   ```
 
   To run a postgres sql command use `call-sql`. Currently `call-sql`
-  only works with postgres. With the second parameter can be an
-  optional settings map (default values shown below).
+  only works with postgres. The second parameter can be an optional
+  settings map (default values shown below).
 
   ```clojure
   (call-sql \"function\" {:log? true :use-vec? false} \"param1\" \"param2\" ... \"paramN\")
@@ -27,9 +27,9 @@
   (call-sqlite \"select * from table\" \"path/db-file\")
   ```
 
-  To insert new rows or update existing rows use `insert-rows!` and
-  `update-rows!`. If fields are not provided, the first row will be assumed to
-  be the field names.
+  To insert new rows or update existing rows, use `insert-rows!` and
+  `update-rows!`. If fields are not provided, the first row will be
+  assumed to be the field names.
 
   ```clojure
   (insert-rows! table-name rows-vector fields-map)

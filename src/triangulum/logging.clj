@@ -1,7 +1,8 @@
 (ns triangulum.logging
-  "To send a message to the logger use `log` or `log-str`. `log` can take an
-  optional argument to specify not default behavior. The default values are
-  shown below. `log-str` always uses the default values.
+  "To send a message to the logger use `log` or `log-str`. `log` can
+  take an optional argument to specify non-default behavior. The
+  default values are shown below. `log-str` always uses the default
+  values.
 
   ```clojure
   (log \"Hello world\" {:newline? true :pprint? false :force-stdout? false})
@@ -12,8 +13,8 @@
   have the system log to YYYY-DD-MM.log, set a log path. You can either specify
   a path relative to the toplevel directory of the main project repository or an
   absolute path on your filesystem. The logger will keep the 10 most recent logs
-  (where a new log is created every day at midnight). To stop the logging server
-  set path to \"\"."
+  (where a new log is created everyday at midnight). To stop the
+  logging server set log path to \"\"."
 
   (:import java.text.SimpleDateFormat
            java.util.Date

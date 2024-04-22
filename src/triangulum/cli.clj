@@ -1,5 +1,8 @@
 (ns triangulum.cli
-  "Provides a command-line interface (CLI) for Triangulum applications. It includes functions for parsing command-line options, displaying usage information, and checking for errors in the provided arguments."
+  "Provides a command-line interface (CLI) for Triangulum applications.
+  It includes functions for parsing command-line options, displaying
+  usage information, and checking for errors in the provided
+  arguments."
   (:require [clojure.string    :as str]
             [clojure.tools.cli :refer [parse-opts]]
             [triangulum.utils  :refer [format-str]]))
