@@ -79,3 +79,21 @@
 (defmethod stop-workers! :namespaced []
   (doseq [{::keys [name stop value]} @workers]
     (stop-worker! name stop value)))
+
+(defmulti get-worker
+  "Returns a worker by name, represented as a map with the following shape:
+  {:triangulum.worker/name  String | Keyword
+   :triangulum.worker/start IFn
+   :triangulum.worker/stop  IFn
+   :triangulum.worker/value Object}"
+  (fn [_worker-name] (if (map? @workers) :nested :namespaced)))
+
+(defmethod get-worker :nested [worker-name]
+  (let [{:keys [start stop value]} (get @workers worker-name)]
+    #:triangulum.worker{:name  worker-name
+                        :start start
+                        :stop  stop
+                        :value value}))
+
+(defmethod get-worker :namespaced [worker-name]
+  (first (filter (fn [{::keys [name]}] (= name worker-name)) @workers)))
