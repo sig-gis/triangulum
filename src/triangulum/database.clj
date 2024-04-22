@@ -1,4 +1,40 @@
 (ns triangulum.database
+  "To use `triangulum.database`, first add your database connection
+  configurations to a `config.edn` file in your project's root directory.
+
+  For example:
+  ```clojure
+  ;; config.edn
+  {:database {:host     \"localhost\"
+            :port     5432
+            :dbname   \"pyregence\"
+            :user     \"pyregence\"
+            :password \"pyregence\"}}
+  ```
+
+  To run a postgres sql command use `call-sql`. Currently `call-sql`
+  only works with postgres. The second parameter can be an optional
+  settings map (default values shown below).
+
+  ```clojure
+  (call-sql \"function\" {:log? true :use-vec? false} \"param1\" \"param2\" ... \"paramN\")
+  ```
+
+  To run a sqllite3 sql command use `call-sqlite`. An existing sqllite3 database
+  must be provided.
+
+  ```clojure
+  (call-sqlite \"select * from table\" \"path/db-file\")
+  ```
+
+  To insert new rows or update existing rows, use `insert-rows!` and
+  `update-rows!`. If fields are not provided, the first row will be
+  assumed to be the field names.
+
+  ```clojure
+  (insert-rows! table-name rows-vector fields-map)
+  (update-rows! table-name rows-vector column-to-update fields-map)
+  ```"
   (:import java.sql.Array)
   (:require [clojure.spec.alpha   :as s]
             [clojure.string       :as str]

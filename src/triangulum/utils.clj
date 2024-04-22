@@ -1,4 +1,6 @@
 (ns triangulum.utils
+  "Collection of utility functions for various purposes, such as text parsing,
+   shell command execution, response building, and operations on maps and namespaces."
   (:import java.io.ByteArrayOutputStream
            java.time.LocalDateTime)
   (:require [babashka.process   :refer [shell]]

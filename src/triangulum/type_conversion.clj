@@ -1,4 +1,7 @@
 (ns triangulum.type-conversion
+  "Provides a collection of functions for converting between different
+  data types and formats, including conversions between numbers,
+  booleans, JSON, and PostgreSQL data types."
   (:import org.postgresql.util.PGobject)
   (:require [clojure.data.json :refer [read-str write-str]]))
 

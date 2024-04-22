@@ -1,4 +1,8 @@
 (ns triangulum.worker
+  "Responsible for the management of worker lifecycle within the
+  `:server` context, specifically those defined under the `:workers`
+  key. This namespace furnishes functions to initiate and terminate
+  workers, maintaining their current state within an atom."
   (:require  [clojure.spec.alpha  :as s]
              [triangulum.logging  :refer [log-str]]
              [triangulum.utils    :refer [resolve-foreign-symbol]]))
@@ -32,11 +36,21 @@
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defmulti start-workers!
   "Starts a set of workers based on the provided configuration.
-  The workers parameter can be either a map (for nested workers) or a vector (for namespaced workers).
-  For nested workers, the map keys are worker names and values are maps with :start (a symbol representing the start function) and :stop keys. The start function is called to start the worker.
-  For namespaced workers, the vector elements are maps with ::name (the worker name), ::start (a symbol representing the start function), and ::stop keys. The start function is called to start each worker.
+  The workers parameter can be either a map (for nested workers)
+  or a vector (for namespaced workers).
+  For nested workers, the map keys are worker names and values are
+  maps with `:start` (a symbol representing the start function) and
+  `:stop` keys. The start function is called to start the worker.
+
+  For namespaced workers, the vector elements are maps with:
+  - `::name`  - the worker name
+  - `::start` - a symbol representing the start function
+  - `::stop`  - symbol representing the stop function.
+
+  The start function is called to start each worker.
+
   Arguments:
-   workers - a map or vector representing the workers to be started."
+  - `workers` - a map or vector representing the workers to be started."
   (fn [workers] (if (map? workers) :nested :namespaced)))
 
 
