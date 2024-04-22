@@ -95,5 +95,6 @@
                         :stop  stop
                         :value value}))
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defmethod get-worker :namespaced [worker-name]
   (first (filter (fn [{::keys [name]}] (= name worker-name)) @workers)))
