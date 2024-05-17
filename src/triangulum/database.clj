@@ -35,11 +35,15 @@
   (insert-rows! table-name rows-vector fields-map)
   (update-rows! table-name rows-vector column-to-update fields-map)
   ```"
-  (:import java.sql.Array)
+  (:import java.sql.Array
+           (java.sql PreparedStatement)
+           (org.postgresql.util PGobject))
   (:require [clojure.spec.alpha   :as s]
+            [clojure.data.json    :as json]
             [clojure.string       :as str]
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :as rs]
+            [next.jdbc.prepare    :as prepare]
             [triangulum.config    :as config :refer [get-config]]
             [triangulum.logging   :refer [log-str]]
             [triangulum.utils     :refer [format-str]]))
@@ -52,10 +56,54 @@
 (s/def ::host     ::config/string)
 (s/def ::port     ::config/port)
 
+;; JSON encoding/decoding helpers
+
+(def ->json json/write-str)
+(def <-json #(json/read-str % :key-fn keyword))
+
+;; Functions for converting between Clojure data and PGobject
+
+(defn ->pgobject
+  "Convert Clojure data to a PGobject with JSON content.
+  The default type is `jsonb`, but can be overridden with :pgtype metadata."
+  [x]
+  (let [pgtype (or (:pgtype (meta x)) "jsonb")]
+    (doto (PGobject.)
+      (.setType pgtype)
+      (.setValue (->json x)))))
+
+(defn <-pgobject
+  "Convert PGobject containing `json` or `jsonb` to Clojure data."
+  [^org.postgresql.util.PGobject v]
+  (let [type  (.getType v)
+        value (.getValue v)]
+    (if (#{"jsonb" "json"} type)
+      (when value
+        (with-meta (<-json value) {:pgtype type}))
+      value)))
+
+(extend-protocol prepare/SettableParameter
+  "Convert Clojure maps and vectors to PGobject for JSON/JSONB."
+  clojure.lang.IPersistentMap
+  (set-parameter [m ^PreparedStatement s i]
+    (.setObject s i (->pgobject m)))
+
+  clojure.lang.IPersistentVector
+  (set-parameter [v ^PreparedStatement s i]
+    (.setObject s i (->pgobject v))))
+
 (extend-protocol rs/ReadableColumn
+  ;; Convert SQL arrays to Clojure vectors.
   Array
   (read-column-by-label [^Array v _]    (vec (.getArray v)))
-  (read-column-by-index [^Array v _ _]  (vec (.getArray v))))
+  (read-column-by-index [^Array v _ _]  (vec (.getArray v)))
+
+  ;; Convert PGobject columns to Clojure data if type is `json` or `jsonb`.
+  org.postgresql.util.PGobject
+  (read-column-by-label [^org.postgresql.util.PGobject v _]
+    (<-pgobject v))
+  (read-column-by-index [^org.postgresql.util.PGobject v _2 _3]
+    (<-pgobject v)))
 
 ;;; Helper Functions
 
