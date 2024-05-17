@@ -11,6 +11,8 @@
 ;; Debugging
 (def ^:private verbose? false)
 (def ^:private tri-test "tri_test")
+(def ^:private pg-host (or (System/getenv "PGHOST") "localhost"))
+(def ^:private pg-port (or (System/getenv "PGPORT") 5432))
 
 ;; Helpers
 (defn- get-conn [config]
@@ -19,15 +21,15 @@
     (catch Exception _ (println "Unable to connect to db using:" config))))
 
 (defn- get-admin-conn []
-  (get-conn {:host     (or (System/getenv "PGHOST") "localhost")
-             :port     (or (System/getenv "PGPORT") 5432)
+  (get-conn {:host     pg-host
+             :port     pg-port
              :dbname   (or (System/getenv "PGDATABASE") "postgres")
              :user     (or (System/getenv "PGUSERNAME") "postgres")
              :password (or (System/getenv "PGPASSWORD") "")}))
 
 (defn- get-tri-test-conn []
-  (get-conn {:host     (or (System/getenv "PGHOST") "localhost")
-             :port     (or (System/getenv "PGPORT") 5432)
+  (get-conn {:host     pg-host
+             :port     pg-port
              :dbname   tri-test
              :user     tri-test
              :password tri-test}))
@@ -71,7 +73,7 @@
     ; Arrange
 
     ; Act
-    (migrate! tri-test tri-test tri-test verbose?)
+    (migrate! pg-host pg-port tri-test tri-test tri-test verbose?)
 
     ; Assert
     (with-open [^Connection conn (get-tri-test-conn)]
@@ -89,7 +91,7 @@
       (spit (str m/*migrations-dir* filename) contents)
 
       ; Act
-      (migrate! tri-test tri-test tri-test verbose?)
+      (migrate! pg-host pg-port tri-test tri-test tri-test verbose?)
 
       ; Assert
       (with-open [^Connection conn (get-tri-test-conn)]
@@ -105,7 +107,7 @@
 
     ; Act
     (dotimes [_ 5]
-      (migrate! tri-test tri-test tri-test verbose?))
+      (migrate! pg-host pg-port tri-test tri-test tri-test verbose?))
 
     ; Assert
     (with-open [^Connection conn (get-tri-test-conn)]
@@ -126,7 +128,7 @@
           "CREATE TABLE pets (id serial PRIMARY KEY, pet_name varchar);")
 
     ; Act
-    (is (thrown? Exception (migrate! tri-test tri-test tri-test verbose?)))
+    (is (thrown? Exception (migrate! pg-host pg-port tri-test tri-test tri-test verbose?)))
 
     ; Assert
     (with-open [^Connection conn (get-tri-test-conn)]
@@ -143,4 +145,4 @@
     (spit (str m/*migrations-dir* "01-create-users-table.sql") "CREATE TABLE users (id serial PRIMARY KEY);")
 
     ; Act/Assert
-    (is (thrown? Exception (migrate! tri-test tri-test tri-test false)))))
+    (is (thrown? Exception (migrate! pg-host pg-port tri-test tri-test tri-test false)))))

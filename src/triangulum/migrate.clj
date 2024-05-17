@@ -18,9 +18,11 @@
 (defn- migration-path [filename]
   (io/file *migrations-dir* filename))
 
-(defn- get-conn [database user user-pass]
+(defn- get-conn [host port database user user-pass]
   (jdbc/get-connection {:dbtype                "postgresql"
                         :dbname                database
+                        :host                  host
+                        :port                  port
                         :user                  user
                         :password              user-pass
                         :reWriteBatchedInserts true}))
@@ -104,10 +106,10 @@
   and include a SHA-256 hash of the migration file contents. If a migration has
   been altered, the migrations will fail. This is to ensure consistency as migrations
   are added."
-  [database user user-pass verbose?]
+  [host port database user user-pass verbose?]
   (when verbose? (println "Applying changes..."))
 
-  (with-open [^Connection db-conn (get-conn database user user-pass)]
+  (with-open [^Connection db-conn (get-conn host port database user user-pass)]
     (setup-migrations-table! db-conn)
     (let [all-files   (get-migration-files)
           completed   (get-completed-changes db-conn)
