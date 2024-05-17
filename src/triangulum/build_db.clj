@@ -140,24 +140,28 @@
       (.read is array 0 5)
       (String. array))))
 
-(defn- run-backup [database file admin-pass verbose]
+(defn- run-backup [host port database file admin-pass verbose]
   (println "Backing up database...")
   (sh-wrapper "./"
               {:PGPASSWORD admin-pass}
               verbose
-              (format-str "pg_dump -U postgres -d %d --format=custom --compress=4 --file=%f"
+              (format-str "pg_dump -h %h -p %p -U postgres -d %d --format=custom --compress=4 --file=%f"
+                          host
+                          port
                           database
                           file)))
 
-(defn- run-restore [file admin-pass verbose]
+(defn- run-restore [host port file admin-pass verbose]
   ;; TODO check database against 'pg_restore --list file'
   (println "Restoring database...")
   (if (= "PGDMP" (read-file-tag file))
     (sh-wrapper "./"
                 {:PGPASSWORD admin-pass}
                 verbose
-                (str "pg_restore -U postgres -d postgres --clean --if-exists --create --jobs=12 "
-                     file))
+                (format-str "pg_restore -h %h -p %p -U postgres -d postgres --clean --if-exists --create --jobs=12 %f"
+                            host
+                            port
+                            file))
     (println "Invalid .dump file.")))
 
 (def ^:private cli-options
@@ -210,9 +214,11 @@
                               (or user dbname)
                               (or password dbname) ; user-pass
                               verbose)
-      :backup    (run-backup dbname file admin-pass verbose)
-      :restore   (run-restore file admin-pass verbose)
-      :migrate   (migrate! dbname ; TODO we might need consider host and port here.
+      :backup    (run-backup host port dbname file admin-pass verbose)
+      :restore   (run-restore host port file admin-pass verbose)
+      :migrate   (migrate! host
+                           port
+                           dbname
                            (or user dbname)
                            (or password dbname) ; user-pass
                            verbose)
