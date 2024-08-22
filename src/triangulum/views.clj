@@ -182,10 +182,10 @@
                                :font-style      "italic"
                                :font-weight     "bold"
                                :justify-content "space-between"
-                               :left            "1rem"
                                :max-width       "50%"
                                :padding         ".5rem"
                                :position        "fixed"
+                               :right           "1rem"
                                :top             "1rem"
                                :z-index         "10001"}}
    [:script {:type "text/javascript"}
