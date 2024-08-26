@@ -38,7 +38,7 @@
            :or {newline? true pprint? false force-stdout? false truncate? true}}]
   (let [timestamp    (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))
         log-filename (str (.format (SimpleDateFormat. "YYYY-MM-dd") (Date.)) ".log")
-        max-data     (if truncate? (max-length data 2000) data)
+        max-data     (if truncate? (max-length data 500) data)
         line         (str timestamp
                           " "
                           (if pprint? (with-out-str (pp/pprint data)) max-data)
