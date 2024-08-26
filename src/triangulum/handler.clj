@@ -87,7 +87,7 @@
     (let [{:keys [uri request-method params]} request
           private-request-keys                (or (get-config :server :private-request-keys)
                                                   #{:password :passwordConfirmation})
-          param-str                           (binding [*print-length* -1] (print-str (apply dissoc params private-request-keys)))]
+          param-str                           (pr-str (apply dissoc params private-request-keys))]
       (log-str "Request(" (name request-method) "): \"" uri "\" " param-str)
       (handler request))))
 
