@@ -23,7 +23,7 @@
                                                         wrap-frame-options
                                                         wrap-xss-protection]]
             [triangulum.config                  :as config :refer [get-config]]
-            [triangulum.logging                 :refer [log-str]]
+            [triangulum.logging                 :refer [log log-str]]
             [triangulum.errors                  :refer [nil-on-error]]
             [triangulum.utils                   :refer [resolve-foreign-symbol]]
             [triangulum.response                :refer [forbidden-response data-response]]))
@@ -87,8 +87,11 @@
     (let [{:keys [uri request-method params]} request
           private-request-keys                (or (get-config :server :private-request-keys)
                                                   #{:password :passwordConfirmation})
+          truncate-request?                   (if (some? (get-config :server :truncate-request?))
+                                                (get-config :server :truncate-request?)
+                                                true)
           param-str                           (pr-str (apply dissoc params private-request-keys))]
-      (log-str "Request(" (name request-method) "): \"" uri "\" " param-str)
+      (log (apply str "Request(" (name request-method) "): \"" uri "\" " param-str) :truncate? truncate-request?)
       (handler request))))
 
 (defn wrap-response-logging
