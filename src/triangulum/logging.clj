@@ -33,7 +33,7 @@
   "Synchronously create a log entry. Logs will got to standard out as default.
    A log file location can be specified with set-log-path!.
 
-   Default options are {:newline? true :pprint? false :force-stdout? false}"
+   Default options are {:newline? true :pprint? false :force-stdout? false truncate? true}"
   [data & {:keys [newline? pprint? force-stdout? truncate?]
            :or {newline? true pprint? false force-stdout? false truncate? true}}]
   (let [timestamp    (.format (SimpleDateFormat. "MM/dd HH:mm:ss") (Date.))
