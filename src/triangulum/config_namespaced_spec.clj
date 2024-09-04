@@ -33,6 +33,7 @@
                                :triangulum.handler/redirect-handler
                                :triangulum.handler/route-authenticator
                                :triangulum.handler/routing-tables
+                               :triangulum.handler/truncate-request
                                :triangulum.handler/private-request-keys
                                :triangulum.handler/private-response-keys
                                :triangulum.handler/bad-tokens

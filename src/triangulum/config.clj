@@ -24,7 +24,6 @@
 (s/def ::url-or-file-path  (s/and string? #(re-matches #"^(https?:\/\/[^\s\/$.?#].[^\s]*)|(/[^:*?\"<>|]*)$" %)))
 (s/def ::path              (s/and string? #(re-matches #"[./][^:*?\"<>|]*" %)))
 (s/def ::hostname          (s/and string? #(re-matches #"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" %)))
-(s/def ::boolean           boolean?)
 
 ;; Config file
 

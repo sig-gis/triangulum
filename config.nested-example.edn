@@ -18,6 +18,7 @@
           :route-authenticator   product-ns.handlers/route-authenticator
           :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
           :bad-tokens            #{".php"}
+          :truncate-request      false
           :private-request-keys  #{:base64Image :plotFileBase64 :sampleFileBase64}
           :private-response-keys #{}
 

@@ -35,6 +35,7 @@
 (s/def ::route-authenticator   ::config/namespaced-symbol)
 (s/def ::routing-tables        (s/coll-of ::config/namespaced-symbol))
 (s/def ::bad-tokens            (s/coll-of ::config/string :kind set? :min-count 0))
+(s/def ::truncate-request      boolean?)
 (s/def ::private-request-keys  (s/coll-of keyword :kind set?))
 (s/def ::private-response-keys (s/coll-of keyword :kind set?))
 
@@ -85,11 +86,9 @@
   [handler]
   (fn [request]
     (let [{:keys [uri request-method params]} request
+          truncate-request?                   (get-config :server :truncate-request)
           private-request-keys                (or (get-config :server :private-request-keys)
                                                   #{:password :passwordConfirmation})
-          truncate-request?                   (if (some? (get-config :server :truncate-request?))
-                                                (get-config :server :truncate-request?)
-                                                true)
           param-str                           (pr-str (apply dissoc params private-request-keys))]
       (log (apply str "Request(" (name request-method) "): \"" uri "\" " param-str) :truncate? truncate-request?)
       (handler request))))

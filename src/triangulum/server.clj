@@ -25,7 +25,6 @@
 (s/def ::cider-nrepl       boolean?)
 (s/def ::mode              (s/and ::config/string #{"dev" "prod"}))
 (s/def ::log-dir           ::config/string)
-(s/def ::truncate-request? ::config/boolean)
 (s/def ::handler           ::config/namespaced-symbol)
 (s/def ::keystore-file     ::config/string)
 (s/def ::keystore-type     ::config/string)
