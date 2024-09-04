@@ -61,8 +61,7 @@
                           (create-handler-stack ssl? reload?))
         config        (merge
                        {:port  http-port
-                        :join? false
-                        :truncate-request? truncate-request?}
+                        :join? false}
                        (when ssl?
                          {:ssl?             true
                           :ssl-port         https-port
