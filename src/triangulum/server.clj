@@ -45,14 +45,13 @@
 (defn start-server!
   "See README.org -> Web Framework -> triangulum.server for details."
   [{:keys [http-port https-port nrepl cider-nrepl nrepl-bind nrepl-port mode log-dir
-           truncate-request? handler workers keystore-file keystore-type keystore-password]
+           handler workers keystore-file keystore-type keystore-password]
     :or   {nrepl-bind        "127.0.0.1"
            nrepl-port        5555
            keystore-file     "./.key/keystore.pkcs12"
            keystore-type     "pkcs12"
            keystore-password "foobar"
            log-dir           ""
-           truncate-request? true
            mode              "prod"}}]
   (let [has-key?      (and keystore-file (.exists (io/file keystore-file)))
         ssl?          (and has-key? https-port)
