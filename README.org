@@ -67,7 +67,7 @@ file logging system, and worker functions for non-HTTP-related tasks.
                :cider-nrepl       true      ; If your editor supports CIDER middleware
                :mode              "dev"     ; or prod
                :log-dir           "logs"    ; or "" for stdout
-               :truncate-request? false     ; true by default
+               :truncate-request  true      ; false by default
                :handler           product-ns.routing/handler
                :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
                                                :stop  product-ns.jobs/stop-scheduled-jobs!}}

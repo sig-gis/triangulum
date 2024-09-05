@@ -20,6 +20,7 @@
                                    :triangulum.handler/route-authenticator
                                    :triangulum.handler/routing-tables
                                    :triangulum.handler/bad-tokens
+                                   :triangulum.handler/truncate-request
                                    :triangulum.handler/private-request-keys
                                    :triangulum.handler/private-response-keys
                                    :triangulum.worker/workers

@@ -18,6 +18,7 @@
  :triangulum.handler/route-authenticator   product-ns.handlers/route-authenticator
  :triangulum.handler/routing-tables        [backend-libary-ns.routing/routes product-ns.routing/routes]
  :triangulum.handler/bad-tokens            #{".php"}
+ :triangulum.handler/truncate-request      false
  :triangulum.handler/private-request-keys  #{:base64Image :plotFileBase64 :sampleFileBase64}
  :triangulum.handler/private-response-keys #{}
 
