@@ -21,6 +21,8 @@
           :truncate-request      false
           :private-request-keys  #{:base64Image :plotFileBase64 :sampleFileBase64}
           :private-response-keys #{}
+          :upload-max-size-mb    100
+          :upload-max-file-count 10
 
           ;; workers
           :workers {:scheduler {:start product-ns.jobs/start-scheduled-jobs!

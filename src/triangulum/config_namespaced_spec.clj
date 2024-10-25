@@ -18,7 +18,7 @@
                  #(no-keys-of-ns? % "triangulum.server")
                  :server-keys
                  (s/keys :req [:triangulum.server/http-port
-                               :triangulum.server/handler]
+                              :triangulum.server/handler]
                          :opt [:triangulum.server/https-port
                                :triangulum.server/nrepl
                                :triangulum.server/nrepl-port
@@ -37,6 +37,8 @@
                                :triangulum.handler/private-request-keys
                                :triangulum.handler/private-response-keys
                                :triangulum.handler/bad-tokens
+                               :triangulum.handler/upload-max-size-mb
+                               :triangulum.handler/upload-max-file-count
                                :triangulum.worker/workers
                                :triangulum.response/response-type])))
 
