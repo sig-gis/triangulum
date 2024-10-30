@@ -18,7 +18,7 @@
                  #(no-keys-of-ns? % "triangulum.server")
                  :server-keys
                  (s/keys :req [:triangulum.server/http-port
-                              :triangulum.server/handler]
+                               :triangulum.server/handler]
                          :opt [:triangulum.server/https-port
                                :triangulum.server/nrepl
                                :triangulum.server/nrepl-port
