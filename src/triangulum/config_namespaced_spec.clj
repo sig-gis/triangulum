@@ -37,6 +37,8 @@
                                :triangulum.handler/private-request-keys
                                :triangulum.handler/private-response-keys
                                :triangulum.handler/bad-tokens
+                               :triangulum.handler/upload-max-size-mb
+                               :triangulum.handler/upload-max-file-count
                                :triangulum.worker/workers
                                :triangulum.response/response-type])))
 

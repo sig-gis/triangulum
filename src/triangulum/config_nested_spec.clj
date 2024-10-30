@@ -23,6 +23,8 @@
                                    :triangulum.handler/truncate-request
                                    :triangulum.handler/private-request-keys
                                    :triangulum.handler/private-response-keys
+                                   :triangulum.handler/upload-max-size-mb
+                                   :triangulum.handler/upload-max-file-count
                                    :triangulum.worker/workers
                                    :triangulum.response/response-type]))
 

@@ -1,32 +1,33 @@
 (ns triangulum.handler
-  (:require [clojure.data.json                  :as json]
-            [clojure.edn                        :as edn]
-            [clojure.spec.alpha                 :as s]
-            [clojure.string                     :as str]
-            [ring.middleware.absolute-redirects :refer [wrap-absolute-redirects]]
-            [ring.middleware.content-type       :refer [wrap-content-type]]
-            [ring.middleware.default-charset    :refer [wrap-default-charset]]
-            [ring.middleware.gzip               :refer [wrap-gzip]]
-            [ring.middleware.json               :refer [wrap-json-params]]
-            [ring.middleware.keyword-params     :refer [wrap-keyword-params]]
-            [ring.middleware.multipart-params   :refer [wrap-multipart-params]]
-            [ring.middleware.nested-params      :refer [wrap-nested-params]]
-            [ring.middleware.not-modified       :refer [wrap-not-modified]]
-            [ring.middleware.params             :refer [wrap-params]]
-            [ring.middleware.reload             :refer [wrap-reload]]
-            [ring.middleware.resource           :refer [wrap-resource]]
-            [ring.middleware.session            :refer [wrap-session]]
-            [ring.middleware.session.cookie     :refer [cookie-store]]
-            [ring.middleware.ssl                :refer [wrap-ssl-redirect]]
-            [ring.util.codec                    :refer [url-decode]]
-            [ring.middleware.x-headers          :refer [wrap-content-type-options
-                                                        wrap-frame-options
-                                                        wrap-xss-protection]]
-            [triangulum.config                  :as config :refer [get-config]]
-            [triangulum.logging                 :refer [log log-str]]
-            [triangulum.errors                  :refer [nil-on-error]]
-            [triangulum.utils                   :refer [resolve-foreign-symbol]]
-            [triangulum.response                :refer [forbidden-response data-response]]))
+  (:require [clojure.data.json                          :as json]
+            [clojure.edn                                :as edn]
+            [clojure.spec.alpha                         :as s]
+            [clojure.string                             :as str]
+            [ring.middleware.absolute-redirects         :refer [wrap-absolute-redirects]]
+            [ring.middleware.content-type               :refer [wrap-content-type]]
+            [ring.middleware.default-charset            :refer [wrap-default-charset]]
+            [ring.middleware.gzip                       :refer [wrap-gzip]]
+            [ring.middleware.json                       :refer [wrap-json-params]]
+            [ring.middleware.keyword-params             :refer [wrap-keyword-params]]
+            [ring.middleware.multipart-params           :refer [wrap-multipart-params]]
+            [ring.middleware.multipart-params.temp-file :refer [temp-file-store]]
+            [ring.middleware.nested-params              :refer [wrap-nested-params]]
+            [ring.middleware.not-modified               :refer [wrap-not-modified]]
+            [ring.middleware.params                     :refer [wrap-params]]
+            [ring.middleware.reload                     :refer [wrap-reload]]
+            [ring.middleware.resource                   :refer [wrap-resource]]
+            [ring.middleware.session                    :refer [wrap-session]]
+            [ring.middleware.session.cookie             :refer [cookie-store]]
+            [ring.middleware.ssl                        :refer [wrap-ssl-redirect]]
+            [ring.util.codec                            :refer [url-decode]]
+            [ring.middleware.x-headers                  :refer [wrap-content-type-options
+                                                                wrap-frame-options
+                                                                wrap-xss-protection]]
+            [triangulum.config                          :as config :refer [get-config]]
+            [triangulum.logging                         :refer [log log-str]]
+            [triangulum.errors                          :refer [nil-on-error]]
+            [triangulum.utils                           :refer [resolve-foreign-symbol]]
+            [triangulum.response                        :refer [forbidden-response data-response]]))
 
 ;; spec
 
@@ -38,6 +39,14 @@
 (s/def ::truncate-request      boolean?)
 (s/def ::private-request-keys  (s/coll-of keyword :kind set?))
 (s/def ::private-response-keys (s/coll-of keyword :kind set?))
+(s/def ::upload-max-size-mb
+  ^{:doc "Maximum allowed file size in megabytes for uploads.
+          Must be a positive integer not exceeding 1000MB (1GB)."}
+  (s/and pos-int? #(<= % 1000)))
+(s/def ::upload-max-file-count
+  ^{:doc "Maximum number of files allowed in a single upload request.
+          Must be a positive integer not exceeding 100 files."}
+  (s/and pos-int? #(<= % 100)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler
@@ -174,6 +183,37 @@
                           (string-to-bytes))}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Upload Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private mb-to-bytes
+  "Convert megabytes to bytes."
+  (partial * 1024 1024))
+
+(defn- calculate-progress-interval
+  "Calculate bytes between progress updates, aiming for ~10 updates."
+  [max-size-mb]
+  (mb-to-bytes (max 1 (quot max-size-mb 10))))
+
+(defn- make-upload-config
+  "Creates upload configuration from config.edn or defaults."
+  []
+  (let [max-size-mb    (or (get-config ::upload-max-size-mb) 100)
+        max-file-count (or (get-config ::upload-max-file-count) 10)]
+    {:encoding      "UTF-8"
+     :error-handler (fn [_]
+                     (data-response
+                       (str "File upload exceeded limits. Maximum file size is " max-size-mb "MB.")
+                       {:status 413}))
+     :max-file-count max-file-count
+     :max-file-size  (mb-to-bytes max-size-mb)
+     :progress-fn    (fn [_ bytes-read content-length item-count]
+                      (when (zero? (mod bytes-read (calculate-progress-interval max-size-mb)))
+                        (log (str "Upload progress: " bytes-read "/" content-length
+                                 " bytes, items: " item-count))))
+     :store         (temp-file-store)}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handler Stack
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -195,7 +235,7 @@
       wrap-json-params
       wrap-edn-params
       wrap-nested-params
-      wrap-multipart-params
+      (wrap-multipart-params (make-upload-config))
       wrap-params
       (wrap-session {:store (get-cookie-store)})
       wrap-absolute-redirects
