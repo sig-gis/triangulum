@@ -186,14 +186,14 @@
   "Adds CORS headers for specific routes"
   [handler]
   (fn [{:keys [uri headers] :as request}]
-    (let [cors-config   (get-config :handler :cors)
+    (let [cors-config   (get-config :handler :cors-headers)
           routes        (->> (get-config :triangulum.handler/routing-tables)
                              (map (comp deref resolve-foreign-symbol))
                              (apply merge))
           route         (some (fn [[key value]]
                                 (when (= (second key) uri)
                                   {key value})) routes)]
-      (if (get-in route [1 :cors?])
+      (if (get-in route [1 :cors])
         (handler (assoc request :headers (merge headers cors-config)))
         (handler request)))))
 
