@@ -23,6 +23,11 @@
  :triangulum.handler/private-response-keys #{}
  :triangulum.handler/upload-max-size-mb    100
  :triangulum.handler/upload-max-file-count 10
+ :triangulum.handler/cors?         false
+ :triangulum.handler/cors-headers {"Access-Control-Allow-Origin" "https://example.com"
+                                   "Access-Control-Allow-Methods" "GET, POST, PUT, DELETE"
+                                   "Access-Control-Allow-Headers" "Content-Type, Authorization"
+                                   "Access-Control-Allow-Credentials" "true"}
 
  ;; workers (server)
  :triangulum.worker/workers [{:triangulum.worker/name  "scheduler"
