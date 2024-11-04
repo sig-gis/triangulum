@@ -263,6 +263,7 @@
       (wrap-content-type-options :nosniff)
       wrap-response-logging
       wrap-gzip
+      wrap-cors-routes
       wrap-exceptions
       (optional-middleware wrap-reload reload?)))
 
