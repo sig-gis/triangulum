@@ -141,9 +141,6 @@
 (defn- ensure-int [x]
   (if (int? x) x (Integer/parseInt x)))
 
-(defn- ensure-boolean [b]
-  (if (boolean? b) b (Boolean/valueOf b)))
-
 (def ^:private cli-options
   {:http-port   ["-p" "--http-port PORT"  "Port for http (e.g., 8080)"
                  :parse-fn ensure-int]
@@ -157,10 +154,9 @@
    :mode        ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
                  :default "prod"
                  :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
-   :remove-logs ["-x" "--remove-logs BOOL" "Wether to remove logs from time to time"
-                 :default true
-                 :validate [boolean? "Must be \"true\" or \"false\""]
-                 :parse-fn ensure-boolean]
+   :remove-logs ["-x" "--remove-logs" "Wether to remove logs from time to time"
+                 :default "true"
+                 :validate [#{"true" "false"} "Must be \"true\" or \"false\""]]
    :log-dir     ["-l" "--log-dir DIR" "Directory for log files. When a directory is not provided, output will be to stdout."
                  :default ""]})
 
@@ -184,3 +180,21 @@
       :reload (reload-running-server! options)
       nil)
     (System/exit 0)))
+
+(comment
+  (let [args ["-p8080" "--remove-logs=false" "start"]]
+    (get-cli-options args
+                     cli-options
+                     cli-actions
+                     "server"
+                     (get-config :server)))
+  (for [args [["-p8080" "--remove-logs=true" "start"]
+              ["-p8080" "--remove-logs=false" "start"]
+              ["-p8080" "--remove-logs=false" "start"]]]
+    (get-cli-options args
+                     cli-options
+                     cli-actions
+                     "server"
+                     (get-config :server)))
+   ;
+  )
