@@ -141,21 +141,28 @@
 (defn- ensure-int [x]
   (if (int? x) x (Integer/parseInt x)))
 
+(defn- ensure-boolean [b]
+  (if (boolean? b) b (Boolean/valueOf b)))
+
 (def ^:private cli-options
-  {:http-port        ["-p" "--http-port PORT"  "Port for http (e.g., 8080)"
-                      :parse-fn ensure-int]
-   :https-port       ["-P" "--https-port PORT" "Port for https (e.g., 8443)"
-                      :parse-fn ensure-int]
-   :nrepl-port       ["-n" "--nrepl-port PORT" "Port for an nREPL server (e.g., 5555)"
-                      :parse-fn ensure-int]
-   :nrepl-bind       ["-b" "--nrepl-bind IP" "IP address to bind nREPL server (eg., 127.0.0.1)"]
-   :nrepl            ["-r" "--nrepl" "Launch an nREPL server (on nrepl-port or 5555)"]
-   :cider-nrepl      ["-c" "--cider-nrepl" "Launch a CIDER nREPL server (on nrepl-port or 5555)"]
-   :mode             ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
-                      :default "prod"
-                      :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
-   :log-dir          ["-l" "--log-dir DIR" "Directory for log files. When a directory is not provided, output will be to stdout."
-                      :default ""]})
+  {:http-port   ["-p" "--http-port PORT"  "Port for http (e.g., 8080)"
+                 :parse-fn ensure-int]
+   :https-port  ["-P" "--https-port PORT" "Port for https (e.g., 8443)"
+                 :parse-fn ensure-int]
+   :nrepl-port  ["-n" "--nrepl-port PORT" "Port for an nREPL server (e.g., 5555)"
+                 :parse-fn ensure-int]
+   :nrepl-bind  ["-b" "--nrepl-bind IP" "IP address to bind nREPL server (eg., 127.0.0.1)"]
+   :nrepl       ["-r" "--nrepl" "Launch an nREPL server (on nrepl-port or 5555)"]
+   :cider-nrepl ["-c" "--cider-nrepl" "Launch a CIDER nREPL server (on nrepl-port or 5555)"]
+   :mode        ["-m" "--mode MODE" "Production (prod) or development (dev) mode, default prod"
+                 :default "prod"
+                 :validate [#{"prod" "dev"} "Must be \"prod\" or \"dev\""]]
+   :remove-logs ["-x" "--remove-logs BOOL" "Wether to remove logs from time to time"
+                 :default true
+                 :validate [boolean? "Must be \"true\" or \"false\""]
+                 :parse-fn ensure-boolean]
+   :log-dir     ["-l" "--log-dir DIR" "Directory for log files. When a directory is not provided, output will be to stdout."
+                 :default ""]})
 
 (def ^:private cli-actions
   {:start  {:description "Starts the web server, nREPL server, logger, and workers."
