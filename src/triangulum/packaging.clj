@@ -4,6 +4,7 @@
             [clojure.spec.alpha      :as spec]
             [clojure.string          :as str]
             [clojure.tools.build.api :as b]
+            [clojure.java.shell :refer [sh]]
             [deps-deploy.deps-deploy :refer [deploy]]))
 
 ;;==============================
@@ -139,6 +140,15 @@
 
     (println (format "JAR file created: \"%s\"" jar-file-name))))
 
+(defn get-git-version []
+  (let [{:keys [out err]} (sh "git" "describe" "--tags" "--always")]
+    (if (str/blank? err)
+      (str/trim out)
+      "unknown")))
+
+(defn write-version-edn []
+  (spit "resources/version.edn" (pr-str {:version (get-git-version)})))
+
 (defn build-uberjar
   "Create an UberJAR suitable for deployment and use as an application."
   [{:keys [app-name main-ns src-dirs resource-dirs bindings compile-opts java-opts manifest]
@@ -190,6 +200,8 @@
              :basis     basis
              :main      main-ns
              :manifest  manifest})
+
+    (write-version-edn)
 
     (println (format "UberJAR file created: \"%s\"" uberjar-file-name))))
 
