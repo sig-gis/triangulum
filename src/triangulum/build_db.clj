@@ -120,10 +120,12 @@
       (do (->> (sh-wrapper "./src/sql"
                            {:PGPASSWORD admin-pass}
                            verbose
-                           (format-str "psql -h %h -p %p --set=database=%d -U postgres -f create_db.sql"
+                           (format-str "psql -h %h -p %p --set=database=%d --set=user=%u --set=password=%p -U postgres -f create_db.sql"
                                        host
                                        port
-                                       database))
+                                       database
+                                       user
+                                       user-pass))
                (println))
           (load-folder :tables host port database user user-pass verbose)
           (load-folder :functions host port database user user-pass verbose)
