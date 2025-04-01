@@ -532,5 +532,5 @@ To generate docs, use: ~bb docs~
 Copyright © 2021-2023 Spatial Informatics Group, LLC.
 
 Triangulum is distributed by Spatial Informatics Group, LLC. under the
-terms of the Eclipse Public License version 2.0 (EPLv2). See
-LICENSE.txt in this directory for more information.
+terms of the Eclipse Public License version 2.0 (EPLv2). See the
+LICENSE file in this directory for more information.
