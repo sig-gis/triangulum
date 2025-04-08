@@ -40,8 +40,7 @@
   []
   (as-> (slurp (io/resource "public/cljs/manifest.edn")) app
     (edn/read-string app)
-    ;;manifest is put in target dir. but it's read on the classpath.
-    (get app "target/public/cljs/app.js")
+    (get app "public/cljs/app.js")
     (str/split app #"/")
     (last app)
     (str "cljs/" app)))
