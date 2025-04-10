@@ -105,29 +105,47 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
-(defmacro sql-type->sql-cmd
+;;TODO look into cleaning up temp file
+(defn extract-resource-to-tempfile
+  [resource-url]
+  (let [in-stream (io/input-stream resource-url)
+        temp-file (java.io.File/createTempFile "sql-script-" ".sql")]
+    (with-open [out (io/output-stream temp-file)]
+      (io/copy in-stream out))
+    (.deleteOnExit temp-file)
+    (.getAbsolutePath temp-file)))
+
+(defmacro sql-type->resource-path
   []
   (assoc
    (reduce-kv
-    (fn [k->sql-cmd k files]
-      ;;TODO what happens if the file doesn't exist?
-      (assoc k->sql-cmd k (->> files topo-sort-files-by-namespace (mapv slurp))))
+    (fn [sql-type->sql-cmd sql-type folder]
+      (assoc sql-type->sql-cmd sql-type
+             (->>
+              (topo-sort-files-by-namespace folder)
+              (mapv #(str/replace % #"..*sql/" "")))))
     {}
     folders)
    :create
-   (slurp "./src/sql/create_db.sql")))
+   "create_db.sql"))
 
+;;TODO consider bringing back sh-wrapper now that were using -f again
 (defn- load-folder [sql-type host port database user user-pass verbose]
   (sh/with-sh-env {:PGPASSWORD user-pass}
-    (->> (sql-type->sql-cmd)
+    (->> (sql-type->resource-path)
          sql-type
-         (run! (fn [sql-cmd]
+         (map io/resource)
+         (map extract-resource-to-tempfile)
+         (run! (fn [sql-file]
                  (println
-                  (apply sh/sh ["psql" "-h" host "-p" port "-U" user "-d" database "-c" sql-cmd])))))))
+                  (apply sh/sh ["psql" "-h" host "-p" port "-U" user "-d" database "-f" sql-file])))))))
 
+;;TODO consider bringing back sh-wrapper now that were using -f again
+;;TODO consider moving the if-let outside this fn
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database..." [host port database user user-pass admin-pass dev-data? verbose])
-  (if-let [create-sql-cmd ((sql-type->sql-cmd) :create)]
+  (println "Building database..." "[host port database user user-pass admin-pass dev-data? verbose]")
+  (if-let [sql-file (-> (sql-type->resource-path) :create io/resource extract-resource-to-tempfile)]
     (do
       (sh/with-sh-env {:PGPASSWORD admin-pass}
         (println (apply sh/sh ["psql"
@@ -137,7 +155,7 @@
                                (str "--set=user=" user)
                                (str "--set=password=" user-pass)
                                "-U" "postgres"
-                               "-c" create-sql-cmd])))
+                               "-f" sql-file])))
       (load-folder :tables host port database user user-pass verbose)
       (load-folder :functions host port database user user-pass verbose)
       (load-folder :defaults host port database user user-pass verbose)
@@ -210,7 +228,8 @@
                                                   cli-actions
                                                   "build-db"
                                                   (get-config :database))
-        {:keys [host port dbname dev-data file password admin-pass user verbose]} options]
+        {:keys [host port dbname dev-data file password admin-pass user verbose] :as m} options]
+    (println m)
     (case action
       :build-all (build-everything host
                                    port
