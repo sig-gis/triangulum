@@ -105,13 +105,19 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
+(defmacro sql-type->sql-cmds
+  []
+  (reduce-kv
+    (fn [k->sql-cmd k files]
+      (assoc k->sql-cmd k (->> files topo-sort-files-by-namespace (mapv slurp))))
+    {}
+    folders))
+
 (defn- load-folder [sql-type host port database user user-pass verbose]
-  (let [folder (sql-type folders)]
-    (println (str "Loading " folder "..."))
-    (->> (map #(format-str "psql -h %h -p %p -U %u -d %d -f %f" host port user database %)
-              (topo-sort-files-by-namespace folder))
-         (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
-         (println))))
+  (sh/with-sh-env {:PGPASSWORD user-pass}
+    (->> (sql-type->sql-cmds)
+         sql-type
+         (run! #(apply sh/sh ["psql" "-h" host "-p" port "-U" user "-d" database "-c" %])))))
 
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
