@@ -105,40 +105,45 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
-(defmacro sql-type->sql-cmds
+(defmacro sql-type->sql-cmd
   []
-  (reduce-kv
+  (assoc
+   (reduce-kv
     (fn [k->sql-cmd k files]
+      ;;TODO what happens if the file doesn't exist?
       (assoc k->sql-cmd k (->> files topo-sort-files-by-namespace (mapv slurp))))
     {}
-    folders))
+    folders)
+   :create
+   (slurp "./src/sql/create_db.sql")))
 
 (defn- load-folder [sql-type host port database user user-pass verbose]
   (sh/with-sh-env {:PGPASSWORD user-pass}
-    (->> (sql-type->sql-cmds)
+    (->> (sql-type->sql-cmd)
          sql-type
-         (run! #(apply sh/sh ["psql" "-h" host "-p" port "-U" user "-d" database "-c" %])))))
+         (run! (fn [sql-cmd]
+                 (println
+                  (apply sh/sh ["psql" "-h" host "-p" port "-U" user "-d" database "-c" sql-cmd])))))))
 
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
-  (println "Building database...")
-  (let [file (io/file "./src/sql/create_db.sql")]
-    (if (.exists file)
-      (do (->> (sh-wrapper "./src/sql"
-                           {:PGPASSWORD admin-pass}
-                           verbose
-                           (format-str "psql -h %h -p %p --set=database=%d --set=user=%u --set=password=%p -U postgres -f create_db.sql"
-                                       host
-                                       port
-                                       database
-                                       user
-                                       user-pass))
-               (println))
-          (load-folder :tables host port database user user-pass verbose)
-          (load-folder :functions host port database user user-pass verbose)
-          (load-folder :defaults host port database user user-pass verbose)
-          (when dev-data?
-            (load-folder :dev host port database user user-pass verbose)))
-      (println "Error file ./src/sql/create_db.sql is missing."))))
+  (println "Building database..." [host port database user user-pass admin-pass dev-data? verbose])
+  (if-let [create-sql-cmd ((sql-type->sql-cmd) :create)]
+    (do
+      (sh/with-sh-env {:PGPASSWORD admin-pass}
+        (println (apply sh/sh ["psql"
+                               "-h" host
+                               "-p" port
+                               (str "--set=database=" database)
+                               (str "--set=user=" user)
+                               (str "--set=password=" user-pass)
+                               "-U" "postgres"
+                               "-c" create-sql-cmd])))
+      (load-folder :tables host port database user user-pass verbose)
+      (load-folder :functions host port database user user-pass verbose)
+      (load-folder :defaults host port database user user-pass verbose)
+      (when dev-data?
+        (load-folder :dev host port database user user-pass verbose)))
+    (println "Error create sql command is missing.")))
 
 ;; Backup / restore functions
 
