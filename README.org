@@ -18,6 +18,12 @@ A Clojure library that provides:
                        :git/sha "REPLACE-WITH-CURRENT-SHA"}
    #+end_src
 
+   Add src/sql to your deps.edn paths:
+
+   #+begin_src clojure
+   :paths ["src/sql"]
+   #+end_src
+
    If you want to pull Triangulum into a [[https://babashka.org][Babashka]] script, you can do
    so with ~babashka.deps~ as follows:
 
@@ -246,6 +252,12 @@ This tag label will be passed to the browser code in the ~:session~ map under th
 **** Required Prerequisites
 
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
+
+Add src/sql to your deps.edn paths:
+
+   #+begin_src clojure
+   :paths ["src/sql"]
+   #+end_src
 
 To set up the folder and file structure for use with ~build-db~, use the following directory structure:
 

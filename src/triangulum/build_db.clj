@@ -30,6 +30,21 @@
               ""
               commands))))
 
+(defn- src->tempfile!
+  "Returns a delete-on-exit tempfile of the src"
+  [src]
+  (let [in-stream (io/input-stream src)
+        tempfile (java.io.File/createTempFile "triangulum-" "")]
+    (with-open [out (io/output-stream tempfile)]
+      (io/copy in-stream out))
+    (.deleteOnExit tempfile)
+    tempfile))
+
+(defn- resource-path->tempfile!
+  "Returns a tempfile given a resource path"
+  [resource-path]
+  (-> resource-path io/resource src->tempfile!))
+
 ;; Namespace file sorting functions
 
 (defn- get-sql-files [dir-name]
@@ -105,27 +120,45 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
+(defmacro sql-type->resource-path*
+  "A compile time mapping a sql-type to it's resource path"
+  []
+  (-> (reduce-kv
+       (fn [sql-type->resource-path sql-type folder]
+         (assoc sql-type->resource-path sql-type
+                (->> folder
+                     topo-sort-files-by-namespace
+                     (mapv #(str/replace % #"..*sql/" "")))))
+       {}
+       folders)
+      (assoc :create "create_db.sql")))
+
+(def ^:private sql-type->resource-path
+  "A compile time mapping a sql-type to it's resource path"
+  (sql-type->resource-path*))
+
 (defn- load-folder [sql-type host port database user user-pass verbose]
-  (let [folder (sql-type folders)]
-    (println (str "Loading " folder "..."))
+  (let [files (->> sql-type sql-type->resource-path (map resource-path->tempfile!))]
+    (println (str "Loading " (name sql-type) "..."))
     (->> (map #(format-str "psql -h %h -p %p -U %u -d %d -f %f" host port user database %)
-              (topo-sort-files-by-namespace folder))
+              files)
          (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
          (println))))
 
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
-  (let [file (io/file "./src/sql/create_db.sql")]
+  (let [file (-> :create sql-type->resource-path resource-path->tempfile!)]
     (if (.exists file)
-      (do (->> (sh-wrapper "./src/sql"
+      (do (->> (sh-wrapper "./"
                            {:PGPASSWORD admin-pass}
                            verbose
-                           (format-str "psql -h %h -p %p --set=database=%d --set=user=%u --set=password=%p -U postgres -f create_db.sql"
+                           (format-str "psql -h %h -p %p --set=database=%d --set=user=%u --set=password=%p -U postgres -f %f"
                                        host
                                        port
                                        database
                                        user
-                                       user-pass))
+                                       user-pass
+                                       file))
                (println))
           (load-folder :tables host port database user user-pass verbose)
           (load-folder :functions host port database user user-pass verbose)
