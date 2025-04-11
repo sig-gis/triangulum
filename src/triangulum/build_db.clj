@@ -121,7 +121,7 @@
                         :dev       "./src/sql/dev_data"})
 
 (defmacro sql-type->resource-path*
-  "A compile time mapping a sql-type to it's resource path"
+  "A compile time mapping of a sql-type to its resource path."
   []
   (-> (reduce-kv
        (fn [sql-type->resource-path sql-type folder]
@@ -134,7 +134,7 @@
       (assoc :create "create_db.sql")))
 
 (def ^:private sql-type->resource-path
-  "A compile time mapping a sql-type to it's resource path"
+  "A compile time mapping of a sql-type to its resource path."
   (sql-type->resource-path*))
 
 (defn- load-folder [sql-type host port database user user-pass verbose]
