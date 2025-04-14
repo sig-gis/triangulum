@@ -38,7 +38,7 @@
 (defn- find-cljs-app-js
   "Returns the relative path of the compiled ClojureScript app.js file."
   []
-  (as-> (slurp "target/public/cljs/manifest.edn") app
+  (as-> (slurp (io/resource "public/cljs/manifest.edn")) app
     (edn/read-string app)
     (get app "target/public/cljs/app.js")
     (str/split app #"/")
