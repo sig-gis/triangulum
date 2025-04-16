@@ -190,12 +190,12 @@ generating HTML, and handling various types of responses.
 2. Use ~render-page~ to generate a handler that will return an HTML response with a standard template for React/Reagent web apps.
 
 **** Example
-#+BEGIN_SRC clojure
+#+begin_src clojure
 (ns my-app.views
   (:require [triangulum.views :refer [render-page]]))
 
 (def my-page-handler (render-page "/my-page"))
-#+END_SRC
+#+end_src
 
 **** Functions
 ***** render-page
