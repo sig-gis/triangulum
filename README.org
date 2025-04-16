@@ -459,6 +459,12 @@ To build an application UberJAR from your repository, run:
 clojure -X triangulum.packaging/build-uberjar :app-name $ARTIFACT_ID :main-ns $MAIN_NAMESPACE
 #+end_src
 
+If your UberJAR relies on ~triangulum.build-db~ for managing your database, you will need to include "src/sql" in the ~:resource-dirs~ argument to ~build-uberjar~.
+
+#+begin_src sh
+clojure -X triangulum.packaging/build-uberjar :app-name $ARTIFACT_ID :main-ns $MAIN_NAMESPACE :resource-dirs ["src/sql"] # include other neccessary resource-dirs
+#+end_src
+
 To deploy a library JAR to https://clojars.org, run:
 
 #+begin_src sh
