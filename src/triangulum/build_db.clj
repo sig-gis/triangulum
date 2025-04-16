@@ -30,20 +30,16 @@
               ""
               commands))))
 
-(defn- src->tempfile!
-  "Returns a delete-on-exit tempfile of the src"
-  [src]
-  (let [in-stream (io/input-stream src)
-        tempfile (java.io.File/createTempFile "triangulum-" "")]
-    (with-open [out (io/output-stream tempfile)]
-      (io/copy in-stream out))
+(defn- resource-path->tempfile!
+  "Converts the resource on the path to a temporary file that will be deleted when the JVM exits."
+  [resource-path]
+  (let [src      (io/resource resource-path)
+        tempfile (File/createTempFile "triangulum-" "")]
+    (with-open [in-stream  (io/input-stream src)
+                out-stream (io/output-stream tempfile)]
+      (io/copy in-stream out-stream))
     (.deleteOnExit tempfile)
     tempfile))
-
-(defn- resource-path->tempfile!
-  "Returns a tempfile given a resource path"
-  [resource-path]
-  (-> resource-path io/resource src->tempfile!))
 
 ;; Namespace file sorting functions
 
@@ -120,12 +116,12 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
-(defn sql-type->resource-path*
-  "A mapping of a sql-type to its resource path."
+(defmacro sql-type->resource-path*
+  "A compile time mapping of a sql-type to its resource path."
   []
   (-> (reduce-kv
-       (fn [acc sql-type folder]
-         (assoc acc sql-type
+       (fn [sql-type->resource-path sql-type folder]
+         (assoc sql-type->resource-path sql-type
                 (->> folder
                      topo-sort-files-by-namespace
                      (mapv #(str/replace % #"..*sql/" "")))))
@@ -134,7 +130,7 @@
       (assoc :create "create_db.sql")))
 
 (def ^:private sql-type->resource-path
-  "An eval time mapping of a sql-type to its resource path."
+  "A compile time mapping of a sql-type to its resource path."
   (sql-type->resource-path*))
 
 (defn- load-folder [sql-type host port database user user-pass verbose]
