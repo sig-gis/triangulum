@@ -120,12 +120,12 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
-(defmacro sql-type->resource-path*
-  "A compile time mapping of a sql-type to its resource path."
+(defn sql-type->resource-path*
+  "A mapping of a sql-type to its resource path."
   []
   (-> (reduce-kv
-       (fn [sql-type->resource-path sql-type folder]
-         (assoc sql-type->resource-path sql-type
+       (fn [acc sql-type folder]
+         (assoc acc sql-type
                 (->> folder
                      topo-sort-files-by-namespace
                      (mapv #(str/replace % #"..*sql/" "")))))
@@ -134,7 +134,7 @@
       (assoc :create "create_db.sql")))
 
 (def ^:private sql-type->resource-path
-  "A compile time mapping of a sql-type to its resource path."
+  "An eval time mapping of a sql-type to its resource path."
   (sql-type->resource-path*))
 
 (defn- load-folder [sql-type host port database user user-pass verbose]
