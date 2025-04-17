@@ -7,7 +7,8 @@
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
             [triangulum.errors    :refer [nil-on-error]]
-            [triangulum.security  :refer [hash-file]]))
+            [triangulum.security  :refer [hash-file]]
+            [triangulum.utils     :refer [drop-sql-path]]))
 
 ;;; Constants
 
@@ -16,7 +17,7 @@
 ;;; Helper Fns
 
 (defn- migration-path [filename]
-  (io/file *migrations-dir* filename))
+  (io/resource (drop-sql-path (str *migrations-dir* filename))))
 
 (defn- get-conn [host port database user user-pass]
   (jdbc/get-connection {:dbtype                "postgresql"
@@ -39,6 +40,10 @@
        (map #(.getName ^File %))
        (filter #(str/ends-with? % ".sql"))
        (sort)))
+
+(def ^:private migration-files
+  "An eval time list of migration files."
+  (get-migration-files))
 
 (defn- file-changed? [filename prev-file-hash]
   (nil-on-error (not= prev-file-hash (hash-file (migration-path filename)))))
@@ -111,7 +116,7 @@
 
   (with-open [^Connection db-conn (get-conn host port database user user-pass)]
     (setup-migrations-table! db-conn)
-    (let [all-files   (get-migration-files)
+    (let [all-files   migration-files
           completed   (get-completed-changes db-conn)
           new-changes (sort (difference (set all-files) (set completed)))]
 

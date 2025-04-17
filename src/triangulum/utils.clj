@@ -287,6 +287,10 @@
   [& args]
   (str (apply io/file (map str args))))
 
+(defn drop-sql-path
+  [f]
+  (str/replace f #"..*sql/" ""))
+
 ;;; Miscellaneous
 
 (defn current-year

@@ -7,7 +7,7 @@
             [triangulum.cli     :refer [get-cli-options]]
             [triangulum.config  :as config :refer [get-config]]
             [triangulum.migrate :refer [migrate!]]
-            [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
+            [triangulum.utils   :refer [parse-as-sh-cmd format-str drop-sql-path]]))
 
 ;; spec
 
@@ -124,7 +124,7 @@
          (assoc acc sql-type
                 (->> folder
                      topo-sort-files-by-namespace
-                     (mapv #(str/replace % #"..*sql/" "")))))
+                     (mapv drop-sql-path))))
        {}
        folders)
       (assoc :create "create_db.sql")))
