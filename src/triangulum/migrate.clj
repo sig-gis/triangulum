@@ -32,14 +32,15 @@
   (io/make-parents *migrations-dir* "dummy.txt")
   *migrations-dir*)
 
-(defn- get-migration-files []
+(defmacro get-migration-files []
   (->> (get-migrations-dir)
        (io/file)
        (file-seq)
        (filter #(.isFile ^File %))
        (map #(.getName ^File %))
        (filter #(str/ends-with? % ".sql"))
-       (sort)))
+       (sort)
+       vec))
 
 (def ^:private migration-files
   "An eval time list of migration files."

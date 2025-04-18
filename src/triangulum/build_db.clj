@@ -116,7 +116,7 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
-(defn sql-type->resource-path*
+(defmacro sql-type->resource-path*
   "A mapping of a sql-type to its resource path."
   []
   (-> (reduce-kv
