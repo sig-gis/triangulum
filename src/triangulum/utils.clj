@@ -288,6 +288,10 @@
   (str (apply io/file (map str args))))
 
 (defn drop-sql-path
+  "Removes the sql path from a file path
+
+  Example:
+  (drop-sql-path \"foo/sql/changes.sql\") => changes.sql"
   [f]
   (str/replace f #"..*sql/" ""))
 
