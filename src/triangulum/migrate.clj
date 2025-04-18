@@ -33,6 +33,7 @@
   *migrations-dir*)
 
 (defmacro get-migration-files []
+  "An eval time list of the migration files."
   (->> (get-migrations-dir)
        (io/file)
        (file-seq)
