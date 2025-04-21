@@ -33,7 +33,11 @@
   *migrations-dir*)
 
 (defmacro get-migration-files []
-  "An eval time list of the migration files."
+  "An eval time list of the migration files.
+
+   NOTE: This is a macro because we want to retain the file
+   path information at AOT compile time so it's available at
+   run time from a JAR."
   (->> (get-migrations-dir)
        (io/file)
        (file-seq)
@@ -41,11 +45,7 @@
        (map #(.getName ^File %))
        (filter #(str/ends-with? % ".sql"))
        (sort)
-       vec))
-
-(def ^:private migration-files
-  "An eval time list of migration files."
-  (get-migration-files))
+       (vec)))
 
 (defn- file-changed? [filename prev-file-hash]
   (nil-on-error (not= prev-file-hash (hash-file (migration-path filename)))))
@@ -118,7 +118,7 @@
 
   (with-open [^Connection db-conn (get-conn host port database user user-pass)]
     (setup-migrations-table! db-conn)
-    (let [all-files   migration-files
+    (let [all-files   (get-migration-files)
           completed   (get-completed-changes db-conn)
           new-changes (sort (difference (set all-files) (set completed)))]
 
