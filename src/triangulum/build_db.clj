@@ -116,8 +116,12 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
-(defmacro sql-type->resource-path*
-  "A mapping of a sql-type to its resource path."
+(defmacro sql-type->resource-path
+  "A mapping of a sql-type to its resource path.
+
+   NOTE: This is a macro because we want to retain the file
+   path information at AOT compile time so it's available at
+   run time from a JAR."
   []
   (-> (reduce-kv
        (fn [acc sql-type folder]
@@ -129,12 +133,9 @@
        folders)
       (assoc :create "create_db.sql")))
 
-(def ^:private sql-type->resource-path
-  "An eval time mapping of a sql-type to its resource path."
-  (sql-type->resource-path*))
-
 (defn- load-folder [sql-type host port database user user-pass verbose]
-  (let [files (->> sql-type sql-type->resource-path (map resource-path->tempfile!))]
+  (let [resource-paths (get (sql-type->resource-path) sql-type)
+        files          (map resource-path->tempfile! resource-paths)]
     (println (str "Loading " (name sql-type) "..."))
     (->> (map #(format-str "psql -h %h -p %p -U %u -d %d -f %f" host port user database %)
               files)
@@ -143,7 +144,8 @@
 
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
-  (let [file (-> :create sql-type->resource-path resource-path->tempfile!)]
+  (let [resource-path (get (sql-type->resource-path) :create)
+        file          (resource-path->tempfile! resource-path)]
     (if (.exists file)
       (do (->> (sh-wrapper "./"
                            {:PGPASSWORD admin-pass}
