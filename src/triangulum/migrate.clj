@@ -17,7 +17,7 @@
 ;;; Helper Fns
 
 (defn- migration-path [filename]
-  (io/resource (drop-sql-path (str *migrations-dir* filename))))
+  (io/resource (drop-sql-path (.getPath ^File (io/file *migrations-dir* filename)))))
 
 (defn- get-conn [host port database user user-pass]
   (jdbc/get-connection {:dbtype                "postgresql"
