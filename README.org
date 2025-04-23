@@ -190,12 +190,12 @@ generating HTML, and handling various types of responses.
 2. Use ~render-page~ to generate a handler that will return an HTML response with a standard template for React/Reagent web apps.
 
 **** Example
-#+BEGIN_SRC clojure
+#+begin_src clojure
 (ns my-app.views
   (:require [triangulum.views :refer [render-page]]))
 
 (def my-page-handler (render-page "/my-page"))
-#+END_SRC
+#+end_src
 
 **** Functions
 ***** render-page
@@ -246,6 +246,12 @@ This tag label will be passed to the browser code in the ~:session~ map under th
 **** Required Prerequisites
 
 - [[https://www.postgresql.org/download][Postgresql (version 12)]]
+
+Add "src/sql" to your deps.edn paths:
+
+#+begin_src clojure
+:paths ["src/sql"]
+#+end_src
 
 To set up the folder and file structure for use with ~build-db~, use the following directory structure:
 
@@ -451,6 +457,12 @@ To build an application UberJAR from your repository, run:
 
 #+begin_src sh
 clojure -X triangulum.packaging/build-uberjar :app-name $ARTIFACT_ID :main-ns $MAIN_NAMESPACE
+#+end_src
+
+If your UberJAR relies on ~triangulum.build-db~ for managing your database, you will need to include "src/sql" in the ~:resource-dirs~ argument to ~build-uberjar~.
+
+#+begin_src sh
+clojure -X triangulum.packaging/build-uberjar :app-name $ARTIFACT_ID :main-ns $MAIN_NAMESPACE :resource-dirs ["src/sql"] # include other neccessary resource-dirs
 #+end_src
 
 To deploy a library JAR to https://clojars.org, run:

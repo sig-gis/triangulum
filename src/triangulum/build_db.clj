@@ -7,7 +7,7 @@
             [triangulum.cli     :refer [get-cli-options]]
             [triangulum.config  :as config :refer [get-config]]
             [triangulum.migrate :refer [migrate!]]
-            [triangulum.utils   :refer [parse-as-sh-cmd format-str]]))
+            [triangulum.utils   :refer [parse-as-sh-cmd format-str drop-sql-path]]))
 
 ;; spec
 
@@ -29,6 +29,16 @@
                   (str acc (when verbose out) err)))
               ""
               commands))))
+
+(defn- resource-path->tempfile!
+  "Converts the specified resource to a temporary file that will be deleted when the JVM exits."
+  [resource-path]
+  (let [src      (io/resource resource-path)
+        tempfile (File/createTempFile "triangulum-" "")]
+    (with-open [in-stream  (io/input-stream src)
+                out-stream (io/output-stream tempfile)]
+      (io/copy in-stream out-stream))
+    (doto tempfile (.deleteOnExit))))
 
 ;; Namespace file sorting functions
 
@@ -105,27 +115,47 @@
                         :defaults  "./src/sql/default_data"
                         :dev       "./src/sql/dev_data"})
 
+(defmacro sql-type->resource-path
+  "A mapping of a sql-type to its resource path.
+
+   NOTE: This is a macro because we want to retain the file
+   path information at AOT compile time so it's available at
+   run time from a JAR."
+  []
+  (-> (reduce-kv
+       (fn [acc sql-type folder]
+         (assoc acc sql-type
+                (->> folder
+                     (topo-sort-files-by-namespace)
+                     (mapv drop-sql-path))))
+       {}
+       folders)
+      (assoc :create "create_db.sql")))
+
 (defn- load-folder [sql-type host port database user user-pass verbose]
-  (let [folder (sql-type folders)]
-    (println (str "Loading " folder "..."))
+  (let [resource-paths (get (sql-type->resource-path) sql-type)
+        files          (map resource-path->tempfile! resource-paths)]
+    (println (str "Loading " (name sql-type) "..."))
     (->> (map #(format-str "psql -h %h -p %p -U %u -d %d -f %f" host port user database %)
-              (topo-sort-files-by-namespace folder))
+              files)
          (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
          (println))))
 
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
-  (let [file (io/file "./src/sql/create_db.sql")]
+  (let [resource-path (get (sql-type->resource-path) :create)
+        ^File file    (resource-path->tempfile! resource-path)]
     (if (.exists file)
-      (do (->> (sh-wrapper "./src/sql"
+      (do (->> (sh-wrapper "./"
                            {:PGPASSWORD admin-pass}
                            verbose
-                           (format-str "psql -h %h -p %p --set=database=%d --set=user=%u --set=password=%p -U postgres -f create_db.sql"
+                           (format-str "psql -h %h -p %p --set=database=%d --set=user=%u --set=password=%p -U postgres -f %f"
                                        host
                                        port
                                        database
                                        user
-                                       user-pass))
+                                       user-pass
+                                       file))
                (println))
           (load-folder :tables host port database user user-pass verbose)
           (load-folder :functions host port database user user-pass verbose)

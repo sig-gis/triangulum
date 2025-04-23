@@ -7,7 +7,8 @@
             [next.jdbc            :as jdbc]
             [next.jdbc.result-set :refer [as-unqualified-lower-maps]]
             [triangulum.errors    :refer [nil-on-error]]
-            [triangulum.security  :refer [hash-file]]))
+            [triangulum.security  :refer [hash-file]]
+            [triangulum.utils     :refer [drop-sql-path]]))
 
 ;;; Constants
 
@@ -16,7 +17,7 @@
 ;;; Helper Fns
 
 (defn- migration-path [filename]
-  (io/file *migrations-dir* filename))
+  (io/resource (drop-sql-path (.getPath ^File (io/file *migrations-dir* filename)))))
 
 (defn- get-conn [host port database user user-pass]
   (jdbc/get-connection {:dbtype                "postgresql"
@@ -31,14 +32,21 @@
   (io/make-parents *migrations-dir* "dummy.txt")
   *migrations-dir*)
 
-(defn- get-migration-files []
+(defmacro get-migration-files
+  "An eval time list of the migration files.
+
+   NOTE: This is a macro because we want to retain the file
+   path information at AOT compile time so it's available at
+   run time from a JAR."
+  []
   (->> (get-migrations-dir)
        (io/file)
        (file-seq)
        (filter #(.isFile ^File %))
        (map #(.getName ^File %))
        (filter #(str/ends-with? % ".sql"))
-       (sort)))
+       (sort)
+       (vec)))
 
 (defn- file-changed? [filename prev-file-hash]
   (nil-on-error (not= prev-file-hash (hash-file (migration-path filename)))))
