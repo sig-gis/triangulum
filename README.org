@@ -250,7 +250,7 @@ This tag label will be passed to the browser code in the ~:session~ map under th
 Add "src/sql" to your deps.edn paths:
 
 #+begin_src clojure
-  :paths ["src/sql"]
+:paths ["src/sql"]
 #+end_src
 
 To set up the folder and file structure for use with ~build-db~, use the following directory structure:
