@@ -38,8 +38,7 @@
     (with-open [in-stream  (io/input-stream src)
                 out-stream (io/output-stream tempfile)]
       (io/copy in-stream out-stream))
-    (.deleteOnExit tempfile)
-    tempfile))
+    (doto tempfile (.deleteOnExit))))
 
 ;; Namespace file sorting functions
 
