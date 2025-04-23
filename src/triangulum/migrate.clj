@@ -32,12 +32,13 @@
   (io/make-parents *migrations-dir* "dummy.txt")
   *migrations-dir*)
 
-(defmacro get-migration-files []
+(defmacro get-migration-files
   "An eval time list of the migration files.
 
    NOTE: This is a macro because we want to retain the file
    path information at AOT compile time so it's available at
    run time from a JAR."
+  []
   (->> (get-migrations-dir)
        (io/file)
        (file-seq)
