@@ -127,7 +127,7 @@
        (fn [acc sql-type folder]
          (assoc acc sql-type
                 (->> folder
-                     topo-sort-files-by-namespace
+                     (topo-sort-files-by-namespace)
                      (mapv drop-sql-path))))
        {}
        folders)
