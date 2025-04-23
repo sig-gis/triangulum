@@ -31,7 +31,7 @@
               commands))))
 
 (defn- resource-path->tempfile!
-  "Converts the resource on the path to a temporary file that will be deleted when the JVM exits."
+  "Converts the specified resource to a temporary file that will be deleted when the JVM exits."
   [resource-path]
   (let [src      (io/resource resource-path)
         tempfile (File/createTempFile "triangulum-" "")]
