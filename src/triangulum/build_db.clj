@@ -145,7 +145,7 @@
 (defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
   (println "Building database...")
   (let [resource-path (get (sql-type->resource-path) :create)
-        file          (resource-path->tempfile! resource-path)]
+        ^File file    (resource-path->tempfile! resource-path)]
     (if (.exists file)
       (do (->> (sh-wrapper "./"
                            {:PGPASSWORD admin-pass}
