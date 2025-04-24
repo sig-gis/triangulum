@@ -193,7 +193,7 @@ Add "target" to your deps.edn paths:
 :paths ["target"]
 #+end_src
 
-So Triangulum can find your app.js.
+So Triangulum can find target/public/cljs/app.js.
 
 **** Usage
 
