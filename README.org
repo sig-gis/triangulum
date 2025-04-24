@@ -186,7 +186,6 @@ generating HTML, and handling various types of responses.
 
 **** Prerequisites
 
-
 Add "target" to your deps.edn paths:
 
 #+begin_src clojure
