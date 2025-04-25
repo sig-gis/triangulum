@@ -186,13 +186,11 @@ generating HTML, and handling various types of responses.
 
 **** Prerequisites
 
-Add "target" to your deps.edn paths:
+Add ~"target"~ to your ~deps.edn~ ~:paths~ so that Triangulum can find the file ~target/public/cljs/app.js~:
 
 #+begin_src clojure
-:paths ["target"]
+:paths ["target"] ;; Include other necessary paths.
 #+end_src
-
-So Triangulum can find target/public/cljs/app.js.
 
 **** Usage
 
