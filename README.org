@@ -184,6 +184,14 @@ This namespace provides functions for rendering pages and handling
 resources in Triangulum. It defines functions for reading asset files,
 generating HTML, and handling various types of responses.
 
+**** Prerequisites
+
+Add ~"target"~ to your ~deps.edn~ ~:paths~ so that Triangulum can find the file ~target/public/cljs/app.js~:
+
+#+begin_src clojure
+:paths ["target"] ;; Include other necessary paths.
+#+end_src
+
 **** Usage
 
 1. Require the namespace in your project.
