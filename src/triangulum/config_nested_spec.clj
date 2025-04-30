@@ -25,6 +25,7 @@
                                    :triangulum.handler/private-response-keys
                                    :triangulum.handler/upload-max-size-mb
                                    :triangulum.handler/upload-max-file-count
+                                   :triangulum.handler/cors-headers
                                    :triangulum.worker/workers
                                    :triangulum.response/response-type]))
 

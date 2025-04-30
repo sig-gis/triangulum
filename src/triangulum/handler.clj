@@ -182,6 +182,21 @@
   (cookie-store {:key (-> (random-string 16)
                           (string-to-bytes))}))
 
+(defn wrap-cors-routes
+  "Adds CORS headers for specific routes"
+  [handler]
+  (fn [{:keys [uri headers] :as request}]
+    (let [cors-config   (get-config :handler :cors-headers)
+          routes        (->> (get-config :triangulum.handler/routing-tables)
+                             (map (comp deref resolve-foreign-symbol))
+                             (apply merge))
+          route         (some (fn [[key value]]
+                                (when (= (second key) uri)
+                                  {key value})) routes)]
+      (if (get-in route [1 :cors])
+        (handler (assoc request :headers (merge headers cors-config)))
+        (handler request)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Upload Configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -248,6 +263,7 @@
       (wrap-content-type-options :nosniff)
       wrap-response-logging
       wrap-gzip
+      wrap-cors-routes
       wrap-exceptions
       (optional-middleware wrap-reload reload?)))
 
