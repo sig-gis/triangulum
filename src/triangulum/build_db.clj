@@ -1,6 +1,7 @@
 (ns triangulum.build-db
   (:import java.io.File)
-  (:require [clojure.java.io    :as io]
+  (:require [clojure.java.classpath :as cp]
+            [clojure.java.io    :as io]
             [clojure.java.shell :as sh]
             [clojure.spec.alpha :as s]
             [clojure.string     :as str]
@@ -113,7 +114,12 @@
 (def ^:private folders {:tables    "./src/sql/tables"
                         :functions "./src/sql/functions"
                         :defaults  "./src/sql/default_data"
-                        :dev       "./src/sql/dev_data"})
+                        :dev       "./src/sql/dev_data"
+                        ;; Search the classpath for pulse sql folder, i.e. /somepath/pulse/src/sql
+                        :pulse     (->> (cp/classpath-directories)
+                                        (map #(.toString %))
+                                        (filter #(re-find #"pulse.*sql" %))
+                                        (first))})
 
 (defmacro sql-type->resource-path
   "A mapping of a sql-type to its resource path.
@@ -141,7 +147,7 @@
          (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
          (println))))
 
-(defn- build-everything [host port database user user-pass admin-pass dev-data? verbose]
+(defn- build-everything [host port database user user-pass admin-pass dev-data? pulse-data? verbose]
   (println "Building database...")
   (let [resource-path (get (sql-type->resource-path) :create)
         ^File file    (resource-path->tempfile! resource-path)]
@@ -161,7 +167,9 @@
           (load-folder :functions host port database user user-pass verbose)
           (load-folder :defaults host port database user user-pass verbose)
           (when dev-data?
-            (load-folder :dev host port database user user-pass verbose)))
+            (load-folder :dev host port database user user-pass verbose))
+          (when pulse-data?
+            (load-folder :pulse host port database user user-pass verbose)))
       (println "Error file ./src/sql/create_db.sql is missing."))))
 
 ;; Backup / restore functions
@@ -203,6 +211,7 @@
                 :default 5432]
    :dbname     ["-d"  "--dbname DB"            "Database name."]
    :dev-data   ["-x"  "--dev-data"             "Load dev data."]
+   :pulse-data ["-s"  "--pulse-data"           "Load pulse data."]
    :file       ["-f"  "--file FILE"            "File used for backup and restore."]
    :admin-pass ["-a"  "--admin-pass PASSWORD"  "Admin password for the postgres account."]
    :user       ["-u"  "--user USER"            "User for the database. Defaults to the same as the database name."]
@@ -229,7 +238,7 @@
                                                   cli-actions
                                                   "build-db"
                                                   (get-config :database))
-        {:keys [host port dbname dev-data file password admin-pass user verbose]} options]
+        {:keys [host port dbname dev-data pulse-data file password admin-pass user verbose]} options]
     (case action
       :build-all (build-everything host
                                    port
@@ -238,6 +247,7 @@
                                    (or password dbname) ; user-pass
                                    admin-pass
                                    dev-data
+                                   pulse-data
                                    verbose)
       :functions (load-folder :functions
                               host
