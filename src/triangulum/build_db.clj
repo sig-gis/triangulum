@@ -136,7 +136,8 @@
   (let [resource-paths (get (sql-type->resource-path) sql-type)
         files          (map resource-path->tempfile! resource-paths)]
     (println (str "Loading " (name sql-type) "..."))
-    (->> (map #(format-str "psql -h %h -p %p -U %u -d %d -f %f" host port user database %)
+    (->> (map #(format-str "psql -h %h -p %p -U --set=user=%u %u -d %d -f %f"
+                           host port user user database %)
               files)
          (apply sh-wrapper "./" {:PGPASSWORD user-pass} verbose)
          (println))))
