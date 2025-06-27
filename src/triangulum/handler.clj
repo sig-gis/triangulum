@@ -62,7 +62,7 @@
         routes            (->> (get-config :triangulum.handler/routing-tables)
                                (map (comp deref resolve-foreign-symbol))
                                (apply merge))
-        {:keys [auth-type auth-action handler] :as route} (get routes [request-method uri])]
+        {:keys [auth-type auth-action handler] :as route} (get @routes [request-method uri])]
     (cond
       (nil? route)                                                (not-found-handler request)
       (or (nil? auth-type) (is-authenticated? request auth-type)) (handler request)
@@ -251,9 +251,10 @@
       wrap-exceptions
       (optional-middleware wrap-reload reload?)))
 
+;;TODO make it so this doesn't get called when pyregence jar is built.
 (def development-app
   "Handler function for development (figwheel)."
-  (create-handler-stack
+  #_(create-handler-stack
    (fn [request]
      (let [user-handler (-> (get-config :server :handler)
                             resolve-foreign-symbol)]

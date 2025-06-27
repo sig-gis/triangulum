@@ -69,7 +69,10 @@
   [k]
   (some? (namespace k)))
 
+
 (defn- read-config [file]
+  ;;TODO don't keep this change, but we should probably do something different here with this wrap-throw because it's hiding the ST, i think ,which is the whole point, of throwing an error.
+  (edn/read-string (slurp file))
   (if (.exists (io/file file))
     (if-let [config (nil-on-error (edn/read-string (slurp file)))]
       (let [valid-nested-config?     (s/valid? ::nested-config config)
@@ -137,6 +140,7 @@
    (get-config :triangulum.views/title :en) -> \"english\"
    ```"
   [& all-keys]
+  (println "called")
   (let [config   (cache-config)
         [k & ks] all-keys]
     (cond
