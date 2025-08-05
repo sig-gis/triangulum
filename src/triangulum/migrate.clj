@@ -87,6 +87,7 @@
   (let [migration-exists? (jdbc/execute-one! db-conn ["SELECT * FROM pg_catalog.pg_tables
                                                       WHERE schemaname = 'tri'
                                                       AND tablename = 'migrations';"])]
+    (println "migration-exists?:" migration-exists?)
     (when-not migration-exists?
       (jdbc/with-transaction [tx db-conn]
         (jdbc/execute! tx ["CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"])
@@ -102,29 +103,27 @@
 (defn migrate!
   "Performs the database migrations stored in the `src/sql/changes/` directory.
   Migrations must be stored in chronological order (e.g. `2021-02-28_add-users-table.sql`).
-
   Migrations run inside of a transaction block to ensure the entire migration is
   completed prior to being committed to the database.
-
   Currently, this tool does not support rollbacks.
-
   If a migration fails, all migrations which follow it will be cancelled.
-
   Migrations which have been completed are stored in a table `tri.migrations`,
   and include a SHA-256 hash of the migration file contents. If a migration has
   been altered, the migrations will fail. This is to ensure consistency as migrations
   are added."
   [host port database user user-pass verbose?]
   (when verbose? (println "Applying changes..."))
-
   (with-open [^Connection db-conn (get-conn host port database user user-pass)]
+    (println "user-pass:" user-pass)
+    (println "user:" user)
+    (println "database:" database)
+    (println "port:" port)
+    (println "host:" host)
     (setup-migrations-table! db-conn)
     (let [all-files   (get-migration-files)
           completed   (get-completed-changes db-conn)
           new-changes (sort (difference (set all-files) (set completed)))]
-
       (when verbose? (println (format "Found %s new change files." (count new-changes))))
-
       (doseq [file new-changes]
         (try
           (apply-migration! db-conn file verbose?)
@@ -133,5 +132,4 @@
             (throw (ex-info (migration-error (.getMessage e) file new-changes)
                             {:file        file
                              :new-changes new-changes}))))))
-
     (when verbose? (println "Completed migrations."))))
