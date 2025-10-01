@@ -29,16 +29,24 @@
   (let [pattern #"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"]
     (and (string? string) (re-matches pattern string))))
 
-(defn- send-postal [to-addresses cc-addresses bcc-addresses subject body content-type]
-  (send-message
-   (select-keys (get-config :mail) [:host :user :pass :tls :port])
-   {:from    (get-config :mail :user)
-    :to      to-addresses
-    :cc      cc-addresses
-    :bcc     bcc-addresses
-    :subject subject
-    :body    [{:type    (or content-type "text/plain")
-               :content body}]}))
+(defn- send-postal
+  "Internal function to send emails via postal.
+   Can optionally accept a custom email config map to override defaults."
+  ([to-addresses cc-addresses bcc-addresses subject body content-type] 
+   (send-postal to-addresses cc-addresses bcc-addresses subject body content-type nil))
+  ([to-addresses cc-addresses bcc-addresses subject body content-type email-config] 
+   (let [config (or email-config
+                    (select-keys (get-config :mail) [:host :user :pass :tls :port]))
+         from-address (:user config)]
+     (send-message
+      config
+      {:from    from-address
+       :to      to-addresses
+       :cc      cc-addresses
+       :bcc     bcc-addresses
+       :subject subject
+       :body    [{:type    (or content-type "text/plain")
+                  :content body}]}))))
 
 (def ^:private mime-type
   {:text "text/plain"
@@ -57,18 +65,22 @@
   subject        - a string representing the subject of the email
   body           - a string representing the body of the email
   content-type   - a keyword indicating the content type of the email, either :text for 'text/plain' or :html for 'text/html'
+  email-config   - (optional) a map with keys :host, :user, :pass, :tls, :port to override default email settings
 
   Returns:
   Result map returned by `send-postal`."
-  [to-addresses cc-addresses bcc-addresses subject body content-type]
-  (log-str (format "Sending email to %s: %s" to-addresses subject))
-  (let [result (send-postal to-addresses
-                            cc-addresses
-                            bcc-addresses
-                            subject
-                            body
-                            (get mime-type content-type))]
-    (if (= :SUCCESS (result :error))
-      (log-str "Email sending succeeded.")
-      (log-str "Email sending failed with error: " (result :message)))
-    result))
+  ([to-addresses cc-addresses bcc-addresses subject body content-type]
+   (send-mail to-addresses cc-addresses bcc-addresses subject body content-type nil))
+  ([to-addresses cc-addresses bcc-addresses subject body content-type email-config]
+   (log-str (format "Sending email to %s: %s" to-addresses subject))
+   (let [result (send-postal to-addresses
+                             cc-addresses
+                             bcc-addresses
+                             subject
+                             body
+                             (get mime-type content-type)
+                             email-config)]
+     (if (= :SUCCESS (:error result))
+       (log-str "Email sending succeeded.")
+       (log-str "Email sending failed with error: " (:message result)))
+     result)))
