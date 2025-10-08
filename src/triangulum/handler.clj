@@ -251,12 +251,16 @@
       wrap-exceptions
       (optional-middleware wrap-reload reload?)))
 
-(def development-app
+(defonce ^:private handler
+  (delay (create-handler-stack
+          (fn [request]
+            (let [user-handler (-> (get-config :server :handler)
+                                   (resolve-foreign-symbol))]
+              (user-handler request)))
+          false
+          true)))
+
+(defn development-app
   "Handler function for development (figwheel)."
-  (create-handler-stack
-   (fn [request]
-     (let [user-handler (-> (get-config :server :handler)
-                            resolve-foreign-symbol)]
-       (user-handler request)))
-   false
-   true))
+  [request]
+  (@handler request))
