@@ -547,6 +547,9 @@ See [[file:API.md][API.md]]
 ** Docs
 To generate docs, use: ~bb docs~
 
+** Vulerability checking
+To check for vulerabilities in this project, use ~clojure -M:clj-watson scan -p deps.edn -s~
+
 ** License
 
 Copyright © 2021-2025 Spatial Informatics Group, LLC.

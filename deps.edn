@@ -53,7 +53,6 @@
                            :main-opts   ["-e" "(do,(set!,*warn-on-reflection*,true),nil)"
                                          "-m" "cognitect.test-runner"
                                          "--include" ":db"]}
-           ;; clojure -M:clj-watson scan -p deps.edn
            :clj-watson    {:replace-deps
                            {io.github.clj-holmes/clj-watson
                             {:git/tag "v6.0.1" :git/sha "b520351"}}
