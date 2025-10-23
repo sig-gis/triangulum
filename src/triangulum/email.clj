@@ -32,14 +32,15 @@
 (defn- send-postal
   "Internal function to send emails via postal.
    Can optionally accept a custom email config map to override defaults."
-  ([to-addresses cc-addresses bcc-addresses subject body content-type] 
+  ([to-addresses cc-addresses bcc-addresses subject body content-type]
    (send-postal to-addresses cc-addresses bcc-addresses subject body content-type nil))
-  ([to-addresses cc-addresses bcc-addresses subject body content-type email-config] 
-   (let [config (or email-config
-                    (select-keys (get-config :mail) [:host :user :pass :tls :port]))
-         from-address (:user config)]
+  ([to-addresses cc-addresses bcc-addresses subject body content-type email-config]
+   (let [config       (or email-config
+                          (select-keys (get-config :mail) [:host :user :pass :tls :port :from]))
+         from-address (or (:from config) (:user config))
+         smtp-config  (dissoc config :from)]
      (send-message
-      config
+      smtp-config
       {:from    from-address
        :to      to-addresses
        :cc      cc-addresses
