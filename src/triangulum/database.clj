@@ -81,6 +81,16 @@
           :reWriteBatchedInserts true}
          (get-config :database)))
 
+(defn coerce-sql-arg
+  "Coerce a value to a JDBC-friendly type for a prepared-statement param. Int-range longs
+   narrow to int (for SQL `integer` params); out-of-range longs and doubles pass through so
+   they don't overflow; in-range doubles narrow to float."
+  [x]
+  (condp = (type x)
+    java.lang.Long   (if (<= Integer/MIN_VALUE x Integer/MAX_VALUE) (int x) x)
+    java.lang.Double (if (<= (- Float/MAX_VALUE) x Float/MAX_VALUE) (float x) x)
+    x))
+
 ;;; Select Queries
 
 (defn call-sql
@@ -102,11 +112,7 @@
                                     (str/join "," (map pr-str args)))]
     (when log? (log-str "SQL Call: " query-with-args))
     (jdbc/execute! (jdbc/get-datasource (pg-db))
-                   (into [query] (map #(condp = (type %)
-                                         java.lang.Long (int %)
-                                         java.lang.Double (float %)
-                                         %)
-                                      args))
+                   (into [query] (map coerce-sql-arg args))
                    {:builder-fn (if use-vec?
                                   rs/as-unqualified-lower-arrays
                                   rs/as-unqualified-lower-maps)})))
