@@ -105,6 +105,7 @@ file logging system, and worker functions for non-HTTP-related tasks.
    - The ~:stop~ functions for all ~:workers~ will be run after the web server is stopped. They will receive the outputs of the ~:start~ functions.
    - Before starting the server, you must set ~:handler~ to a namespace-qualified symbol bound to a Ring handler function.
    - If you set ~:mode~ to "dev", then the ~wrap-reload~ middleware will be added to your handler function. This will automatically reload all of your namespaces into the running JVM on each HTTP request.
+   - The Jetty ~Server~ response header is suppressed (~:send-server-version? false~) so the Jetty version is not disclosed.
 
 *** triangulum.handler
 
