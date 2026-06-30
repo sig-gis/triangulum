@@ -58,8 +58,9 @@
         handler-stack (-> (resolve-foreign-symbol handler)
                           (create-handler-stack ssl? reload?))
         config        (merge
-                       {:port  http-port
-                        :join? false}
+                       {:port                 http-port
+                        :join?                false
+                        :send-server-version? false}
                        (when ssl?
                          {:ssl?             true
                           :ssl-port         https-port
