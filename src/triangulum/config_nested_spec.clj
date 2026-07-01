@@ -25,6 +25,8 @@
                                    :triangulum.handler/private-response-keys
                                    :triangulum.handler/upload-max-size-mb
                                    :triangulum.handler/upload-max-file-count
+                                   :triangulum.handler/session-cookie-attrs
+                                   :triangulum.handler/hsts?
                                    :triangulum.worker/workers
                                    :triangulum.response/response-type]))
 

@@ -18,7 +18,7 @@
             [ring.middleware.resource                   :refer [wrap-resource]]
             [ring.middleware.session                    :refer [wrap-session]]
             [ring.middleware.session.cookie             :refer [cookie-store]]
-            [ring.middleware.ssl                        :refer [wrap-ssl-redirect]]
+            [ring.middleware.ssl                        :refer [wrap-hsts wrap-ssl-redirect]]
             [ring.util.codec                            :refer [url-decode]]
             [ring.middleware.x-headers                  :refer [wrap-content-type-options
                                                                 wrap-frame-options
@@ -47,6 +47,12 @@
   ^{:doc "Maximum number of files allowed in a single upload request.
           Must be a positive integer not exceeding 100 files."}
   (s/and pos-int? #(<= % 100)))
+(s/def ::session-cookie-attrs
+  ^{:doc "Ring :cookie-attrs merged onto the session cookie, e.g. {:secure true :same-site :lax}."}
+  map?)
+(s/def ::hsts?
+  ^{:doc "Send an HSTS (Strict-Transport-Security) header when true; enable only over HTTPS. Default false."}
+  boolean?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing Handler
@@ -227,29 +233,33 @@
 (defn create-handler-stack
   "Create the Ring handler stack."
   [routing-handler ssl? reload?]
-  (-> routing-handler
-      (optional-middleware wrap-ssl-redirect ssl?)
-      wrap-bad-uri
-      wrap-request-logging
-      wrap-keyword-params
-      wrap-json-params
-      wrap-edn-params
-      wrap-nested-params
-      (wrap-multipart-params (make-upload-config))
-      wrap-params
-      (wrap-session {:store (get-cookie-store)})
-      wrap-absolute-redirects
-      (wrap-resource "public")
-      wrap-content-type
-      (wrap-default-charset "utf-8")
-      wrap-not-modified
-      (wrap-xss-protection true {:mode :block})
-      (wrap-frame-options :sameorigin)
-      (wrap-content-type-options :nosniff)
-      wrap-response-logging
-      wrap-gzip
-      wrap-exceptions
-      (optional-middleware wrap-reload reload?)))
+  (let [cookie-attrs (get-config ::session-cookie-attrs)
+        hsts?        (boolean (get-config ::hsts?))]
+    (-> routing-handler
+        (optional-middleware wrap-ssl-redirect ssl?)
+        (optional-middleware wrap-hsts hsts?)
+        wrap-bad-uri
+        wrap-request-logging
+        wrap-keyword-params
+        wrap-json-params
+        wrap-edn-params
+        wrap-nested-params
+        (wrap-multipart-params (make-upload-config))
+        wrap-params
+        (wrap-session (cond-> {:store (get-cookie-store)}
+                        cookie-attrs (assoc :cookie-attrs cookie-attrs)))
+        wrap-absolute-redirects
+        (wrap-resource "public")
+        wrap-content-type
+        (wrap-default-charset "utf-8")
+        wrap-not-modified
+        (wrap-xss-protection true {:mode :block})
+        (wrap-frame-options :sameorigin)
+        (wrap-content-type-options :nosniff)
+        wrap-response-logging
+        wrap-gzip
+        wrap-exceptions
+        (optional-middleware wrap-reload reload?))))
 
 (defonce ^:private handler
   (delay (create-handler-stack
