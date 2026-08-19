@@ -96,6 +96,16 @@
         (forbidden-response request)
         (handler request)))))
 
+(defn- without-private-keys
+  "`v` as it should appear in the log. A configured key is dropped under either spelling, since
+   request params are keywordized while `json/read-str` yields string keys. A `v` that is not a map
+   has no keys to drop."
+  [v private-keys]
+  (if (map? v)
+    (let [spellings (mapcat (fn [k] (let [kw (keyword k)] [kw (str (symbol kw))])) private-keys)]
+      (apply dissoc v spellings))
+    v))
+
 (defn wrap-request-logging
   "Wrapper that logs the incoming requests."
   [handler]
@@ -104,7 +114,7 @@
           truncate-request?                   (get-config :server :truncate-request)
           private-request-keys                (or (get-config :server :private-request-keys)
                                                   #{:password :passwordConfirmation})
-          param-str                           (pr-str (apply dissoc params private-request-keys))]
+          param-str                           (pr-str (without-private-keys params private-request-keys))]
       (log (apply str "Request(" (name request-method) "): \"" uri "\" " param-str) :truncate? truncate-request?)
       (handler request))))
 
@@ -121,10 +131,10 @@
                  (str content-type " file")
 
                  (= content-type "application/edn")
-                 (binding [*print-length* 2] (print-str (apply dissoc (edn/read-string body) private-response-keys)))
+                 (binding [*print-length* 2] (print-str (without-private-keys (edn/read-string body) private-response-keys)))
 
                  (= content-type "application/json")
-                 (binding [*print-length* 2] (print-str (apply dissoc (nil-on-error (json/read-str body)) private-response-keys)))
+                 (binding [*print-length* 2] (print-str (without-private-keys (nil-on-error (json/read-str body)) private-response-keys)))
 
                  :else
                  (str content-type " response")))

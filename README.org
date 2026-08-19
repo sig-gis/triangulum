@@ -59,24 +59,32 @@ file logging system, and worker functions for non-HTTP-related tasks.
 1. In config.edn:
 
    #+begin_src clojure
-    :server   {:http-port         8080
-               :https-port        8443      ; Only if you also include the keystore fields below
-               :nrepl-bind        127.0.0.1 ; Must be paired with either :nrepl or :cider-repl below
-               :nrepl-port        5555      ; Must be paired with either :nrepl or :cider-repl below
-               :nrepl             false     ; For a vanilla nrepl
-               :cider-nrepl       true      ; If your editor supports CIDER middleware
-               :mode              "dev"     ; or prod
-               :log-dir           "logs"    ; or "" for stdout
-               :truncate-request  true      ; false by default
-               :handler           product-ns.routing/handler
-               :workers           {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
-                                               :stop  product-ns.jobs/stop-scheduled-jobs!}}
-               :response-type     :json ; #{:json :edn :transit}
-               :bad-tokens        #{".php"} ; Reject URLs containing these strings
-               :keystore-file     "keystore.pkcs12" ; Contains your SSL certificate(s)
-               :keystore-type     "pkcs12"
-               :keystore-password "foobar"}
+    :server   {:http-port             8080
+               :https-port            8443 ; Only if you also include the keystore fields below
+               :nrepl-bind            127.0.0.1 ; Must be paired with either :nrepl or :cider-repl below
+               :nrepl-port            5555 ; Must be paired with either :nrepl or :cider-repl below
+               :nrepl                 false ; For a vanilla nrepl
+               :cider-nrepl           true ; If your editor supports CIDER middleware
+               :mode                  "dev" ; or prod
+               :log-dir               "logs" ; or "" for stdout
+               :truncate-request      true ; false by default
+               :private-request-keys  #{:password :passwordConfirmation} ; Redacted from request logs; this is the default
+               :private-response-keys #{} ; Redacted from response logs; none by default
+               :handler               product-ns.routing/handler
+               :workers               {:scheduler {:start product-ns.jobs/start-scheduled-jobs!
+                                                   :stop  product-ns.jobs/stop-scheduled-jobs!}}
+               :response-type         :json ; #{:json :edn :transit}
+               :bad-tokens            #{".php"} ; Reject URLs containing these strings
+               :keystore-file         "keystore.pkcs12" ; Contains your SSL certificate(s)
+               :keystore-type         "pkcs12"
+               :keystore-password     "foobar"}
    #+end_src
+
+   ~:private-request-keys~ and ~:private-response-keys~ are dropped from
+   =wrap-request-logging=/=wrap-response-logging= output before it's written
+   to the log. A key matches under either spelling - as a keyword or as its
+   string name - since request params are keywordized while JSON response
+   bodies are parsed with string keys.
 
 2. At the command line:
 
