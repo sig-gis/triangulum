@@ -1,6 +1,7 @@
 # Table of contents
--  [`triangulum.build-db`](#triangulum.build-db)
+-  [`triangulum.build-db`](#triangulum.build-db) 
     -  [`-main`](#triangulum.build-db/-main) - A set of tools for building and maintaining the project database with Postgres.
+    -  [`sql-type->resource-path`](#triangulum.build-db/sql-type->resource-path) - A mapping of a sql-type to its resource path.
 -  [`triangulum.cli`](#triangulum.cli)  - Provides a command-line interface (CLI) for Triangulum applications.
     -  [`get-cli-options`](#triangulum.cli/get-cli-options) - Checks for a valid call from the CLI and returns the users options.
 -  [`triangulum.config`](#triangulum.config) 
@@ -15,6 +16,7 @@
 -  [`triangulum.database`](#triangulum.database)  - To use <code>triangulum.database</code>, first add your database connection configurations to a <code>config.edn</code> file in your project's root directory.
     -  [`call-sql`](#triangulum.database/call-sql) - Currently call-sql only works with postgres.
     -  [`call-sqlite`](#triangulum.database/call-sqlite) - Runs a sqllite3 sql command.
+    -  [`coerce-sql-arg`](#triangulum.database/coerce-sql-arg) - Coerce a value to a JDBC-friendly type for a prepared-statement param.
     -  [`insert-rows!`](#triangulum.database/insert-rows!) - Insert new rows from 3d vector.
     -  [`p-insert-rows!`](#triangulum.database/p-insert-rows!) - A parallel implementation of insert-rows!.
     -  [`p-update-rows!`](#triangulum.database/p-update-rows!) - A parallel implementation of update-rows!.
@@ -54,6 +56,7 @@
     -  [`set-log-path!`](#triangulum.logging/set-log-path!) - Sets a path to create file logs.
 -  [`triangulum.migrate`](#triangulum.migrate) 
     -  [`*migrations-dir*`](#triangulum.migrate/*migrations-dir*) - Location of migrations dir.
+    -  [`get-migration-files`](#triangulum.migrate/get-migration-files) - An eval time list of the migration files.
     -  [`migrate!`](#triangulum.migrate/migrate!) - Performs the database migrations stored in the <code>src/sql/changes/</code> directory.
 -  [`triangulum.notify`](#triangulum.notify)  - Provides functions to interact with systemd for process management and notifications.
     -  [`available?`](#triangulum.notify/available?) - Checks if this process is a process managed by systemd.
@@ -119,6 +122,7 @@
     -  [`current-year`](#triangulum.utils/current-year) - Returns the current year as an integer.
     -  [`data-response`](#triangulum.utils/data-response) - DEPRECATED: Use [[triangulum.response/data-response]] instead.
     -  [`delete-recursively`](#triangulum.utils/delete-recursively) - Recursively delete all files and directories under the given directory.
+    -  [`drop-sql-path`](#triangulum.utils/drop-sql-path) - Removes the sql path from a file path.
     -  [`end-with`](#triangulum.utils/end-with) - Appends 'end' to the end of the string, if it is not already the end of the string.
     -  [`filterm`](#triangulum.utils/filterm) - Takes a map, filters on pred for each MapEntry, returns a map.
     -  [`find-missing-keys`](#triangulum.utils/find-missing-keys) - Returns true if m1's keys are a subset of m2's keys, and that any nested maps also maintain the same property.
@@ -141,6 +145,7 @@
     -  [`not-found-page`](#triangulum.views/not-found-page) - Produces a not found response.
     -  [`render-page`](#triangulum.views/render-page) - Returns the page's html.
 -  [`triangulum.worker`](#triangulum.worker)  - Responsible for the management of worker lifecycle within the <code>:server</code> context, specifically those defined under the <code>:workers</code> key.
+    -  [`get-worker`](#triangulum.worker/get-worker) - Returns a worker by name, represented as a map with the following shape: {:triangulum.worker/name String | Keyword :triangulum.worker/start IFn :triangulum.worker/stop IFn :triangulum.worker/value Object}.
     -  [`start-workers!`](#triangulum.worker/start-workers!) - Starts a set of workers based on the provided configuration.
     -  [`stop-workers!`](#triangulum.worker/stop-workers!) - Stops a set of currently running workers.
 
@@ -159,13 +164,30 @@
 ```
 
 A set of tools for building and maintaining the project database with Postgres.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/build_db.clj#L188-L220">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/build_db.clj#L225-L259">Source</a></sub></p>
+
+## <a name="triangulum.build-db/sql-type->resource-path">`sql-type->resource-path`</a><a name="triangulum.build-db/sql-type->resource-path"></a>
+``` clojure
+
+(sql-type->resource-path)
+```
+Function.
+
+A mapping of a sql-type to its resource path.
+
+   NOTE: This is a macro because we want to retain the file
+   path information at AOT compile time so it's available at
+   run time from a JAR.
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/build_db.clj#L118-L133">Source</a></sub></p>
 
 -----
 # <a name="triangulum.cli">triangulum.cli</a>
 
 
-Provides a command-line interface (CLI) for Triangulum applications. It includes functions for parsing command-line options, displaying usage information, and checking for errors in the provided arguments.
+Provides a command-line interface (CLI) for Triangulum applications.
+  It includes functions for parsing command-line options, displaying
+  usage information, and checking for errors in the provided
+  arguments.
 
 
 
@@ -190,7 +212,7 @@ Checks for a valid call from the CLI and returns the users options.
 
    (get-cli-options command-line-args cli-options cli-actions alias-str)
    ```
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/cli.clj#L88-L116">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/cli.clj#L91-L119">Source</a></sub></p>
 
 -----
 # <a name="triangulum.config">triangulum.config</a>
@@ -292,8 +314,8 @@ To use [`triangulum.database`](#triangulum.database), first add your database co
   ```
 
   To run a postgres sql command use [[`call-sql`](#triangulum.database/call-sql)](#triangulum.database/call-sql). Currently [[`call-sql`](#triangulum.database/call-sql)](#triangulum.database/call-sql)
-  only works with postgres. With the second parameter can be an
-  optional settings map (default values shown below).
+  only works with postgres. The second parameter can be an optional
+  settings map (default values shown below).
 
   ```clojure
   (call-sql "function" {:log? true :use-vec? false} "param1" "param2" ... "paramN")
@@ -306,9 +328,9 @@ To use [`triangulum.database`](#triangulum.database), first add your database co
   (call-sqlite "select * from table" "path/db-file")
   ```
 
-  To insert new rows or update existing rows use [`insert-rows!`](#triangulum.database/insert-rows!) and
-  [`update-rows!`](#triangulum.database/update-rows!). If fields are not provided, the first row will be assumed to
-  be the field names.
+  To insert new rows or update existing rows, use [`insert-rows!`](#triangulum.database/insert-rows!) and
+  [`update-rows!`](#triangulum.database/update-rows!). If fields are not provided, the first row will be
+  assumed to be the field names.
 
   ```clojure
   (insert-rows! table-name rows-vector fields-map)
@@ -329,7 +351,7 @@ Currently call-sql only works with postgres. The second parameter
 
    Defaults values are:
    {:log? true :use-vec? false}
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L86-L112">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L96-L118">Source</a></sub></p>
 
 ## <a name="triangulum.database/call-sqlite">`call-sqlite`</a><a name="triangulum.database/call-sqlite"></a>
 ``` clojure
@@ -338,7 +360,18 @@ Currently call-sql only works with postgres. The second parameter
 ```
 
 Runs a sqllite3 sql command. An existing sqllite3 database must be provided.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L115-L123">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L121-L129">Source</a></sub></p>
+
+## <a name="triangulum.database/coerce-sql-arg">`coerce-sql-arg`</a><a name="triangulum.database/coerce-sql-arg"></a>
+``` clojure
+
+(coerce-sql-arg x)
+```
+
+Coerce a value to a JDBC-friendly type for a prepared-statement param. Int-range longs
+   narrow to int (for SQL `integer` params); out-of-range longs and doubles pass through so
+   they don't overflow; in-range doubles narrow to float.
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L84-L92">Source</a></sub></p>
 
 ## <a name="triangulum.database/insert-rows!">`insert-rows!`</a><a name="triangulum.database/insert-rows!"></a>
 ``` clojure
@@ -349,7 +382,7 @@ Runs a sqllite3 sql command. An existing sqllite3 database must be provided.
 
 Insert new rows from 3d vector. If the optional fields are not provided,
    the first row will be assumed to be the field names.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L137-L147">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L143-L153">Source</a></sub></p>
 
 ## <a name="triangulum.database/p-insert-rows!">`p-insert-rows!`</a><a name="triangulum.database/p-insert-rows!"></a>
 ``` clojure
@@ -359,7 +392,7 @@ Insert new rows from 3d vector. If the optional fields are not provided,
 ```
 
 A parallel implementation of insert-rows!
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L149-L155">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L155-L161">Source</a></sub></p>
 
 ## <a name="triangulum.database/p-update-rows!">`p-update-rows!`</a><a name="triangulum.database/p-update-rows!"></a>
 ``` clojure
@@ -369,7 +402,7 @@ A parallel implementation of insert-rows!
 ```
 
 A parallel implementation of update-rows!
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L187-L193">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L193-L199">Source</a></sub></p>
 
 ## <a name="triangulum.database/sql-primitive">`sql-primitive`</a><a name="triangulum.database/sql-primitive"></a>
 
@@ -389,7 +422,7 @@ Return single value for queries that return a value instead of a table.
 Updates existing rows from a 3d vector.  One of the columns must be a
    identifier for the update command. If the optional fields are not provided,
    the first row will be assumed to be the field names.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L174-L185">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/database.clj#L180-L191">Source</a></sub></p>
 
 -----
 # <a name="triangulum.email">triangulum.email</a>
@@ -401,7 +434,7 @@ Provides some functionality for sending email from an SMTP
    - `:user`     - Email account to use via SMTP (and which emails will be addressed from)
    - `:pass`     - Password to use via SMTP.
    - `:port`     - Port to use for SMTP.
-   - `:base-url` - The host's host url, used when sending links in emails.
+   - `:base-url` - The host's base url, used when sending links in emails.
 
 
 
@@ -428,6 +461,7 @@ Gets the homepage url.
 ``` clojure
 
 (send-mail to-addresses cc-addresses bcc-addresses subject body content-type)
+(send-mail to-addresses cc-addresses bcc-addresses subject body content-type email-config)
 ```
 
 Sends an email with a given subject and body to specified recipients.
@@ -442,10 +476,11 @@ Sends an email with a given subject and body to specified recipients.
   subject        - a string representing the subject of the email
   body           - a string representing the body of the email
   content-type   - a keyword indicating the content type of the email, either :text for 'text/plain' or :html for 'text/html'
+  email-config   - (optional) a map with keys :host, :user, :pass, :tls, :port to override default email settings
 
   Returns:
   Result map returned by [[`send-postal`](#triangulum.email/send-postal)](#triangulum.email/send-postal).
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/email.clj#L47-L74">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/email.clj#L56-L87">Source</a></sub></p>
 
 -----
 # <a name="triangulum.errors">triangulum.errors</a>
@@ -544,7 +579,7 @@ Gets repo tags url from config.edn.
 
 Routing Handler that delegates authentication & redirection
    to handlers specified in your config.edn
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L45-L60">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L61-L76">Source</a></sub></p>
 
 ## <a name="triangulum.handler/case-insensitive-substring?">`case-insensitive-substring?`</a><a name="triangulum.handler/case-insensitive-substring?"></a>
 ``` clojure
@@ -553,7 +588,7 @@ Routing Handler that delegates authentication & redirection
 ```
 
 True if s includes substr regardless of case.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L66-L70">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L82-L86">Source</a></sub></p>
 
 ## <a name="triangulum.handler/create-handler-stack">`create-handler-stack`</a><a name="triangulum.handler/create-handler-stack"></a>
 ``` clojure
@@ -562,15 +597,16 @@ True if s includes substr regardless of case.
 ```
 
 Create the Ring handler stack.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L185-L210">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L243-L272">Source</a></sub></p>
 
 ## <a name="triangulum.handler/development-app">`development-app`</a><a name="triangulum.handler/development-app"></a>
+``` clojure
 
-
-
+(development-app request)
+```
 
 Handler function for development (figwheel).
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L212-L220">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L283-L286">Source</a></sub></p>
 
 ## <a name="triangulum.handler/get-cookie-store">`get-cookie-store`</a><a name="triangulum.handler/get-cookie-store"></a>
 ``` clojure
@@ -579,7 +615,7 @@ Handler function for development (figwheel).
 ```
 
 Computes a new `ring.middleware.session.cookie/cookie-store` object.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L168-L172">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L195-L199">Source</a></sub></p>
 
 ## <a name="triangulum.handler/optional-middleware">`optional-middleware`</a><a name="triangulum.handler/optional-middleware"></a>
 ``` clojure
@@ -588,7 +624,7 @@ Computes a new `ring.middleware.session.cookie/cookie-store` object.
 ```
 
 Conditionally apply a middleware.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L178-L183">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L236-L241">Source</a></sub></p>
 
 ## <a name="triangulum.handler/parse-query-string">`parse-query-string`</a><a name="triangulum.handler/parse-query-string"></a>
 ``` clojure
@@ -597,7 +633,7 @@ Conditionally apply a middleware.
 ```
 
 Parses query strings and returns a params map.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L128-L138">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L155-L165">Source</a></sub></p>
 
 ## <a name="triangulum.handler/random-string">`random-string`</a><a name="triangulum.handler/random-string"></a>
 ``` clojure
@@ -606,7 +642,7 @@ Parses query strings and returns a params map.
 ```
 
 Returns a random alphanumeric string of length n.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L159-L166">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L186-L193">Source</a></sub></p>
 
 ## <a name="triangulum.handler/string-to-bytes">`string-to-bytes`</a><a name="triangulum.handler/string-to-bytes"></a>
 ``` clojure
@@ -615,7 +651,7 @@ Returns a random alphanumeric string of length n.
 ```
 
 Converts a string into a byte array.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L154-L157">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L181-L184">Source</a></sub></p>
 
 ## <a name="triangulum.handler/wrap-bad-uri">`wrap-bad-uri`</a><a name="triangulum.handler/wrap-bad-uri"></a>
 ``` clojure
@@ -626,7 +662,7 @@ Converts a string into a byte array.
 Wrapper that checks if the request url contains a bad token from the
   provided set and returns a forbidden-response if so; otherwise,
   passes the request to the provided handler.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L72-L81">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L88-L97">Source</a></sub></p>
 
 ## <a name="triangulum.handler/wrap-edn-params">`wrap-edn-params`</a><a name="triangulum.handler/wrap-edn-params"></a>
 ``` clojure
@@ -635,7 +671,7 @@ Wrapper that checks if the request url contains a bad token from the
 ```
 
 Wrapper that parses request query strings and puts in :params request map.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L140-L152">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L167-L179">Source</a></sub></p>
 
 ## <a name="triangulum.handler/wrap-exceptions">`wrap-exceptions`</a><a name="triangulum.handler/wrap-exceptions"></a>
 ``` clojure
@@ -644,7 +680,7 @@ Wrapper that parses request query strings and puts in :params request map.
 ```
 
 Wrapper to manage exception handling, logging it and responding with 500 in case of an exception.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L116-L126">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L143-L153">Source</a></sub></p>
 
 ## <a name="triangulum.handler/wrap-request-logging">`wrap-request-logging`</a><a name="triangulum.handler/wrap-request-logging"></a>
 ``` clojure
@@ -653,7 +689,7 @@ Wrapper to manage exception handling, logging it and responding with 500 in case
 ```
 
 Wrapper that logs the incoming requests.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L83-L92">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L109-L119">Source</a></sub></p>
 
 ## <a name="triangulum.handler/wrap-response-logging">`wrap-response-logging`</a><a name="triangulum.handler/wrap-response-logging"></a>
 ``` clojure
@@ -662,7 +698,7 @@ Wrapper that logs the incoming requests.
 ```
 
 Wrapper that logs served responses.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L94-L114">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/handler.clj#L121-L141">Source</a></sub></p>
 
 -----
 # <a name="triangulum.https">triangulum.https</a>
@@ -685,9 +721,10 @@ A set of tools for using certbot as the server certificate manager.
 # <a name="triangulum.logging">triangulum.logging</a>
 
 
-To send a message to the logger use [[`log`](#triangulum.logging/log)](#triangulum.logging/log) or [[`log-str`](#triangulum.logging/log-str)](#triangulum.logging/log-str). [[`log`](#triangulum.logging/log)](#triangulum.logging/log) can take an
-  optional argument to specify not default behavior. The default values are
-  shown below. [[`log-str`](#triangulum.logging/log-str)](#triangulum.logging/log-str) always uses the default values.
+To send a message to the logger use [[`log`](#triangulum.logging/log)](#triangulum.logging/log) or [[`log-str`](#triangulum.logging/log-str)](#triangulum.logging/log-str). [[`log`](#triangulum.logging/log)](#triangulum.logging/log) can
+  take an optional argument to specify non-default behavior. The
+  default values are shown below. [[`log-str`](#triangulum.logging/log-str)](#triangulum.logging/log-str) always uses the default
+  values.
 
   ```clojure
   (log "Hello world" {:newline? true :pprint? false :force-stdout? false})
@@ -698,8 +735,8 @@ To send a message to the logger use [[`log`](#triangulum.logging/log)](#triangul
   have the system log to YYYY-DD-MM.log, set a log path. You can either specify
   a path relative to the toplevel directory of the main project repository or an
   absolute path on your filesystem. The logger will keep the 10 most recent logs
-  (where a new log is created every day at midnight). To stop the logging server
-  set path to "".
+  (where a new log is created everyday at midnight). To stop the
+  logging server set log path to "".
 
 
 
@@ -717,8 +754,8 @@ To send a message to the logger use [[`log`](#triangulum.logging/log)](#triangul
 Synchronously create a log entry. Logs will got to standard out as default.
    A log file location can be specified with set-log-path!.
 
-   Default options are {:newline? true :pprint? false :force-stdout? false}
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/logging.clj#L31-L49">Source</a></sub></p>
+   Default options are {:newline? true :pprint? false :force-stdout? false truncate? true}
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/logging.clj#L32-L50">Source</a></sub></p>
 
 ## <a name="triangulum.logging/log-str">`log-str`</a><a name="triangulum.logging/log-str"></a>
 ``` clojure
@@ -728,7 +765,7 @@ Synchronously create a log entry. Logs will got to standard out as default.
 
 A variadic version of log which concatenates all of the strings into one log line.
    Uses the default options for log.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/logging.clj#L51-L55">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/logging.clj#L52-L56">Source</a></sub></p>
 
 ## <a name="triangulum.logging/set-log-path!">`set-log-path!`</a><a name="triangulum.logging/set-log-path!"></a>
 ``` clojure
@@ -739,7 +776,7 @@ A variadic version of log which concatenates all of the strings into one log lin
 Sets a path to create file logs. When set to a directory, log files will be
    created with the date as part of the file name. When an empty string is set
    logging will be sent to standard out.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/logging.clj#L69-L91">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/logging.clj#L70-L92">Source</a></sub></p>
 
 -----
 # <a name="triangulum.migrate">triangulum.migrate</a>
@@ -755,12 +792,26 @@ Sets a path to create file logs. When set to a directory, log files will be
 
 
 Location of migrations dir
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/migrate.clj#L14-L14">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/migrate.clj#L15-L15">Source</a></sub></p>
+
+## <a name="triangulum.migrate/get-migration-files">`get-migration-files`</a><a name="triangulum.migrate/get-migration-files"></a>
+``` clojure
+
+(get-migration-files)
+```
+Function.
+
+An eval time list of the migration files.
+
+   NOTE: This is a macro because we want to retain the file
+   path information at AOT compile time so it's available at
+   run time from a JAR.
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/migrate.clj#L35-L49">Source</a></sub></p>
 
 ## <a name="triangulum.migrate/migrate!">`migrate!`</a><a name="triangulum.migrate/migrate!"></a>
 ``` clojure
 
-(migrate! database user user-pass verbose?)
+(migrate! host port database user user-pass verbose?)
 ```
 
 Performs the database migrations stored in the `src/sql/changes/` directory.
@@ -777,7 +828,7 @@ Performs the database migrations stored in the `src/sql/changes/` directory.
   and include a SHA-256 hash of the migration file contents. If a migration has
   been altered, the migrations will fail. This is to ensure consistency as migrations
   are added.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/migrate.clj#L92-L127">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/migrate.clj#L102-L137">Source</a></sub></p>
 
 -----
 # <a name="triangulum.notify">triangulum.notify</a>
@@ -1079,7 +1130,7 @@ Returns the SHA-256 digest of a file.
 ```
 
 Server entry main function.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L166-L179">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L167-L180">Source</a></sub></p>
 
 ## <a name="triangulum.server/reload-running-server!">`reload-running-server!`</a><a name="triangulum.server/reload-running-server!"></a>
 ``` clojure
@@ -1088,7 +1139,7 @@ Server entry main function.
 ```
 
 Reloads the server namespace and its dependencies.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L129-L135">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L130-L136">Source</a></sub></p>
 
 ## <a name="triangulum.server/send-to-nrepl-server!">`send-to-nrepl-server!`</a><a name="triangulum.server/send-to-nrepl-server!"></a>
 ``` clojure
@@ -1097,7 +1148,7 @@ Reloads the server namespace and its dependencies.
 ```
 
 Sends form to the nrepl server
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L108-L119">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L109-L120">Source</a></sub></p>
 
 ## <a name="triangulum.server/start-server!">`start-server!`</a><a name="triangulum.server/start-server!"></a>
 ``` clojure
@@ -1128,7 +1179,7 @@ Sends form to the nrepl server
 ```
 
 See README.org -> Web Framework -> triangulum.server for details.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L44-L96">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L44-L97">Source</a></sub></p>
 
 ## <a name="triangulum.server/stop-running-server!">`stop-running-server!`</a><a name="triangulum.server/stop-running-server!"></a>
 ``` clojure
@@ -1137,7 +1188,7 @@ See README.org -> Web Framework -> triangulum.server for details.
 ```
 
 Sends stop-server! call to the nrepl server.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L121-L127">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L122-L128">Source</a></sub></p>
 
 ## <a name="triangulum.server/stop-server!">`stop-server!`</a><a name="triangulum.server/stop-server!"></a>
 ``` clojure
@@ -1146,13 +1197,18 @@ Sends stop-server! call to the nrepl server.
 ```
 
 Stops server with workers jobs.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L98-L106">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/server.clj#L99-L107">Source</a></sub></p>
 
 -----
 # <a name="triangulum.sockets">triangulum.sockets</a>
 
 
-Provides functionality for creating and managing client and server sockets. It includes functions for opening and checking socket connections, sending messages to the server, and starting/stopping socket servers with custom request handlers. This namespace enables communication between distributed systems and allows you to implement networked applications.
+Provides functionality for creating and managing client and server
+  sockets. It includes functions for opening and checking socket
+  connections, sending messages to the server, and starting/stopping
+  socket servers with custom request handlers. This namespace enables
+  communication between distributed systems and allows you to
+  implement networked applications.
 
 
 
@@ -1164,7 +1220,7 @@ Provides functionality for creating and managing client and server sockets. It i
 ```
 
 Attempts to send socket message. Returns :success if successful.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L22-L35">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L27-L40">Source</a></sub></p>
 
 ## <a name="triangulum.sockets/socket-open?">`socket-open?`</a><a name="triangulum.sockets/socket-open?"></a>
 ``` clojure
@@ -1173,7 +1229,7 @@ Attempts to send socket message. Returns :success if successful.
 ```
 
 Checks if the socket at host/port is open.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L13-L20">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L18-L25">Source</a></sub></p>
 
 ## <a name="triangulum.sockets/start-socket-server!">`start-socket-server!`</a><a name="triangulum.sockets/start-socket-server!"></a>
 ``` clojure
@@ -1182,7 +1238,7 @@ Checks if the socket at host/port is open.
 ```
 
 Starts a socket server at port with handler.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L71-L85">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L76-L90">Source</a></sub></p>
 
 ## <a name="triangulum.sockets/stop-socket-server!">`stop-socket-server!`</a><a name="triangulum.sockets/stop-socket-server!"></a>
 ``` clojure
@@ -1191,7 +1247,7 @@ Starts a socket server at port with handler.
 ```
 
 Stops the socket server at port with handler.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L59-L69">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/sockets.clj#L64-L74">Source</a></sub></p>
 
 -----
 # <a name="triangulum.systemd">triangulum.systemd</a>
@@ -1233,7 +1289,9 @@ Formats `template` with the `config` dictionary.
 # <a name="triangulum.type-conversion">triangulum.type-conversion</a>
 
 
-Provides a collection of functions for converting between different data types and formats, including conversions between numbers, booleans, JSON, and PostgreSQL data types.
+Provides a collection of functions for converting between different
+  data types and formats, including conversions between numbers,
+  booleans, JSON, and PostgreSQL data types.
 
 
 
@@ -1244,7 +1302,7 @@ Provides a collection of functions for converting between different data types a
 
 
 Convert clj to JSON string.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L92-L92">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L94-L94">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/clj->jsonb">`clj->jsonb`</a><a name="triangulum.type-conversion/clj->jsonb"></a>
 ``` clojure
@@ -1253,7 +1311,7 @@ Convert clj to JSON string.
 ```
 
 Convert clj to PG jsonb object.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L107-L110">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L109-L112">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/json->clj">`json->clj`</a><a name="triangulum.type-conversion/json->clj"></a>
 ``` clojure
@@ -1263,7 +1321,7 @@ Convert clj to PG jsonb object.
 ```
 
 Convert JSON string to clj equivalent.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L74-L81">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L76-L83">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/json->jsonb">`json->jsonb`</a><a name="triangulum.type-conversion/json->jsonb"></a>
 ``` clojure
@@ -1272,7 +1330,7 @@ Convert JSON string to clj equivalent.
 ```
 
 Convert JSON string to PG jsonb object.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L102-L105">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L104-L107">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/jsonb->clj">`jsonb->clj`</a><a name="triangulum.type-conversion/jsonb->clj"></a>
 ``` clojure
@@ -1282,7 +1340,7 @@ Convert JSON string to PG jsonb object.
 ```
 
 Convert PG jsonb object to clj equivalent.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L85-L90">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L87-L92">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/jsonb->json">`jsonb->json`</a><a name="triangulum.type-conversion/jsonb->json"></a>
 
@@ -1290,7 +1348,7 @@ Convert PG jsonb object to clj equivalent.
 
 
 Convert PG jsonb object to json string.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L83-L83">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L85-L85">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/str->pg">`str->pg`</a><a name="triangulum.type-conversion/str->pg"></a>
 ``` clojure
@@ -1299,7 +1357,7 @@ Convert PG jsonb object to json string.
 ```
 
 Convert string to PG object of pg-type
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L94-L100">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L96-L102">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/val->bool">`val->bool`</a><a name="triangulum.type-conversion/val->bool"></a>
 ``` clojure
@@ -1309,7 +1367,7 @@ Convert string to PG object of pg-type
 ```
 
 Converts a value to a java Boolean. Default value for failed conversion is false.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L56-L65">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L58-L67">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/val->double">`val->double`</a><a name="triangulum.type-conversion/val->double"></a>
 ``` clojure
@@ -1320,7 +1378,7 @@ Converts a value to a java Boolean. Default value for failed conversion is false
 
 Converts a value to a java Double. Default value for failed conversion is -1.0.
    Note Postgres float is equivalent to java Double.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L43-L54">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L45-L56">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/val->float">`val->float`</a><a name="triangulum.type-conversion/val->float"></a>
 ``` clojure
@@ -1331,7 +1389,7 @@ Converts a value to a java Double. Default value for failed conversion is -1.0.
 
 Converts a value to a java Float. Default value for failed conversion is -1.0.
    Note Postgres real is equivalent to java Float.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L30-L41">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L32-L43">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/val->int">`val->int`</a><a name="triangulum.type-conversion/val->int"></a>
 ``` clojure
@@ -1341,7 +1399,7 @@ Converts a value to a java Float. Default value for failed conversion is -1.0.
 ```
 
 Converts a value to a java Integer. Default value for failed conversion is -1.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L6-L16">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L8-L18">Source</a></sub></p>
 
 ## <a name="triangulum.type-conversion/val->long">`val->long`</a><a name="triangulum.type-conversion/val->long"></a>
 ``` clojure
@@ -1351,7 +1409,7 @@ Converts a value to a java Integer. Default value for failed conversion is -1.
 ```
 
 Converts a value to a java Long. Default value for failed conversion is -1.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L18-L28">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/type_conversion.clj#L20-L30">Source</a></sub></p>
 
 -----
 # <a name="triangulum.utils">triangulum.utils</a>
@@ -1388,7 +1446,7 @@ Given a namespace-qualified symbol, return its string representation as a JS mod
 ```
 
 Returns the current year as an integer.
-<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/utils.clj#L292-L295">Source</a></sub></p>
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/utils.clj#L300-L303">Source</a></sub></p>
 
 ## <a name="triangulum.utils/data-response">`data-response`</a><a name="triangulum.utils/data-response"></a>
 ``` clojure
@@ -1412,6 +1470,18 @@ DEPRECATED: Use [[triangulum.response/data-response]] instead.
 
 Recursively delete all files and directories under the given directory.
 <p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/utils.clj#L277-L280">Source</a></sub></p>
+
+## <a name="triangulum.utils/drop-sql-path">`drop-sql-path`</a><a name="triangulum.utils/drop-sql-path"></a>
+``` clojure
+
+(drop-sql-path f)
+```
+
+Removes the sql path from a file path.
+
+  Example:
+  (drop-sql-path "foo/sql/changes.sql") => changes.sql
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/utils.clj#L290-L296">Source</a></sub></p>
 
 ## <a name="triangulum.utils/end-with">`end-with`</a><a name="triangulum.utils/end-with"></a>
 ``` clojure
@@ -1650,6 +1720,18 @@ Responsible for the management of worker lifecycle within the
 
 
 
+
+## <a name="triangulum.worker/get-worker">`get-worker`</a><a name="triangulum.worker/get-worker"></a>
+
+
+
+
+Returns a worker by name, represented as a map with the following shape:
+  {:triangulum.worker/name  String | Keyword
+   :triangulum.worker/start IFn
+   :triangulum.worker/stop  IFn
+   :triangulum.worker/value Object}
+<p><sub><a href="https://github.com/sig-gis/triangulum/blob/main/src/triangulum/worker.clj#L97-L103">Source</a></sub></p>
 
 ## <a name="triangulum.worker/start-workers!">`start-workers!`</a><a name="triangulum.worker/start-workers!"></a>
 
