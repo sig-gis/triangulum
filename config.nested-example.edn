@@ -15,6 +15,7 @@
           ;; handler
           :not-found-handler     product-ns.handlers/not-found-handler
           :redirect-handler      product-ns.handlers/redirect-handler
+          :refused-handler       product-ns.handlers/refused-handler
           :route-authenticator   product-ns.handlers/route-authenticator
           :routing-tables        [common-libary-ns.routing/routes product-ns.routing/routes]
           :bad-tokens            #{".php"}

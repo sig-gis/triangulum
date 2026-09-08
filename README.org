@@ -172,16 +172,23 @@ of overriding defaults.
     - ~:not-found-handler~ (args: ~request~), called when no corresponding route is found.
     - ~:route-authenticator~ (args: ~request~, route ~:auth-type~), determines if client is authenticated
     - ~:redirect-handler~ (args: ~request~), called when client is not authenticated
+    - ~:refused-handler~ (args: ~request~), optional, called when client is not
+      authenticated and the route does not redirect. Defaults to a bare 403
+      ~Forbidden~; register your own to say *why* the request was refused --
+      a session that has ended is not the same as a permission the caller
+      never had, and a 403 cannot tell them apart.
 
 #+begin_src clojure
   ;; nested config
   {:server {:not-found-handler   product-ns.handlers/not-found-handler
             :redirect-handler    product-ns.handlers/redirect-handler
+            :refused-handler     product-ns.handlers/refused-handler
             :route-authenticator product-ns.handlers/route-authenticator}}
 
   ;; namespaced config
   {:triangulum.handler/not-found-handler   product-ns.handlers/not-found-handler
    :triangulum.handler/redirect-handler    product-ns.handlers/redirect-handler
+   :triangulum.handler/refused-handler     product-ns.handlers/refused-handler
    :triangulum.handler/route-authenticator product-ns.handlers/route-authenticator}
 #+end_src
 
