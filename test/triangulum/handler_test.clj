@@ -2,7 +2,10 @@
   (:require [clojure.string     :as str]
             [clojure.test       :refer [deftest is testing]]
             [triangulum.config  :refer [get-config]]
-            [triangulum.handler :refer [create-handler-stack wrap-request-logging wrap-response-logging]]
+            [triangulum.handler :refer [authenticated-routing-handler
+                                        create-handler-stack
+                                        wrap-request-logging
+                                        wrap-response-logging]]
             [triangulum.logging :refer [log log-str]]))
 
 (defn- stub-config
@@ -82,3 +85,56 @@
   (testing "a namespaced key matches its full name, not the bare one"
     (is (= "Response(200): {b 2}"
            (logged-body "application/json" "{\"a/b\":\"s3cr3t\",\"b\":2}" #{:a/b})))))
+
+;;; Refusal
+
+(def gated-routes
+  "One route nobody will be allowed through."
+  {[:get "/gated"] {:auth-type :member :handler (fn [_] {:status 200})}})
+
+(defn turns-everyone-away
+  "A route-authenticator that always says no, so every request reaches the
+   refusal branch."
+  [_ _]
+  false)
+
+(defn explaining-the-ended-session
+  "What an application registers when it can say more than \"Forbidden\"."
+  [_]
+  {:status 401 :body "Your session has ended. Please log in again."})
+
+(defn nothing-here
+  "A not-found-handler, distinct from every other answer so a test can tell
+   which branch produced the response."
+  [_]
+  {:status 404 :body "Not Found"})
+
+(defn- refuse
+  "Send one request at a gated route under config `m` and return the response."
+  [m]
+  (with-redefs [get-config (stub-config m)]
+    (authenticated-routing-handler {:request-method :get :uri "/gated"})))
+
+(def ^:private refusing-config
+  {:triangulum.handler/routing-tables      [`gated-routes]
+   :triangulum.handler/route-authenticator `turns-everyone-away
+   :triangulum.handler/redirect-handler    `explaining-the-ended-session
+   :triangulum.handler/not-found-handler   `nothing-here})
+
+(deftest ^:unit refused-handler-test
+  (testing "default: a refused request is answered by forbidden-response, as before"
+    (let [resp (refuse refusing-config)]
+      (is (= 403 (:status resp)))
+      (is (str/includes? (str (:body resp)) "Forbidden"))))
+  (testing "a registered :refused-handler answers the refusal instead"
+    (let [resp (refuse (assoc refusing-config
+                              :triangulum.handler/refused-handler
+                              `explaining-the-ended-session))]
+      (is (= 401 (:status resp)))
+      (is (str/includes? (:body resp) "session has ended"))))
+  (testing "the other branches are untouched: an unknown route is still not-found's"
+    (with-redefs [get-config (stub-config (assoc refusing-config
+                                                 :triangulum.handler/refused-handler
+                                                 `explaining-the-ended-session))]
+      (is (= 404 (:status (authenticated-routing-handler
+                           {:request-method :get :uri "/no-such-route"})))))))

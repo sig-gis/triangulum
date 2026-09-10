@@ -59,11 +59,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn authenticated-routing-handler
-  "Routing Handler that delegates authentication & redirection
-   to handlers specified in your config.edn"
+  "Routing Handler that delegates authentication, redirection & refusal
+   to handlers specified in your config.edn
+
+   `:triangulum.handler/refused-handler` is optional. Without it a refused
+   request is answered by `forbidden-response`, which is a bare 403 and the word
+   \"Forbidden\" -- true, and useless to a caller who cannot tell a session that
+   has ended from a permission they never had. An application that knows the
+   difference registers its own and chooses the status and the body."
   [{:keys [uri request-method] :as request}]
   (let [redirect-handler  (resolve-foreign-symbol (get-config :triangulum.handler/redirect-handler))
         not-found-handler (resolve-foreign-symbol (get-config :triangulum.handler/not-found-handler))
+        refused-handler   (or (some-> (get-config :triangulum.handler/refused-handler)
+                                      (resolve-foreign-symbol))
+                              forbidden-response)
         is-authenticated? (resolve-foreign-symbol (get-config :triangulum.handler/route-authenticator))
         routes            (->> (get-config :triangulum.handler/routing-tables)
                                (map (comp deref resolve-foreign-symbol))
@@ -73,7 +82,7 @@
       (nil? route)                                                (not-found-handler request)
       (or (nil? auth-type) (is-authenticated? request auth-type)) (handler request)
       (= :redirect auth-action)                                   (redirect-handler request)
-      :else                                                       (forbidden-response request))))
+      :else                                                       (refused-handler request))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Middlewares

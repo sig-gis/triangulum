@@ -17,6 +17,7 @@
                                    :triangulum.server/log-dir
                                    :triangulum.handler/not-found-handler
                                    :triangulum.handler/redirect-handler
+                                   :triangulum.handler/refused-handler
                                    :triangulum.handler/route-authenticator
                                    :triangulum.handler/routing-tables
                                    :triangulum.handler/bad-tokens
