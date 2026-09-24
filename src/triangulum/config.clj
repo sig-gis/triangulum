@@ -45,7 +45,7 @@
 
 ;;; Private vars
 
-(def ^:private config-file  (atom "config.edn"))
+(def ^:private config-file  (atom (or (System/getenv "TRIANGULUM_CONFIG") "config.edn")))
 (def ^:private config-cache (atom nil))
 
 (def ^:private ns->un-mapping

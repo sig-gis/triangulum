@@ -41,6 +41,10 @@ A Clojure library that provides:
    available features in ~config.nested-example.edn~ and
    ~config.namespaced-example.edn~ within this repository.
 
+   NOTE: If you would like to use an alternative file name or location
+   for your ~config.edn~ file, you should set its path in the
+   ~TRIANGULUM_CONFIG~ environment variable before starting your JVM.
+
 ** Running Tests
 
 To launch the test suite, run:
